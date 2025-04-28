@@ -1,18 +1,27 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { MdAlbum } from 'react-icons/md';
+// eslint-disable-next-line no-unused-vars
+import { motion } from 'framer-motion';
 
-const AlbumItem = ({ id, name, image, desc }) => {
+const AlbumItem = ({ id, name, image }) => {
   const navigate = useNavigate();
 
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, y: 40 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, ease: "easeOut" }}
       onClick={() => navigate(`/album/${id}`)}
-      className='min-w-[180px] p-2 px-3 rounded cursor-pointer hover:bg-[#ffffff26]'
+      className='min-w-[180px] p-2 px-3 rounded cursor-pointer hover:bg-[#ffffff26] bg-black/90 shadow-2xl'
     >
-      <img className='rounded' src={image} alt={name} />
+      {image ? (
+        <img className='rounded' src={image} alt={name} />
+      ) : (
+        <MdAlbum className='w-24 h-24 text-fuchsia-500 mx-auto' />
+      )}
       <p className='font-bold mt-2 mb-1'>{name}</p>
-      <p className='text-slate-200 text-sm'>{desc}</p>
-    </div>
+    </motion.div>
   );
 };
 

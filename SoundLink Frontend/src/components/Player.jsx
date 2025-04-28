@@ -1,6 +1,8 @@
 import React, { useContext } from "react";
 import { assets } from "../assets/assets";
 import { PlayerContext } from "../context/PlayerContext";
+// eslint-disable-next-line no-unused-vars
+import { motion } from "framer-motion";
 
 const Player = () => {
   const {
@@ -22,7 +24,12 @@ const Player = () => {
   } = useContext(PlayerContext);
 
   return track ? (
-    <div className="h-20 bg-black flex justify-between items-center text-white px-4">
+    <motion.div
+      initial={{ opacity: 0, y: 40 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, ease: "easeOut" }}
+      className="h-20 bg-black/90 flex justify-between items-center text-white px-4 rounded-xl shadow-2xl"
+    >
       {/* Left - Song Info */}
       <div className="hidden lg:flex items-center gap-4 w-[20%]">
         <img className="w-12" src={track.image} alt={track.name} />
@@ -117,7 +124,7 @@ const Player = () => {
         </div>
         <img className="w-4 cursor-pointer" src={assets.zoom_icon} alt="" />
       </div>
-    </div>
+    </motion.div>
   ) : null;
 };
 

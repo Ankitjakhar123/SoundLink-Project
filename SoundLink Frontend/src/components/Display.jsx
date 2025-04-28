@@ -3,6 +3,8 @@ import { Route, Routes, useLocation, useParams } from 'react-router-dom';
 import DisplayHome from './DisplayHome';
 import DisplayAlbum from './DisplayAlbum';
 import { PlayerContext } from '../context/PlayerContext';
+// eslint-disable-next-line no-unused-vars
+import { motion } from 'framer-motion';
 //import { assets } from '../assets/assets';
 
 const Display = () => {
@@ -25,9 +27,12 @@ const Display = () => {
   }, [location.pathname, bgColour]);
 
   return (
-    <div
+    <motion.div
       ref={displayRef}
-      className="w-[100%] m-2 px-6 pt-4 rounded overflow-auto lg:w-[75%] lg:ml-0 text-white transition-all duration-500"
+      initial={{ opacity: 0, y: 40 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, ease: "easeOut" }}
+      className="w-[100%] m-2 px-6 pt-4 rounded overflow-auto lg:w-[75%] lg:ml-0 text-white transition-all duration-500 bg-black/90 shadow-2xl"
     >
       {albumsData.length > 0 ? (
         <Routes>
@@ -37,7 +42,7 @@ const Display = () => {
       ) : (
         <div>Loading...</div>
       )}
-    </div>
+    </motion.div>
   );
 };
 

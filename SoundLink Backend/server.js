@@ -5,6 +5,23 @@ import songRouter from './src/routes/songroute.js';
 import connectDB from './src/config/mongodb.js';
 import connectCloudinary from './src/config/cloudinary.js';
 import albumRouter from './src/routes/albumroute.js';
+import authRouter from './src/routes/authroute.js';
+import favoriteRouter from './src/routes/favoriteroute.js';
+import commentRouter from './src/routes/commentroute.js';
+import searchRouter from './src/routes/searchroute.js';
+import morgan from 'morgan';
+import rateLimit from 'express-rate-limit';
+import playlistroute from './src/routes/playlistroute.js';
+import analyticsroute from './src/routes/analyticsroute.js';
+import userRouter from './src/routes/userroute.js';
+import movieAlbumRouter from './src/routes/movieAlbumRoutes.js';
+import artistRouter from './src/routes/artistRoutes.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Get current directory
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 //app config
 const app=express();
@@ -16,12 +33,37 @@ connectCloudinary();
 //middelewares
 
 app.use(express.json());
-app.use(cors());
+// Configure CORS to allow credentials
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production' 
+    ? process.env.FRONTEND_URL 
+    : 'http://localhost:5173',
+  credentials: true
+}));
+
+// Serve static files from the uploads directory
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+app.use(morgan('dev'));
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10000, // limit each IP to 10000 requests per windowMs
+});
+app.use(limiter);
 
 //initializing routes
 
 app.use("/api/song",songRouter)
 app.use('/api/album',albumRouter)
+app.use('/api/auth', authRouter)
+app.use('/api/favorite', favoriteRouter)
+app.use('/api/comment', commentRouter)
+app.use('/api/search', searchRouter)
+app.use('/api/playlist', playlistroute)
+app.use('/api/analytics', analyticsroute)
+app.use('/api/user', userRouter)
+app.use('/api/moviealbum', movieAlbumRouter)
+app.use('/api/artist', artistRouter)
 
 app.get('/',(req,res)=> res.send("Api Working"))
 

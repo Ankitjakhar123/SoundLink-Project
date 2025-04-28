@@ -1,5 +1,7 @@
-import { createContext, useEffect, useRef, useState } from "react";
+import { createContext, useEffect, useRef, useState, useContext } from "react";
 import axios from "axios";
+import { AuthContext } from "./AuthContext";
+import { toast } from "react-toastify";
 //import { assets } from "../assets/assets";
 
 export const PlayerContext = createContext();
@@ -9,21 +11,28 @@ export const PlayerContextProvider = ({ children }) => {
   const seekBg = useRef();
   const seekBar = useRef();
   const volumeRef = useRef();
+  const { user, token } = useContext(AuthContext);
 
-  const url = 'http://localhost:4000';
+  const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
 
   const [songsData, setSongsData] = useState([]);
   const [albumsData, setAlbumsData] = useState([]);
+  const [favorites, setFavorites] = useState([]);
+  const [playlists, setPlaylists] = useState([]);
   const [track, setTrack] = useState(null);
   const [playStatus, setPlayStatus] = useState(false);
   const [loop, setLoop] = useState(false);
   const [loading, setLoading] = useState({
     songs: true,
-    albums: true
+    albums: true,
+    favorites: false,
+    playlists: false
   });
   const [error, setError] = useState({
     songs: null,
-    albums: null
+    albums: null,
+    favorites: null,
+    playlists: null
   });
   const [time, setTime] = useState({
     currentTime: { second: 0, minute: 0 },
@@ -82,14 +91,211 @@ export const PlayerContextProvider = ({ children }) => {
     audioRef.current.volume = e.target.value / 100;
   };
 
+  // Fetch user's favorites
+  const getFavorites = async () => {
+    if (!token) return;
+    
+    try {
+      setLoading(prev => ({...prev, favorites: true}));
+      setError(prev => ({...prev, favorites: null}));
+      
+      const response = await axios.get(`${backendUrl}/api/favorite/my`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (response.data.success) {
+        // Extract songs from favorites
+        const favoriteSongs = response.data.favorites
+          .filter(fav => fav.song)
+          .map(fav => fav.song);
+          
+        setFavorites(favoriteSongs);
+      }
+    } catch (error) {
+      setError(prev => ({...prev, favorites: error.message}));
+      console.error('Error fetching favorites:', error);
+    } finally {
+      setLoading(prev => ({...prev, favorites: false}));
+    }
+  };
+
+  // Toggle favorite status for a song
+  const toggleFavorite = async (songId) => {
+    if (!token) {
+      toast.warning("Please log in to add favorites");
+      return;
+    }
+    
+    try {
+      const isFav = favorites.some(fav => fav._id === songId);
+      
+      if (isFav) {
+        // Remove from favorites
+        await axios.post(`${backendUrl}/api/favorite/unlike`, { songId }, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setFavorites(prevFavs => prevFavs.filter(fav => fav._id !== songId));
+        toast.success("Removed from favorites");
+      } else {
+        // Add to favorites
+        await axios.post(`${backendUrl}/api/favorite/like`, { songId }, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        // Find the song and add it to favorites
+        const song = songsData.find(song => song._id === songId);
+        if (song) {
+          setFavorites(prevFavs => [...prevFavs, song]);
+        }
+        toast.success("Added to favorites");
+      }
+    } catch (error) {
+      console.error("Error toggling favorite:", error);
+      toast.error("Failed to update favorites");
+    }
+  };
+
+  // Check if a song is in favorites
+  const isFavorite = (songId) => {
+    return favorites && favorites.some(fav => fav._id === songId);
+  };
+
+  // Fetch user's playlists
+  const getUserPlaylists = async () => {
+    if (!token) return;
+    
+    try {
+      setLoading(prev => ({...prev, playlists: true}));
+      setError(prev => ({...prev, playlists: null}));
+      
+      const response = await axios.get(`${backendUrl}/api/playlist/my`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (response.data.success) {
+        setPlaylists(response.data.playlists);
+      }
+    } catch (error) {
+      setError(prev => ({...prev, playlists: error.message}));
+      console.error('Error fetching playlists:', error);
+    } finally {
+      setLoading(prev => ({...prev, playlists: false}));
+    }
+  };
+
+  // Create a new playlist
+  const createPlaylist = async (name) => {
+    if (!token) {
+      toast.warning("Please log in to create playlists");
+      return null;
+    }
+    
+    try {
+      const response = await axios.post(
+        `${backendUrl}/api/playlist/create`, 
+        { name }, 
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      if (response.data.success) {
+        setPlaylists(prevPlaylists => [...prevPlaylists, response.data.playlist]);
+        toast.success(`Playlist "${name}" created`);
+        return response.data.playlist;
+      }
+      return null;
+    } catch (error) {
+      console.error("Error creating playlist:", error);
+      toast.error("Failed to create playlist");
+      return null;
+    }
+  };
+
+  // Add a song to a playlist
+  const addToPlaylist = async (songId, playlistId) => {
+    if (!token) {
+      toast.warning("Please log in to add to playlists");
+      return false;
+    }
+    
+    try {
+      const response = await axios.post(
+        `${backendUrl}/api/playlist/add-song`, 
+        { songId, playlistId }, 
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      if (response.data.success) {
+        // Update the playlists state
+        getUserPlaylists();
+        toast.success("Added to playlist");
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error("Error adding to playlist:", error);
+      toast.error("Failed to add to playlist");
+      return false;
+    }
+  };
+
+  // Remove a song from a playlist
+  const removeFromPlaylist = async (songId, playlistId) => {
+    if (!token) return false;
+    
+    try {
+      const response = await axios.post(
+        `${backendUrl}/api/playlist/remove-song`, 
+        { songId, playlistId }, 
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      if (response.data.success) {
+        // Update the playlists state
+        getUserPlaylists();
+        toast.success("Removed from playlist");
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error("Error removing from playlist:", error);
+      toast.error("Failed to remove from playlist");
+      return false;
+    }
+  };
+
+  // Delete a playlist
+  const deletePlaylist = async (playlistId) => {
+    if (!token) return false;
+    
+    try {
+      const response = await axios.post(
+        `${backendUrl}/api/playlist/delete`, 
+        { playlistId }, 
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      if (response.data.success) {
+        setPlaylists(prevPlaylists => prevPlaylists.filter(pl => pl._id !== playlistId));
+        toast.success("Playlist deleted");
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error("Error deleting playlist:", error);
+      toast.error("Failed to delete playlist");
+      return false;
+    }
+  };
+
   const getSongData = async () => {
     try {
       setLoading(prev => ({...prev, songs: true}));
       setError(prev => ({...prev, songs: null}));
-      const response = await axios.get(`${url}/api/song/list`);
-      console.log('Songs Data:', response.data); // Log the response
+      const response = await axios.get(`${backendUrl}/api/song/list`);
       setSongsData(response.data.songs);
-      setTrack(response.data.songs[0]);
+      if (response.data.songs.length > 0) {
+        setTrack(response.data.songs[0]);
+      }
     } catch (error) {
       setError(prev => ({...prev, songs: error.message}));
       console.error('Error fetching songs:', error);
@@ -102,7 +308,7 @@ export const PlayerContextProvider = ({ children }) => {
     try {
       setLoading(prev => ({...prev, albums: true}));
       setError(prev => ({...prev, albums: null}));
-      const response = await axios.get(`${url}/api/album/list`);
+      const response = await axios.get(`${backendUrl}/api/album/list`);
       setAlbumsData(response.data.albums);
     } catch (error) {
       setError(prev => ({...prev, albums: error.message}));
@@ -116,6 +322,17 @@ export const PlayerContextProvider = ({ children }) => {
     getSongData();
     getAlbumsData();
   }, []);
+
+  // Fetch favorites and playlists when user changes
+  useEffect(() => {
+    if (user) {
+      getFavorites();
+      getUserPlaylists();
+    } else {
+      setFavorites([]);
+      setPlaylists([]);
+    }
+  }, [user, token]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -157,7 +374,7 @@ export const PlayerContextProvider = ({ children }) => {
   }, [track]);
 
   useEffect(() => {
-    if (track) {
+    if (track && audioRef.current) {
       audioRef.current.load();
       play();
     }
@@ -179,12 +396,25 @@ export const PlayerContextProvider = ({ children }) => {
     seekSong,
     changeVolume,
     songsData,
+    setSongsData,
     albumsData,
+    setAlbumsData,
     shuffle,
     toggleLoop,
     loop,
     loading,
-    error
+    error,
+    // Favorites related
+    favorites,
+    toggleFavorite,
+    isFavorite,
+    // Playlist related
+    playlists,
+    getUserPlaylists,
+    createPlaylist,
+    addToPlaylist,
+    removeFromPlaylist,
+    deletePlaylist
   };
 
   return (
