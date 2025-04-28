@@ -65,6 +65,11 @@ app.use('/api/user', userRouter)
 app.use('/api/moviealbum', movieAlbumRouter)
 app.use('/api/artist', artistRouter)
 
+// Health check endpoint for Docker
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'ok', message: 'Server is running' });
+});
+
 app.get('/',(req,res)=> res.send("Api Working"))
 
 app.listen(port, () => console.log(`Server started on ${port}`));

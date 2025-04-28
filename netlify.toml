@@ -1,0 +1,10 @@
+[build]
+  base = "SoundLink Frontend"
+  publish = "dist"
+  command = "npm run build"
+
+# Redirects and headers
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200 
