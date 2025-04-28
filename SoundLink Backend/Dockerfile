@@ -8,7 +8,7 @@ RUN apk add --no-cache wget \
     && npm install -g npm@latest
 
 # Set npm configurations to avoid common issues
-RUN npm config set network-timeout 300000
+RUN npm config set fetch-timeout 300000
 ENV NODE_ENV=production
 
 # Copy package files and install dependencies
