@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { MdPlayArrow, MdFavorite, MdFavoriteBorder, MdPlaylistAdd, MdArrowBack, MdSearch, MdClear } from 'react-icons/md';
-// eslint-disable-next-line no-unused-vars
-import { motion } from 'framer-motion';
 import { PlayerContext } from '../context/PlayerContext';
 import AddToPlaylistModal from './AddToPlaylistModal';
 
@@ -93,11 +91,8 @@ const TrendingSongs = () => {
         </Link>
 
         {/* Page Header */}
-        <motion.div 
-          initial={{ opacity: 0, y: -20 }} 
-          animate={{ opacity: 1, y: 0 }} 
-          transition={{ duration: 0.5 }}
-          className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8"
+        <div 
+          className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 animate-fade-in"
         >
           <h1 className="text-3xl md:text-4xl font-bold text-white">
             Trending Songs
@@ -122,14 +117,11 @@ const TrendingSongs = () => {
               </button>
             )}
           </div>
-        </motion.div>
+        </div>
 
         {/* Trending Songs List */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="bg-neutral-900/50 backdrop-blur-md rounded-xl p-6 border border-white/5"
+        <div
+          className="bg-neutral-900/50 backdrop-blur-md rounded-xl p-6 border border-white/5 animate-fade-in"
         >
           {filteredSongs.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -193,7 +185,7 @@ const TrendingSongs = () => {
               </Link>
             </div>
           )}
-        </motion.div>
+        </div>
       </div>
 
       {/* Add To Playlist Modal */}

@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect } from "react";
 import axios from "axios";
+import { toast } from "react-toastify";
 
 export const AuthContext = createContext();
 
@@ -8,6 +9,41 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem("token") || "");
   const url = import.meta.env.VITE_BACKEND_URL;
 
+  // Process any pending actions that were stored during login attempts
+  const processPendingActions = async () => {
+    const pendingAction = localStorage.getItem('pendingAction');
+    
+    if (!pendingAction) return;
+    
+    try {
+      const action = JSON.parse(pendingAction);
+      
+      if (action.type === 'favorite' && action.songId) {
+        // Add song to favorites
+        await axios.post(
+          `${url}/api/favorite/like`, 
+          { songId: action.songId }, 
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        toast.success("Added to favorites");
+      } 
+      else if (action.type === 'playlist' && action.songId && action.playlistId) {
+        // Add song to playlist
+        await axios.post(
+          `${url}/api/playlist/add-song`, 
+          { songId: action.songId, playlistId: action.playlistId }, 
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        toast.success("Added to playlist");
+      }
+      
+      // Clear the pending action
+      localStorage.removeItem('pendingAction');
+    } catch (error) {
+      console.error("Error processing pending action:", error);
+    }
+  };
+
   useEffect(() => {
     if (token) {
       axios
@@ -15,7 +51,11 @@ export const AuthProvider = ({ children }) => {
           headers: { Authorization: `Bearer ${token}` },
         })
         .then((res) => {
-          if (res.data.success) setUser(res.data.user);
+          if (res.data.success) {
+            setUser(res.data.user);
+            // Process any pending actions
+            processPendingActions();
+          }
           else setUser(null);
         })
         .catch(() => setUser(null));

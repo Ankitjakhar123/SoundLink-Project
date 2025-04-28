@@ -122,8 +122,24 @@ export const PlayerContextProvider = ({ children }) => {
   // Toggle favorite status for a song
   const toggleFavorite = async (songId) => {
     if (!token) {
-      toast.warning("Please log in to add favorites");
-      return;
+      // Store the action for post-login completion
+      localStorage.setItem('pendingAction', JSON.stringify({
+        type: 'favorite',
+        songId
+      }));
+      
+      // Show toast with link to login page
+      toast.info(
+        <div>
+          Please log in to add favorites. 
+          <a href="/auth" className="ml-2 text-fuchsia-400 underline">
+            Log in now
+          </a>
+        </div>, 
+        { autoClose: 5000 }
+      );
+      
+      return false;
     }
     
     try {
@@ -149,9 +165,11 @@ export const PlayerContextProvider = ({ children }) => {
         }
         toast.success("Added to favorites");
       }
+      return true;
     } catch (error) {
       console.error("Error toggling favorite:", error);
       toast.error("Failed to update favorites");
+      return false;
     }
   };
 
@@ -213,7 +231,24 @@ export const PlayerContextProvider = ({ children }) => {
   // Add a song to a playlist
   const addToPlaylist = async (songId, playlistId) => {
     if (!token) {
-      toast.warning("Please log in to add to playlists");
+      // Store the action for post-login completion
+      localStorage.setItem('pendingAction', JSON.stringify({
+        type: 'playlist',
+        songId,
+        playlistId
+      }));
+      
+      // Show toast with link to login page
+      toast.info(
+        <div>
+          Please log in to add to playlists. 
+          <a href="/auth" className="ml-2 text-fuchsia-400 underline">
+            Log in now
+          </a>
+        </div>, 
+        { autoClose: 5000 }
+      );
+      
       return false;
     }
     
