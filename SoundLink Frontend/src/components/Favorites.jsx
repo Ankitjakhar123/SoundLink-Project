@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from "react";
-import { MdPlayArrow, MdFavorite, MdFavoriteBorder, MdPlaylistAdd, MdArrowBack } from "react-icons/md";
+import { MdPlayArrow, MdFavorite, MdFavoriteBorder, MdPlaylistAdd, MdArrowBack, MdQueueMusic, MdPause } from "react-icons/md";
 import { Link } from "react-router-dom";
 import { PlayerContext } from "../context/PlayerContext";
 import { AuthContext } from "../context/AuthContext";
@@ -7,7 +7,7 @@ import { AuthContext } from "../context/AuthContext";
 import { motion } from "framer-motion";
 
 const Favorites = () => {
-  const { favorites, playWithId, toggleFavorite, loading } = useContext(PlayerContext);
+  const { favorites, playWithId, toggleFavorite, loading, addToQueue, track, playStatus } = useContext(PlayerContext);
   const { user } = useContext(AuthContext);
   const [favoriteSongs, setFavoriteSongs] = useState([]);
 
@@ -27,6 +27,11 @@ const Favorites = () => {
     e.stopPropagation();
     // This would be implemented with a playlist system
     console.log("Add to playlist:", songId);
+  };
+  
+  const handleAddToQueue = (e, songId) => {
+    e.stopPropagation();
+    addToQueue(songId);
   };
 
   if (loading.favorites) {
@@ -75,7 +80,7 @@ const Favorites = () => {
               {favoriteSongs.map((song) => (
                 <div 
                   key={song._id} 
-                  className="flex items-center gap-4 bg-black/30 p-3 rounded-lg hover:bg-white/10 transition-all cursor-pointer group"
+                  className={`flex items-center gap-4 ${track && track._id === song._id ? 'bg-fuchsia-900/30' : 'bg-black/30'} p-3 rounded-lg hover:bg-white/10 transition-all cursor-pointer group`}
                   onClick={() => playWithId(song._id)}
                 >
                   <div className="bg-neutral-800 w-12 h-12 rounded flex items-center justify-center relative">
@@ -89,7 +94,19 @@ const Favorites = () => {
                       <MdPlayArrow size={24} className="text-fuchsia-500" />
                     )}
                     <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-200">
-                      <MdPlayArrow size={24} className="text-white" />
+                      {track && track._id === song._id ? (
+                        playStatus ? (
+                          <div className="bg-fuchsia-500 rounded-full p-1">
+                            <MdPause size={22} className="text-white" />
+                          </div>
+                        ) : (
+                          <div className="bg-fuchsia-500 rounded-full p-1">
+                            <MdPlayArrow size={22} className="text-white" />
+                          </div>
+                        )
+                      ) : (
+                        <MdPlayArrow size={24} className="text-white" />
+                      )}
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
@@ -108,6 +125,12 @@ const Favorites = () => {
                       className="text-white opacity-50 hover:opacity-100 transition-opacity"
                     >
                       <MdPlaylistAdd size={22} />
+                    </button>
+                    <button 
+                      onClick={(e) => handleAddToQueue(e, song._id)}
+                      className="text-white opacity-50 hover:opacity-100 transition-opacity"
+                    >
+                      <MdQueueMusic size={20} />
                     </button>
                     <span className="text-neutral-400 ml-1 min-w-[45px] text-right">{song.duration || "--:--"}</span>
                   </div>

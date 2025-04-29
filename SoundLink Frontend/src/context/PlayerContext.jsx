@@ -21,6 +21,9 @@ export const PlayerContextProvider = ({ children }) => {
   const [track, setTrack] = useState(null);
   const [playStatus, setPlayStatus] = useState(false);
   const [loop, setLoop] = useState(false);
+  const [queueSongs, setQueueSongs] = useState([]);
+  const [autoplayEnabled, setAutoplayEnabled] = useState(false);
+  const [firstLoad, setFirstLoad] = useState(true);
   const [loading, setLoading] = useState({
     songs: true,
     albums: true,
@@ -38,40 +41,113 @@ export const PlayerContextProvider = ({ children }) => {
     totalTime: { second: 0, minute: 0 }
   });
 
+  // Initialize the audio context on user interaction
+  const initAudioContext = () => {
+    // Fix for browsers that require user interaction before audio can play
+    if (typeof window !== "undefined" && 'AudioContext' in window) {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (!window._audioContext) {
+        window._audioContext = new AudioContext();
+      }
+      
+      if (window._audioContext.state === 'suspended') {
+        window._audioContext.resume();
+      }
+    }
+  };
+
+  // Modified play function with audio context initialization
   const play = () => {
-    audioRef.current.play();
-    setPlayStatus(true);
+    initAudioContext(); // Initialize audio context
+
+    if (audioRef.current) {
+      try {
+        const playPromise = audioRef.current.play();
+        
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => {
+              setPlayStatus(true);
+            })
+            .catch(error => {
+              console.error('Error playing audio:', error);
+              setPlayStatus(false);
+              
+              // If autoplay is blocked, we need to manually set autoplay to false
+              if (error.name === 'NotAllowedError') {
+                setAutoplayEnabled(false);
+              }
+            });
+        }
+      } catch (error) {
+        console.error('Error playing audio:', error);
+        setPlayStatus(false);
+      }
+    }
   };
 
   const pause = () => {
-    audioRef.current.pause();
-    setPlayStatus(false);
+    if (audioRef.current) {
+      try {
+        audioRef.current.pause();
+        setPlayStatus(false);
+      } catch (error) {
+        console.error('Error pausing audio:', error);
+      }
+    }
   };
 
   const playWithId = async (id) => {
     const selectedTrack = songsData.find(item => item._id === id);
     if (selectedTrack) {
-      setTrack(selectedTrack);
+      if (track && track._id === id) {
+        if (playStatus) {
+          pause();
+        } else {
+          play();
+        }
+      } else {
+        setTrack(selectedTrack);
+        setAutoplayEnabled(true);
+      }
     }
   };
 
   const Previous = () => {
+    if (queueSongs.length > 0) {
+      // If we have queue songs, stay in the queue
+      return;
+    }
+    
     const currentIndex = songsData.findIndex(item => item._id === track._id);
     if (currentIndex > 0) {
       setTrack(songsData[currentIndex - 1]);
+      setAutoplayEnabled(true);
     }
   };
 
   const Next = () => {
+    if (queueSongs.length > 0) {
+      // Play next from queue
+      const nextTrack = queueSongs[0];
+      setTrack(nextTrack);
+      // Remove from queue
+      setQueueSongs(prevQueue => prevQueue.slice(1));
+      setAutoplayEnabled(true);
+      return;
+    }
+    
     const currentIndex = songsData.findIndex(item => item._id === track._id);
     if (currentIndex < songsData.length - 1) {
       setTrack(songsData[currentIndex + 1]);
+      setAutoplayEnabled(true);
     }
   };
 
   const shuffle = () => {
     const randomIndex = Math.floor(Math.random() * songsData.length);
     setTrack(songsData[randomIndex]);
+    setAutoplayEnabled(true);
   };
 
   const toggleLoop = () => {
@@ -88,6 +164,35 @@ export const PlayerContextProvider = ({ children }) => {
 
   const changeVolume = (e) => {
     audioRef.current.volume = e.target.value / 100;
+  };
+
+  // Queue management functions
+  const addToQueue = (songId) => {
+    const songToAdd = songsData.find(song => song._id === songId);
+    if (songToAdd) {
+      setQueueSongs(prevQueue => [...prevQueue, songToAdd]);
+      toast.success("Added to queue");
+      return true;
+    }
+    return false;
+  };
+
+  const removeFromQueue = (index) => {
+    setQueueSongs(prevQueue => prevQueue.filter((_, i) => i !== index));
+  };
+
+  const moveQueueItem = (fromIndex, toIndex) => {
+    setQueueSongs(prevQueue => {
+      const newQueue = [...prevQueue];
+      const [removed] = newQueue.splice(fromIndex, 1);
+      newQueue.splice(toIndex, 0, removed);
+      return newQueue;
+    });
+  };
+
+  const clearQueue = () => {
+    setQueueSongs([]);
+    toast.success("Queue cleared");
   };
 
   // Fetch user's favorites
@@ -410,9 +515,18 @@ export const PlayerContextProvider = ({ children }) => {
   useEffect(() => {
     if (track && audioRef.current) {
       audioRef.current.load();
-      play();
+      if (autoplayEnabled && !firstLoad) {
+        play();
+      }
     }
-  }, [track]);
+  }, [track, autoplayEnabled]);
+  
+  // Prevent autoplay on initial load
+  useEffect(() => {
+    if (firstLoad && track) {
+      setFirstLoad(false);
+    }
+  }, [track, firstLoad]);
 
   const contextValue = {
     audioRef,
@@ -448,12 +562,31 @@ export const PlayerContextProvider = ({ children }) => {
     createPlaylist,
     addToPlaylist,
     removeFromPlaylist,
-    deletePlaylist
+    deletePlaylist,
+    // Queue related
+    queueSongs,
+    addToQueue,
+    removeFromQueue,
+    moveQueueItem,
+    clearQueue,
+    // Autoplay settings
+    autoplayEnabled,
+    setAutoplayEnabled
   };
 
   return (
     <PlayerContext.Provider value={contextValue}>
       {children}
+      {track && (
+        <audio 
+          ref={audioRef} 
+          preload="metadata" 
+          autoPlay={false}
+        >
+          <source src={track.audio} type="audio/mp3" />
+          Your browser does not support the audio element.
+        </audio>
+      )}
     </PlayerContext.Provider>
   );
 };

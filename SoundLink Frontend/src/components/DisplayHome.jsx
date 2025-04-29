@@ -2,18 +2,29 @@ import React, { useContext, useRef, useEffect, useState } from "react";
 // eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
-import { MdTrendingUp, MdAlbum, MdPerson, MdMovie, MdPlayArrow, MdFavorite, MdFavoriteBorder, MdPlaylistAdd } from "react-icons/md";
+import { useNavigate, Link } from "react-router-dom";
+import { MdTrendingUp, MdAlbum, MdPerson, MdMovie, MdPlayArrow, MdFavorite, MdFavoriteBorder, MdPlaylistAdd, MdQueueMusic, MdPause } from "react-icons/md";
 import AlbumItem from "./AlbumItem";
 import SongItem from "./SongItem";
 import MovieAlbumItem from "./MovieAlbumItem";
 import { PlayerContext } from "../context/PlayerContext";
 import { AuthContext } from "../context/AuthContext";
 import AddToPlaylistModal from "./AddToPlaylistModal";
+import { toast } from "react-toastify";
 
 const DisplayHome = () => {
   const navigate = useNavigate();
-  const { songsData, albumsData, playWithId, toggleFavorite, favorites, setSongsData } = useContext(PlayerContext);
+  const { 
+    songsData, 
+    albumsData, 
+    playWithId, 
+    toggleFavorite, 
+    favorites, 
+    setSongsData, 
+    addToQueue,
+    track, 
+    playStatus 
+  } = useContext(PlayerContext);
   const { user } = useContext(AuthContext);
   
   // Refs for scrollable sections
@@ -99,8 +110,27 @@ const DisplayHome = () => {
 
   const handleAddToPlaylist = (e, songId) => {
     e.stopPropagation();
+    
+    if (!user) {
+      toast.info(
+        <div>
+          Please log in to create playlists. 
+          <Link to="/auth" className="ml-2 text-fuchsia-400 underline">
+            Log in now
+          </Link>
+        </div>, 
+        { autoClose: 5000 }
+      );
+      return;
+    }
+    
     setSelectedSongId(songId);
     setShowPlaylistModal(true);
+  };
+
+  const handleAddToQueue = (e, songId) => {
+    e.stopPropagation();
+    addToQueue(songId);
   };
 
   // Handler for artist click
@@ -167,7 +197,7 @@ const DisplayHome = () => {
                 <div 
                   key={song._id}
                   onClick={() => playWithId(song._id)}
-                  className="flex-shrink-0 w-64 bg-black/30 backdrop-blur-md p-4 rounded-lg hover:bg-white/10 transition-all cursor-pointer group"
+                  className={`flex-shrink-0 w-64 ${track && track._id === song._id ? 'bg-fuchsia-900/30' : 'bg-black/30'} backdrop-blur-md p-4 rounded-lg hover:bg-white/10 transition-all cursor-pointer group`}
                 >
                   <div className="flex gap-4 items-center">
                     <div className="relative w-16 h-16 rounded-md overflow-hidden">
@@ -183,7 +213,19 @@ const DisplayHome = () => {
                         </div>
                       )}
                       <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-200">
-                        <MdPlayArrow className="text-white" size={30} />
+                        {track && track._id === song._id ? (
+                          playStatus ? (
+                            <div className="bg-fuchsia-500 rounded-full p-1">
+                              <MdPause className="text-white" size={24} />
+                            </div>
+                          ) : (
+                            <div className="bg-fuchsia-500 rounded-full p-1">
+                              <MdPlayArrow className="text-fuchsia-500" size={24} />
+                            </div>
+                          )
+                        ) : (
+                          <MdPlayArrow className="text-white" size={30} />
+                        )}
                       </div>
                     </div>
                     
@@ -206,6 +248,12 @@ const DisplayHome = () => {
                           className="text-white opacity-70 hover:opacity-100 transition-opacity"
                         >
                           <MdPlaylistAdd size={18} />
+                        </button>
+                        <button 
+                          onClick={(e) => handleAddToQueue(e, song._id)}
+                          className="text-white opacity-70 hover:opacity-100 transition-opacity"
+                        >
+                          <MdQueueMusic size={16} />
                         </button>
                       </div>
                     </div>
@@ -365,7 +413,7 @@ const DisplayHome = () => {
                 {currentSongs.map((song) => (
                   <div 
                     key={song._id} 
-                    className="flex items-center gap-4 bg-black/20 p-3 rounded-lg hover:bg-white/10 transition-all cursor-pointer group"
+                    className={`flex items-center gap-4 ${track && track._id === song._id ? 'bg-fuchsia-900/30' : 'bg-black/20'} p-3 rounded-lg hover:bg-white/10 transition-all cursor-pointer group`}
                     onClick={() => playWithId(song._id)}
                   >
                     <div className="bg-neutral-800 w-12 h-12 rounded flex items-center justify-center relative">
@@ -379,7 +427,19 @@ const DisplayHome = () => {
                         <MdPlayArrow size={24} className="text-fuchsia-500" />
                       )}
                       <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-200">
-                        <MdPlayArrow size={24} className="text-white" />
+                        {track && track._id === song._id ? (
+                          playStatus ? (
+                            <div className="bg-fuchsia-500 rounded-full p-1">
+                              <MdPause size={22} className="text-white" />
+                            </div>
+                          ) : (
+                            <div className="bg-fuchsia-500 rounded-full p-1">
+                              <MdPlayArrow size={22} className="text-white" />
+                            </div>
+                          )
+                        ) : (
+                          <MdPlayArrow size={24} className="text-white" />
+                        )}
                       </div>
                     </div>
                     <div className="flex-1 min-w-0">
@@ -401,6 +461,12 @@ const DisplayHome = () => {
                         className="text-white opacity-50 hover:opacity-100 transition-opacity"
                       >
                         <MdPlaylistAdd size={22} />
+                      </button>
+                      <button 
+                        onClick={(e) => handleAddToQueue(e, song._id)}
+                        className="text-white opacity-50 hover:opacity-100 transition-opacity"
+                      >
+                        <MdQueueMusic size={20} />
                       </button>
                       <span className="text-neutral-400 ml-1 min-w-[45px] text-right">{song.duration || "--:--"}</span>
                     </div>
