@@ -2,6 +2,7 @@ import { createContext, useEffect, useRef, useState, useContext } from "react";
 import axios from "axios";
 import { AuthContext } from "./AuthContext";
 import { toast } from "react-toastify";
+import { API_BASE_URL } from "../utils/api";
 //import { assets } from "../assets/assets";
 
 export const PlayerContext = createContext();
@@ -12,8 +13,6 @@ export const PlayerContextProvider = ({ children }) => {
   const seekBar = useRef();
   const volumeRef = useRef();
   const { user, token } = useContext(AuthContext);
-
-  const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
 
   const [songsData, setSongsData] = useState([]);
   const [albumsData, setAlbumsData] = useState([]);
@@ -99,7 +98,7 @@ export const PlayerContextProvider = ({ children }) => {
       setLoading(prev => ({...prev, favorites: true}));
       setError(prev => ({...prev, favorites: null}));
       
-      const response = await axios.get(`${backendUrl}/api/favorite/my`, {
+      const response = await axios.get(`${API_BASE_URL}/api/favorite/my`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -147,14 +146,14 @@ export const PlayerContextProvider = ({ children }) => {
       
       if (isFav) {
         // Remove from favorites
-        await axios.post(`${backendUrl}/api/favorite/unlike`, { songId }, {
+        await axios.post(`${API_BASE_URL}/api/favorite/unlike`, { songId }, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setFavorites(prevFavs => prevFavs.filter(fav => fav._id !== songId));
         toast.success("Removed from favorites");
       } else {
         // Add to favorites
-        await axios.post(`${backendUrl}/api/favorite/like`, { songId }, {
+        await axios.post(`${API_BASE_URL}/api/favorite/like`, { songId }, {
           headers: { Authorization: `Bearer ${token}` }
         });
         
@@ -186,7 +185,7 @@ export const PlayerContextProvider = ({ children }) => {
       setLoading(prev => ({...prev, playlists: true}));
       setError(prev => ({...prev, playlists: null}));
       
-      const response = await axios.get(`${backendUrl}/api/playlist/my`, {
+      const response = await axios.get(`${API_BASE_URL}/api/playlist/my`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -210,7 +209,7 @@ export const PlayerContextProvider = ({ children }) => {
     
     try {
       const response = await axios.post(
-        `${backendUrl}/api/playlist/create`, 
+        `${API_BASE_URL}/api/playlist/create`, 
         { name }, 
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -254,7 +253,7 @@ export const PlayerContextProvider = ({ children }) => {
     
     try {
       const response = await axios.post(
-        `${backendUrl}/api/playlist/add-song`, 
+        `${API_BASE_URL}/api/playlist/add-song`, 
         { songId, playlistId }, 
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -279,7 +278,7 @@ export const PlayerContextProvider = ({ children }) => {
     
     try {
       const response = await axios.post(
-        `${backendUrl}/api/playlist/remove-song`, 
+        `${API_BASE_URL}/api/playlist/remove-song`, 
         { songId, playlistId }, 
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -304,7 +303,7 @@ export const PlayerContextProvider = ({ children }) => {
     
     try {
       const response = await axios.post(
-        `${backendUrl}/api/playlist/delete`, 
+        `${API_BASE_URL}/api/playlist/delete`, 
         { playlistId }, 
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -326,7 +325,7 @@ export const PlayerContextProvider = ({ children }) => {
     try {
       setLoading(prev => ({...prev, songs: true}));
       setError(prev => ({...prev, songs: null}));
-      const response = await axios.get(`${backendUrl}/api/song/list`);
+      const response = await axios.get(`${API_BASE_URL}/api/song/list`);
       setSongsData(response.data.songs);
       if (response.data.songs.length > 0) {
         setTrack(response.data.songs[0]);
@@ -343,7 +342,7 @@ export const PlayerContextProvider = ({ children }) => {
     try {
       setLoading(prev => ({...prev, albums: true}));
       setError(prev => ({...prev, albums: null}));
-      const response = await axios.get(`${backendUrl}/api/album/list`);
+      const response = await axios.get(`${API_BASE_URL}/api/album/list`);
       setAlbumsData(response.data.albums);
     } catch (error) {
       setError(prev => ({...prev, albums: error.message}));

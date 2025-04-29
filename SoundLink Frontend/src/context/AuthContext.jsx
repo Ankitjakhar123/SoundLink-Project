@@ -1,13 +1,13 @@
 import React, { createContext, useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { API_BASE_URL } from "../utils/api";
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem("token") || "");
-  const url = import.meta.env.VITE_BACKEND_URL;
 
   // Process any pending actions that were stored during login attempts
   const processPendingActions = async () => {
@@ -21,7 +21,7 @@ export const AuthProvider = ({ children }) => {
       if (action.type === 'favorite' && action.songId) {
         // Add song to favorites
         await axios.post(
-          `${url}/api/favorite/like`, 
+          `${API_BASE_URL}/api/favorite/like`, 
           { songId: action.songId }, 
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -30,7 +30,7 @@ export const AuthProvider = ({ children }) => {
       else if (action.type === 'playlist' && action.songId && action.playlistId) {
         // Add song to playlist
         await axios.post(
-          `${url}/api/playlist/add-song`, 
+          `${API_BASE_URL}/api/playlist/add-song`, 
           { songId: action.songId, playlistId: action.playlistId }, 
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -47,7 +47,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     if (token) {
       axios
-        .get(`${url}/api/auth/me`, {
+        .get(`${API_BASE_URL}/api/auth/me`, {
           headers: { Authorization: `Bearer ${token}` },
         })
         .then((res) => {
@@ -65,7 +65,7 @@ export const AuthProvider = ({ children }) => {
   }, [token]);
 
   const login = async (email, password) => {
-    const res = await axios.post(`${url}/api/auth/login`, { email, password });
+    const res = await axios.post(`${API_BASE_URL}/api/auth/login`, { email, password });
     if (res.data.success) {
       setToken(res.data.token);
       localStorage.setItem("token", res.data.token);
@@ -76,7 +76,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const register = async (username, email, password) => {
-    const res = await axios.post(`${url}/api/auth/register`, { username, email, password });
+    const res = await axios.post(`${API_BASE_URL}/api/auth/register`, { username, email, password });
     return res.data.success;
   };
 
