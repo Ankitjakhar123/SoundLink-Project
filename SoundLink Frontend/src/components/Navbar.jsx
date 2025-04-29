@@ -2,7 +2,7 @@ import React, { useState, useRef, useContext, useEffect } from 'react';
 import { assets } from '../assets/assets'
 import { useNavigate } from 'react-router-dom'
 import { AuthContext } from '../context/AuthContext'
-import { FaCrown, FaBars, FaUser, FaSignOutAlt, FaUserShield, FaCog, FaSearch, FaTimes, FaMusic } from 'react-icons/fa';
+import { FaCrown, FaBars, FaUser, FaSignOutAlt, FaUserShield, FaCog, FaSearch, FaTimes, FaMusic, FaHeadphones, FaHeart } from 'react-icons/fa';
 import axios from 'axios';
 
 const Navbar = (props) => {
@@ -11,6 +11,7 @@ const Navbar = (props) => {
     const [searchResults, setSearchResults] = useState(null);
     const [isSearching, setIsSearching] = useState(false);
     const [showSearchResults, setShowSearchResults] = useState(false);
+    const [showSearchBar, setShowSearchBar] = useState(false);
     const inputRef = useRef(null)
     const searchResultsRef = useRef(null);
     const { user, logout } = useContext(AuthContext);
@@ -24,8 +25,15 @@ const Navbar = (props) => {
                 setShowDropdown(false);
             }
             if (searchResultsRef.current && !searchResultsRef.current.contains(event.target) && 
-                !inputRef.current.contains(event.target)) {
+                inputRef.current && !inputRef.current.contains(event.target)) {
                 setShowSearchResults(false);
+            }
+            
+            // Close search bar on small screens when clicking outside
+            if (showSearchBar && window.innerWidth < 768 && 
+                event.target.closest('.search-container') === null &&
+                !event.target.closest('.search-button')) {
+                setShowSearchBar(false);
             }
         };
 
@@ -33,7 +41,7 @@ const Navbar = (props) => {
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, []);
+    }, [showSearchBar]);
 
     const handleLogout = () => {
         logout();
@@ -47,6 +55,13 @@ const Navbar = (props) => {
         if (!search.trim()) {
             setSearchResults(null);
             setShowSearchResults(false);
+            return;
+        }
+        
+        // If on mobile or user presses Enter, redirect to the search page 
+        if ((window.innerWidth < 768 && showSearchBar) || e?.type === 'submit') {
+            navigate(`/search?q=${encodeURIComponent(search)}`);
+            setShowSearchBar(false);
             return;
         }
         
@@ -81,8 +96,21 @@ const Navbar = (props) => {
         setShowSearchResults(false);
     };
 
+    const toggleSearchBar = () => {
+        setShowSearchBar(!showSearchBar);
+        if (!showSearchBar) {
+            // Focus the input when showing the search bar
+            setTimeout(() => {
+                if (inputRef.current) {
+                    inputRef.current.focus();
+                }
+            }, 100);
+        }
+    };
+
     const handleResultClick = (type, item) => {
         setShowSearchResults(false);
+        setShowSearchBar(false);
         
         switch(type) {
             case 'song':
@@ -105,20 +133,24 @@ const Navbar = (props) => {
     return (
         <>
             <div className="w-full flex items-center justify-between py-2 px-2 md:py-3 md:px-8 bg-black sticky top-0 z-30 backdrop-blur-xl">
-                {/* Left: Hamburger for mobile */}
-                <button className="md:hidden flex items-center justify-center w-10 h-10 rounded-full bg-neutral-900 hover:bg-neutral-800 transition text-white border border-neutral-800 mr-2" onClick={props.onHamburgerClick}>
-                    <FaBars className="w-5 h-5" />
-                </button>
-                {/* Left: Home Icon */}
-                <button
-                    onClick={() => navigate('/')}
-                    className="flex items-center justify-center w-10 h-10 md:w-11 md:h-11 rounded-full bg-neutral-900 hover:bg-neutral-800 transition text-white border border-neutral-800"
-                    title="Home"
-                >
-                    <img className="w-5 md:w-6" src={assets.home_icon} alt="Home" />
-                </button>
-                {/* Center: Search Bar */}
-                <div className="flex-1 flex justify-center relative">
+                {/* Left: Mobile controls */}
+                <div className="flex items-center gap-2">
+                    {/* Hamburger for mobile */}
+                    <button className="md:hidden flex items-center justify-center w-10 h-10 rounded-full bg-neutral-900 hover:bg-neutral-800 transition text-white border border-neutral-800" onClick={props.onHamburgerClick}>
+                        <FaBars className="w-5 h-5" />
+                    </button>
+                    {/* Home Icon */}
+                    <button
+                        onClick={() => navigate('/')}
+                        className="flex items-center justify-center w-10 h-10 md:w-11 md:h-11 rounded-full bg-neutral-900 hover:bg-neutral-800 transition text-white border border-neutral-800"
+                        title="Home"
+                    >
+                        <img className="w-5 md:w-6" src={assets.home_icon} alt="Home" />
+                    </button>
+                </div>
+
+                {/* Center: Search Bar - Shown on desktop or when activated on mobile */}
+                <div className={`${showSearchBar ? 'absolute left-0 right-0 top-0 bottom-0 bg-black z-40 px-2 py-2' : 'hidden'} md:flex md:static md:bg-transparent md:flex-1 md:justify-center md:px-0 md:py-0 search-container`}>
                     <form 
                         onSubmit={handleSearch}
                         className={`flex items-center gap-2 px-3 md:px-4 py-2 rounded-full bg-neutral-900/80 border border-neutral-800 transition-all duration-300 ring-0 focus-within:border-fuchsia-500 w-full max-w-md`}
@@ -146,6 +178,14 @@ const Navbar = (props) => {
                         {isSearching && (
                             <div className="w-4 h-4 border-2 border-fuchsia-500 border-t-transparent rounded-full animate-spin"></div>
                         )}
+                        {/* Mobile Close Button */}
+                        <button 
+                            type="button"
+                            onClick={() => setShowSearchBar(false)}
+                            className="md:hidden ml-2 text-neutral-400 hover:text-white flex-shrink-0"
+                        >
+                            <FaTimes size={18} />
+                        </button>
                     </form>
                     
                     {/* Search Results Dropdown */}
@@ -159,12 +199,53 @@ const Navbar = (props) => {
                                     results={searchResults} 
                                     onResultClick={handleResultClick}
                                 />
+                                <div className="mt-3 flex justify-center">
+                                    <button 
+                                        onClick={() => {
+                                            navigate(`/search?q=${encodeURIComponent(search)}`);
+                                            setShowSearchResults(false);
+                                            setShowSearchBar(false);
+                                        }}
+                                        className="text-fuchsia-400 hover:text-fuchsia-300 text-sm font-medium"
+                                    >
+                                        See all results
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     )}
                 </div>
-                {/* Right: Profile Dropdown and Buttons */}
+
+                {/* Right: Action buttons & Profile */}
                 <div className='flex items-center gap-2 md:gap-4'>
+                    {/* Mobile search button */}
+                    <button 
+                        className="md:hidden flex items-center justify-center w-10 h-10 rounded-full bg-neutral-900 hover:bg-neutral-800 transition text-white border border-neutral-800 search-button"
+                        onClick={toggleSearchBar}
+                        aria-label="Search"
+                    >
+                        <FaSearch className="w-5 h-5" />
+                    </button>
+
+                    {/* Library button - Hidden on smallest screens */}
+                    <button 
+                        onClick={() => navigate('/library')}
+                        className="hidden sm:flex md:flex items-center gap-1 md:gap-2 px-3 md:px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white font-medium rounded-full border border-neutral-800 transition-colors text-sm"
+                    >
+                        <FaHeadphones className="text-fuchsia-400" />
+                        <span className="hidden md:inline">Library</span>
+                    </button>
+
+                    {/* Favorites button - hidden on smallest screens */}
+                    <button 
+                        onClick={() => navigate('/favorites')}
+                        className="hidden sm:flex md:flex items-center gap-1 md:gap-2 px-3 md:px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white font-medium rounded-full border border-neutral-800 transition-colors text-sm"
+                    >
+                        <FaHeart className="text-fuchsia-400" />
+                        <span className="hidden md:inline">Favorites</span>
+                    </button>
+
+                    {/* Premium button */}
                     <button 
                         onClick={() => navigate('/premium')}
                         className="flex items-center gap-1 md:gap-2 px-3 md:px-5 py-2 bg-gradient-to-r from-yellow-400 to-yellow-600 text-black font-bold rounded-full hover:scale-105 transition-transform text-sm md:text-base"

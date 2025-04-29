@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
-import { MdArrowBack, MdMovie, MdPlayArrow, MdAccessTime, MdFavorite, MdFavoriteBorder, MdPlaylistAdd, MdMoreVert } from 'react-icons/md';
+import { MdArrowBack, MdMovie, MdPlayArrow, MdPause, MdAccessTime, MdFavorite, MdFavoriteBorder, MdPlaylistAdd, MdMoreVert, MdQueueMusic } from 'react-icons/md';
 // eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
 import { PlayerContext } from '../context/PlayerContext';
@@ -9,7 +9,7 @@ import AddToPlaylistModal from './AddToPlaylistModal';
 
 const MovieAlbumDetail = () => {
   const { id } = useParams();
-  const { playWithId, toggleFavorite, favorites } = useContext(PlayerContext);
+  const { playWithId, toggleFavorite, favorites, addToQueue, track, playStatus, pause, play } = useContext(PlayerContext);
   const [movieAlbum, setMovieAlbum] = useState(null);
   const [albumSongs, setAlbumSongs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -17,6 +17,7 @@ const MovieAlbumDetail = () => {
   const [bgColors, setBgColors] = useState(['#1e1e1e', '#121212']);
   const [selectedSongId, setSelectedSongId] = useState(null);
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
+  const [showOptions, setShowOptions] = useState(null);
   const displayRef = useRef();
   const imageRef = useRef();
   const canvasRef = useRef(document.createElement('canvas'));
@@ -56,6 +57,20 @@ const MovieAlbumDetail = () => {
 
     fetchMovieAlbum();
   }, [id]);
+
+  // Close dropdown menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showOptions && !event.target.closest('.song-options')) {
+        setShowOptions(null);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [showOptions]);
 
   // Extract colors from the album cover image
   const extractColorsFromImage = (img) => {
@@ -181,6 +196,33 @@ const MovieAlbumDetail = () => {
     setShowPlaylistModal(true);
   };
 
+  const handleAddToQueue = (e, songId) => {
+    e.stopPropagation();
+    addToQueue && addToQueue(songId);
+  };
+
+  const handleToggleOptions = (e, songId) => {
+    e.stopPropagation();
+    setShowOptions(showOptions === songId ? null : songId);
+  };
+
+  const isPlaying = (songId) => {
+    return track && track._id === songId && playStatus;
+  };
+
+  const handlePlayPause = (e, songId) => {
+    e.stopPropagation();
+    if (track && track._id === songId) {
+      if (playStatus) {
+        pause();
+      } else {
+        play();
+      }
+    } else {
+      playWithId(songId);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex justify-center items-center bg-black text-white">
@@ -237,7 +279,7 @@ const MovieAlbumDetail = () => {
           
           <div className="flex flex-col">
             <p className="text-neutral-400">Movie Album</p>
-            <h2 className="text-5xl font-bold mb-4 md:text-7xl">{movieAlbum.title}</h2>
+            <h2 className="text-4xl md:text-6xl font-bold mb-4">{movieAlbum.title}</h2>
             <h4 className="text-neutral-300">Directed by {movieAlbum.director}</h4>
             <div className="flex items-center gap-3 mt-2">
               {movieAlbum.year && (
@@ -247,110 +289,131 @@ const MovieAlbumDetail = () => {
                 <span className="bg-neutral-800/50 px-3 py-1 rounded-full text-sm">{movieAlbum.genre}</span>
               )}
             </div>
-          </div>
-        </div>
-        
-        <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-8">
-          {movieAlbum.description && (
-            <div className="bg-black/30 backdrop-blur-sm rounded-xl p-6 border border-white/10">
-              <h2 className="text-xl font-semibold mb-4">Synopsis</h2>
-              <p className="text-neutral-300 leading-relaxed">{movieAlbum.description}</p>
+            <div className="mt-4">
+              {albumSongs.length > 0 && (
+                <button
+                  onClick={() => playWithId(albumSongs[0]._id)}
+                  className="bg-fuchsia-600 hover:bg-fuchsia-700 text-white py-2 px-6 rounded-full flex items-center gap-2 transition-colors"
+                  style={{ backgroundColor: bgColors[0] }}
+                >
+                  <MdPlayArrow size={24} /> Play Soundtrack
+                </button>
+              )}
             </div>
-          )}
-          
-          <div className="bg-black/30 backdrop-blur-sm rounded-xl p-6 border border-white/10">
-            <h2 className="text-xl font-semibold mb-4">About this Album</h2>
-            <p className="text-neutral-300 mb-2">
-              This movie album is part of the SoundLink collection.
-            </p>
-            <p className="text-neutral-300">
-              Added to our library on {new Date(movieAlbum.createdAt).toLocaleDateString()}
-            </p>
-            
-            {albumSongs.length > 0 ? (
-              <button 
-                onClick={() => playWithId(albumSongs[0]._id)}
-                className="mt-6 flex items-center gap-2 transition-colors py-3 px-6 rounded-full font-semibold"
-                style={{ backgroundColor: bgColors[0] }}
-              >
-                <MdPlayArrow size={24} /> Play Soundtrack
-              </button>
-            ) : (
-              <p className="mt-6 text-neutral-500">No soundtrack songs available</p>
-            )}
           </div>
         </div>
+
+        {movieAlbum.description && (
+          <div className="mt-8 p-4 bg-black/30 rounded-lg">
+            <h3 className="text-xl font-semibold mb-2">About the Movie</h3>
+            <p className="text-neutral-300">{movieAlbum.description}</p>
+          </div>
+        )}
         
-        {/* Soundtrack section */}
-        <div className="mt-12">
-          <h2 className="text-2xl font-bold mb-6">{albumSongs.length > 0 ? "Soundtrack" : "No Tracks Available"}</h2>
+        <div className="mt-10">
+          <h3 className="text-2xl font-semibold mb-4 flex items-center">
+            <MdQueueMusic className="mr-2 text-fuchsia-500" />
+            Soundtrack
+          </h3>
           
           {albumSongs.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {albumSongs.map((song) => (
+            <div className="bg-black/30 rounded-xl overflow-hidden">
+              <div className="grid grid-cols-4 px-4 py-3 border-b border-neutral-800 text-neutral-400 text-sm">
+                <div className="flex items-center"># TITLE</div>
+                <div className="hidden md:block">ALBUM</div>
+                <div className="hidden md:block">TIME</div>
+                <div className="text-right pr-2"></div>
+              </div>
+              
+              {albumSongs.map((song, index) => (
                 <div 
-                  key={song._id} 
-                  className="flex items-center gap-4 bg-black/20 p-4 rounded-lg hover:bg-white/10 transition-all cursor-pointer group"
+                  key={song._id}
                   onClick={() => playWithId(song._id)}
+                  className={`grid grid-cols-4 px-4 py-3 hover:bg-white/5 cursor-pointer group border-b border-neutral-800/50 ${isPlaying(song._id) ? 'bg-white/10' : ''}`}
                 >
-                  <div className="bg-neutral-800 w-12 h-12 rounded flex items-center justify-center relative">
-                    {song.image ? (
-                      <img 
-                        src={song.image} 
-                        alt={song.name} 
-                        className="w-full h-full object-cover rounded"
-                      />
-                    ) : (
-                      <MdPlayArrow size={24} className="text-fuchsia-500" />
-                    )}
-                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-200">
-                      <MdPlayArrow size={24} className="text-white" />
+                  <div className="flex items-center gap-4">
+                    <div className="w-6 text-neutral-400 flex items-center justify-center">
+                      <span className={isPlaying(song._id) ? 'hidden' : 'group-hover:hidden'}>{index + 1}</span>
+                      <button 
+                        className={isPlaying(song._id) ? 'block' : 'hidden group-hover:block'}
+                        onClick={(e) => handlePlayPause(e, song._id)}
+                      >
+                        {isPlaying(song._id) ? <MdPause className="text-fuchsia-500" /> : <MdPlayArrow />}
+                      </button>
+                    </div>
+                    
+                    <div className="flex-1 min-w-0">
+                      <div className={`font-medium truncate ${isPlaying(song._id) ? 'text-fuchsia-500' : 'text-white'}`}>{song.name}</div>
+                      <div className="text-sm text-neutral-400 truncate">{song.desc}</div>
                     </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold truncate">{song.name}</h3>
-                    <p className="text-sm text-neutral-400 truncate">{song.desc}</p>
+                  
+                  <div className="hidden md:block text-neutral-400 truncate">
+                    {song.album}
                   </div>
-                  <div className="flex items-center gap-3">
+                  
+                  <div className="hidden md:flex items-center text-neutral-400">
+                    {song.duration}
+                  </div>
+                  
+                  <div className="flex items-center justify-end gap-1 sm:gap-3">
                     <button 
                       onClick={(e) => handleToggleFavorite(e, song._id)}
-                      className="text-white opacity-50 hover:opacity-100 transition-opacity"
+                      className="sm:opacity-0 group-hover:opacity-100 transition-opacity text-neutral-400 hover:text-white"
                     >
                       {isFavorite(song._id) ? 
-                        <MdFavorite className="text-fuchsia-500" size={20} /> : 
-                        <MdFavoriteBorder size={20} />
+                        <MdFavorite className="text-fuchsia-500" /> : 
+                        <MdFavoriteBorder />
                       }
                     </button>
-                    <button 
-                      onClick={(e) => handleAddToPlaylist(e, song._id)}
-                      className="text-white opacity-50 hover:opacity-100 transition-opacity"
-                    >
-                      <MdPlaylistAdd size={22} />
-                    </button>
-                    <button className="text-white opacity-50 hover:opacity-100 transition-opacity">
-                      <MdMoreVert size={20} />
-                    </button>
-                    <span className="text-neutral-400 ml-2 min-w-[45px] text-right">{song.duration || "--:--"}</span>
+                    
+                    <div className="text-neutral-400 md:hidden text-[14px] sm:text-[15px]">
+                      {song.duration}
+                    </div>
+                    
+                    <div className="relative song-options">
+                      <button 
+                        onClick={(e) => handleToggleOptions(e, song._id)}
+                        className="sm:opacity-0 group-hover:opacity-100 transition-opacity text-neutral-400 hover:text-white"
+                      >
+                        <MdMoreVert />
+                      </button>
+                      
+                      {showOptions === song._id && (
+                        <div className="absolute right-0 mt-2 w-48 bg-neutral-800 rounded-md shadow-lg z-50 border border-neutral-700 py-1">
+                          <button 
+                            onClick={(e) => {e.stopPropagation(); handleAddToQueue(e, song._id)}}
+                            className="w-full text-left px-4 py-2 text-white hover:bg-neutral-700 flex items-center gap-2"
+                          >
+                            <MdQueueMusic size={18} />
+                            Add to Queue
+                          </button>
+                          <button 
+                            onClick={(e) => {e.stopPropagation(); handleAddToPlaylist(e, song._id)}}
+                            className="w-full text-left px-4 py-2 text-white hover:bg-neutral-700 flex items-center gap-2"
+                          >
+                            <MdPlaylistAdd size={18} />
+                            Add to Playlist
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="bg-black/20 p-6 rounded-lg text-center">
-              <p className="text-neutral-400">No soundtrack songs have been added to this movie album yet.</p>
-              <p className="text-sm text-neutral-500 mt-2">
-                Add songs to this movie album by selecting "[Movie] {movieAlbum.title}" when uploading songs.
-              </p>
+            <div className="bg-black/30 rounded-lg p-8 text-center text-neutral-400">
+              No soundtrack available for this movie yet
             </div>
           )}
         </div>
       </div>
       
-      {/* Add To Playlist Modal */}
       {showPlaylistModal && (
         <AddToPlaylistModal 
           songId={selectedSongId} 
-          onClose={() => setShowPlaylistModal(false)}
+          onClose={() => setShowPlaylistModal(false)} 
         />
       )}
     </motion.div>

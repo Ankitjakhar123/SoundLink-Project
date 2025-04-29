@@ -220,7 +220,7 @@ const DisplayHome = () => {
                             </div>
                           ) : (
                             <div className="bg-fuchsia-500 rounded-full p-1">
-                              <MdPlayArrow className="text-fuchsia-500" size={24} />
+                              <MdPlayArrow className="text-white" size={24} />
                             </div>
                           )
                         ) : (

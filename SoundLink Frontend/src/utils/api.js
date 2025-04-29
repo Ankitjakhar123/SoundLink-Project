@@ -4,7 +4,7 @@
  */
 
 // Get the backend URL from environment variables with a fallback for development
-export const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'https://replace-with-your-backend-url.com';
+export const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
 
 // Helper function to construct API URLs
 export const getApiUrl = (endpoint) => {

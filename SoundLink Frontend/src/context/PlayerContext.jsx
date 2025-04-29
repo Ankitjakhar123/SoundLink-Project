@@ -44,14 +44,66 @@ export const PlayerContextProvider = ({ children }) => {
   // Initialize the audio context on user interaction
   const initAudioContext = () => {
     // Fix for browsers that require user interaction before audio can play
-    if (typeof window !== "undefined" && 'AudioContext' in window) {
-      const AudioContext = window.AudioContext || window.webkitAudioContext;
-      if (!window._audioContext) {
-        window._audioContext = new AudioContext();
-      }
-      
-      if (window._audioContext.state === 'suspended') {
-        window._audioContext.resume();
+    if (typeof window !== "undefined") {
+      try {
+        // Create AudioContext if it doesn't exist
+        if (!window._audioContext && 'AudioContext' in window) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          window._audioContext = new AudioContext();
+          console.log('New AudioContext created');
+        }
+        
+        // Resume the AudioContext if it's suspended
+        if (window._audioContext && window._audioContext.state === 'suspended') {
+          window._audioContext.resume()
+            .then(() => console.log('AudioContext resumed successfully'))
+            .catch(error => console.error('Failed to resume AudioContext:', error));
+        }
+        
+        // iOS Safari specific unlock
+        if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+          console.log('iOS device detected, using special audio unlock');
+          
+          // Create and play a silent buffer for iOS
+          const unlockIOSAudio = () => {
+            if (window._audioContext) {
+              const buffer = window._audioContext.createBuffer(1, 1, 22050);
+              const source = window._audioContext.createBufferSource();
+              source.buffer = buffer;
+              source.connect(window._audioContext.destination);
+              source.start(0);
+              source.stop(0.001); // Very short play
+              console.log('iOS audio unlock attempted');
+            }
+          };
+          
+          unlockIOSAudio();
+          
+          // Create a silent <audio> element as another method for iOS
+          const silentSound = document.createElement('audio');
+          silentSound.controls = false;
+          silentSound.preload = 'auto';
+          silentSound.loop = false;
+          silentSound.volume = 0.001;
+          silentSound.src = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjMyLjEwNAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAACWQBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGD/////////////////////////////////////////AAAAAExhdmM1OC41OQAAAAAAAAAAAAAAACQCRgAAAAAAAAJZFiHN3gAAAAAAAAAAAAAAAAAAAAAA';
+          
+          // Attempt to play the silent sound
+          silentSound.play()
+            .then(() => {
+              console.log('Silent sound played on iOS');
+              setTimeout(() => {
+                silentSound.pause();
+                silentSound.remove();
+              }, 100);
+            })
+            .catch(e => {
+              console.log('Silent sound play failed on iOS:', e);
+              silentSound.remove();
+            });
+        }
+        
+      } catch (error) {
+        console.error('Error initializing audio context:', error);
       }
     }
   };
@@ -62,27 +114,93 @@ export const PlayerContextProvider = ({ children }) => {
 
     if (audioRef.current) {
       try {
+        console.log('Beginning play attempt...');
+        
+        // Fix for cross-origin issues and potential src problems
+        if (!audioRef.current.src || audioRef.current.src === '') {
+          console.error('No audio source URL set!');
+          if (track && track.file) {
+            console.log('Resetting audio source from track:', track.file);
+            audioRef.current.src = track.file;
+            audioRef.current.load();
+          } else {
+            console.error('No track or track.file available');
+            return;
+          }
+        }
+        
+        // Force load if not loaded
+        if (audioRef.current.readyState < 2) {
+          console.log('Audio not fully loaded, loading...');
+          audioRef.current.load();
+          
+          // Set a timeout to wait for loading
+          setTimeout(() => {
+            console.log('Attempting playback after delay');
+            audioRef.current.play()
+              .then(() => {
+                console.log('Delayed playback successful');
+                setPlayStatus(true);
+              })
+              .catch(err => {
+                console.error('Delayed playback failed:', err);
+                setPlayStatus(false);
+              });
+          }, 500);
+          
+          // Set playStatus to true immediately for UI feedback
+          setPlayStatus(true);
+          return;
+        }
+        
+        // Set playStatus to true immediately for UI feedback
+        setPlayStatus(true);
+        
+        console.log('Playing audio source:', audioRef.current.src);
+        
+        // Try different methods to force play (for different browsers)
         const playPromise = audioRef.current.play();
         
         if (playPromise !== undefined) {
           playPromise
             .then(() => {
+              console.log('Audio playing successfully');
               setPlayStatus(true);
             })
             .catch(error => {
               console.error('Error playing audio:', error);
-              setPlayStatus(false);
               
-              // If autoplay is blocked, we need to manually set autoplay to false
-              if (error.name === 'NotAllowedError') {
-                setAutoplayEnabled(false);
-              }
+              // Try once more with a delay in case of browser quirks
+              setTimeout(() => {
+                console.log('Retrying play after error');
+                audioRef.current.play()
+                  .then(() => {
+                    console.log('Retry successful');
+                    setPlayStatus(true);
+                  })
+                  .catch(retryError => {
+                    console.error('Retry failed:', retryError);
+                    setPlayStatus(false);
+                    
+                    // If autoplay is blocked, we need to manually set autoplay to false
+                    if (retryError.name === 'NotAllowedError') {
+                      setAutoplayEnabled(false);
+                      console.log('Autoplay blocked by browser, try interacting with the page first');
+                      toast.info("Click the play button to start playing");
+                    }
+                  });
+              }, 200);
             });
+        } else {
+          // For browsers that don't return a promise
+          console.log('Browser did not return play promise, assuming audio is playing');
         }
       } catch (error) {
         console.error('Error playing audio:', error);
         setPlayStatus(false);
       }
+    } else {
+      console.error('Audio reference is not available');
     }
   };
 
@@ -100,14 +218,24 @@ export const PlayerContextProvider = ({ children }) => {
   const playWithId = async (id) => {
     const selectedTrack = songsData.find(item => item._id === id);
     if (selectedTrack) {
+      // Log full track structure for debugging
+      console.log('Selected track:', selectedTrack);
+      console.log('Track file URL:', selectedTrack.file);
+      
+      // If this is the same track, toggle play/pause
       if (track && track._id === id) {
+        console.log('Same track clicked, toggling play/pause', playStatus);
         if (playStatus) {
           pause();
         } else {
           play();
         }
       } else {
+        // This is a new track
+        console.log('New track selected:', selectedTrack.name);
+        console.log('Track audio file URL:', selectedTrack.file);
         setTrack(selectedTrack);
+        setPlayStatus(true); // Set playStatus to true immediately for UI feedback
         setAutoplayEnabled(true);
       }
     }
@@ -481,10 +609,17 @@ export const PlayerContextProvider = ({ children }) => {
       const currentTime = audio.currentTime;
       const duration = audio.duration || 0;
 
+      // Ensure we have a valid duration before updating UI
+      if (isNaN(duration) || duration === 0 || duration === Infinity) {
+        console.log('Invalid audio duration:', duration);
+        return;
+      }
+
       if (seekBar.current && duration > 0) {
         seekBar.current.style.width = `${(currentTime / duration) * 100}%`;
       }
 
+      // Update the time state with current and total times
       setTime({
         currentTime: {
           second: Math.floor(currentTime % 60),
@@ -495,6 +630,11 @@ export const PlayerContextProvider = ({ children }) => {
           minute: Math.floor(duration / 60),
         },
       });
+
+      // Debug the time update
+      if (currentTime % 5 < 0.1) { // Log only occasionally to avoid console spam
+        console.log(`Time update: ${Math.floor(currentTime / 60)}:${Math.floor(currentTime % 60)} / ${Math.floor(duration / 60)}:${Math.floor(duration % 60)}`);
+      }
     };
 
     const handleEnded = () => {
@@ -512,14 +652,96 @@ export const PlayerContextProvider = ({ children }) => {
     };
   }, [track]);
 
+  // Modified useEffect to prevent infinite track loading
   useEffect(() => {
-    if (track && audioRef.current) {
-      audioRef.current.load();
-      if (autoplayEnabled && !firstLoad) {
-        play();
-      }
+    // Add a reference to track the last loaded track to prevent reloading the same track
+    if (!window._lastLoadedTrack) {
+      window._lastLoadedTrack = null;
     }
-  }, [track, autoplayEnabled]);
+    
+    if (track && audioRef.current) {
+      // Skip if this is the same track that was just loaded (prevents infinite loops)
+      if (window._lastLoadedTrack === track._id) {
+        console.log('Skipping reload of the same track:', track.name);
+        return;
+      }
+      
+      // Log track ID to verify correct track is being loaded
+      console.log('Loading track with ID:', track._id);
+      
+      // Update last loaded track
+      window._lastLoadedTrack = track._id;
+      
+      console.log('Track changed, loading new track:', track.name);
+      console.log('Audio source URL:', track.file);
+      
+      // Reset time information
+      audioRef.current.currentTime = 0;
+      
+      // Force clear the src attribute first to ensure browser recognizes change
+      audioRef.current.removeAttribute('src');
+      
+      // Need to call load() to refresh the audio element with the new source
+      audioRef.current.load();
+      
+      // Set initial volume (in case it was muted or changed before)
+      if (typeof audioRef.current.volume !== 'undefined') {
+        audioRef.current.volume = 0.7; // Default volume level
+      }
+      
+      // Debug audio element properties
+      console.log('Audio element state after load:', {
+        readyState: audioRef.current.readyState,
+        paused: audioRef.current.paused,
+        currentSrc: audioRef.current.currentSrc,
+        src: audioRef.current.src, // This is what the browser actually uses
+        error: audioRef.current.error
+      });
+      
+      // Create a flag to track if the audio is ready to play
+      let audioReady = false;
+      
+      // Function to play when audio is ready
+      const playWhenReady = () => {
+        if (autoplayEnabled && !firstLoad) {
+          console.log('Attempting to autoplay after track change');
+          play();
+        } else {
+          console.log('Autoplay disabled or first load, not auto-playing');
+        }
+      };
+      
+      // Add event listeners for audio readiness
+      const canPlayHandler = () => {
+        console.log('Audio canplay event fired - audio is ready to play');
+        audioReady = true;
+        // Remove this event listener to avoid multiple plays
+        audioRef.current.removeEventListener('canplay', canPlayHandler);
+        // Play with a slight delay to ensure readiness
+        setTimeout(playWhenReady, 150);
+      };
+      
+      // Listen for the canplay event
+      audioRef.current.addEventListener('canplay', canPlayHandler);
+      
+      // Fallback - if canplay doesn't fire within 3 seconds, try to play anyway
+      const readyTimeout = setTimeout(() => {
+        if (!audioReady) {
+          console.log('Fallback: canplay event did not fire within timeout, attempting to play anyway');
+          audioRef.current.removeEventListener('canplay', canPlayHandler);
+          playWhenReady();
+        }
+      }, 3000);
+      
+      // Cleanup
+      return () => {
+        clearTimeout(readyTimeout);
+        if (audioRef.current) {
+          audioRef.current.removeEventListener('canplay', canPlayHandler);
+        }
+      };
+    }
+  }, [track, autoplayEnabled, firstLoad, play]);
   
   // Prevent autoplay on initial load
   useEffect(() => {
@@ -579,11 +801,21 @@ export const PlayerContextProvider = ({ children }) => {
       {children}
       {track && (
         <audio 
+          key={track._id}
           ref={audioRef} 
-          preload="metadata" 
+          preload="auto"
           autoPlay={false}
+          crossOrigin="anonymous"
+          onCanPlay={() => console.log("Audio can play now")}
+          onError={(e) => console.error("Audio error:", e.target.error)}
+          onLoadedData={() => console.log("Audio data loaded successfully")}
+          onLoadStart={() => console.log("Audio loading started")}
+          onWaiting={() => console.log("Audio waiting for data")}
+          onStalled={() => console.log("Audio playback has stalled")}
+          playsInline
         >
-          <source src={track.audio} type="audio/mp3" />
+          <source key={`${track._id}-mp3`} src={track.file} type="audio/mp3" />
+          <source key={`${track._id}-mpeg`} src={track.file} type="audio/mpeg" />
           Your browser does not support the audio element.
         </audio>
       )}

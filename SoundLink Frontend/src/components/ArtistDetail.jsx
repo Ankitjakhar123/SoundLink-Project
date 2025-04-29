@@ -3,16 +3,20 @@ import { useParams, Link } from "react-router-dom";
 import axios from "axios";
 // eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion";
-import { MdPerson, MdPlayArrow, MdFavorite, MdFavoriteBorder, MdPlaylistAdd, MdArrowBack } from "react-icons/md";
+import { MdPerson, MdPlayArrow, MdPause, MdFavorite, MdFavoriteBorder, MdPlaylistAdd, MdArrowBack, MdQueueMusic, MdMoreVert } from "react-icons/md";
 import { PlayerContext } from "../context/PlayerContext";
+import AddToPlaylistModal from "./AddToPlaylistModal";
 
 const ArtistDetail = () => {
   const { id } = useParams();
-  const { playWithId, toggleFavorite, favorites } = useContext(PlayerContext);
+  const { playWithId, toggleFavorite, favorites, addToQueue, track, playStatus, pause, play } = useContext(PlayerContext);
   const [artist, setArtist] = useState(null);
   const [artistSongs, setArtistSongs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showOptions, setShowOptions] = useState(null);
+  const [selectedSongId, setSelectedSongId] = useState(null);
+  const [showPlaylistModal, setShowPlaylistModal] = useState(false);
 
   // Check if a song is in favorites
   const isFavorite = (songId) => {
@@ -58,6 +62,20 @@ const ArtistDetail = () => {
     }
   }, [id]);
 
+  // Close dropdown menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showOptions && !event.target.closest('.song-options')) {
+        setShowOptions(null);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [showOptions]);
+
   // Handlers for song actions
   const handleToggleFavorite = (e, songId) => {
     e.stopPropagation();
@@ -66,8 +84,35 @@ const ArtistDetail = () => {
 
   const handleAddToPlaylist = (e, songId) => {
     e.stopPropagation();
-    // This would be implemented with a playlist system
-    console.log("Add to playlist:", songId);
+    setSelectedSongId(songId);
+    setShowPlaylistModal(true);
+  };
+
+  const handleAddToQueue = (e, songId) => {
+    e.stopPropagation();
+    addToQueue && addToQueue(songId);
+  };
+
+  const handleToggleOptions = (e, songId) => {
+    e.stopPropagation();
+    setShowOptions(showOptions === songId ? null : songId);
+  };
+
+  const isPlaying = (songId) => {
+    return track && track._id === songId && playStatus;
+  };
+
+  const handlePlayPause = (e, songId) => {
+    e.stopPropagation();
+    if (track && track._id === songId) {
+      if (playStatus) {
+        pause();
+      } else {
+        play();
+      }
+    } else {
+      playWithId(songId);
+    }
   };
 
   if (loading) {
@@ -134,6 +179,14 @@ const ArtistDetail = () => {
             {artist.bio && (
               <p className="text-neutral-300 text-lg mb-6 max-w-2xl">{artist.bio}</p>
             )}
+            {artistSongs.length > 0 && (
+              <button
+                onClick={() => playWithId(artistSongs[0]._id)}
+                className="bg-fuchsia-600 hover:bg-fuchsia-700 text-white py-2 px-6 rounded-full flex items-center gap-2 transition-colors mx-auto md:mx-0"
+              >
+                <MdPlayArrow size={24} /> Play Artist
+              </button>
+            )}
           </motion.div>
         </div>
 
@@ -149,49 +202,104 @@ const ArtistDetail = () => {
           </h2>
 
           {artistSongs.length > 0 ? (
-            <div className="bg-neutral-900/50 backdrop-blur-md rounded-xl p-6 border border-white/5">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {artistSongs.map((song) => (
+            <div className="bg-neutral-900/50 backdrop-blur-md rounded-xl overflow-hidden">
+              <div className="grid grid-cols-4 p-4 border-b border-neutral-800 text-neutral-400 text-sm">
+                <div className="flex items-center"># TITLE</div>
+                <div className="hidden md:block">ALBUM</div>
+                <div className="hidden md:block">DURATION</div>
+                <div className="text-right"></div>
+              </div>
+              
+              <div className="divide-y divide-neutral-800/50">
+                {artistSongs.map((song, index) => (
                   <div 
                     key={song._id} 
-                    className="flex items-center gap-4 bg-black/30 p-3 rounded-lg hover:bg-white/10 transition-all cursor-pointer group"
+                    className={`grid grid-cols-4 p-4 hover:bg-white/10 transition-all cursor-pointer group ${isPlaying(song._id) ? 'bg-white/10' : ''}`}
                     onClick={() => playWithId(song._id)}
                   >
-                    <div className="bg-neutral-800 w-12 h-12 rounded flex items-center justify-center relative">
-                      {song.image ? (
-                        <img 
-                          src={song.image} 
-                          alt={song.name} 
-                          className="w-full h-full object-cover rounded"
-                        />
-                      ) : (
-                        <MdPlayArrow size={24} className="text-fuchsia-500" />
-                      )}
-                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-200">
-                        <MdPlayArrow size={24} className="text-white" />
+                    <div className="flex items-center gap-3">
+                      <div className="w-6 text-neutral-400 flex items-center justify-center">
+                        <span className={isPlaying(song._id) ? 'hidden' : 'group-hover:hidden'}>{index + 1}</span>
+                        <button 
+                          className={isPlaying(song._id) ? 'block' : 'hidden group-hover:block'}
+                          onClick={(e) => handlePlayPause(e, song._id)}
+                        >
+                          {isPlaying(song._id) ? <MdPause className="text-fuchsia-500" /> : <MdPlayArrow />}
+                        </button>
+                      </div>
+                      
+                      <div className="bg-neutral-800 w-10 h-10 rounded flex-shrink-0 overflow-hidden">
+                        {song.image ? (
+                          <img 
+                            src={song.image} 
+                            alt={song.name} 
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <MdPlayArrow size={20} className="text-fuchsia-500" />
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className={`font-medium truncate ${isPlaying(song._id) ? 'text-fuchsia-500' : 'text-white'}`}>{song.name}</div>
+                        <div className="text-xs text-neutral-400 truncate">{song.desc}</div>
                       </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold truncate text-white">{song.name}</h3>
-                      <p className="text-sm text-neutral-400 truncate">{song.desc}</p>
+                    
+                    <div className="hidden md:block text-neutral-400 truncate">
+                      {song.album || "Single"}
                     </div>
-                    <div className="flex items-center gap-3">
+                    
+                    <div className="hidden md:flex items-center text-neutral-400">
+                      {song.duration || "--:--"}
+                    </div>
+                    
+                    <div className="flex items-center justify-end gap-1 sm:gap-3">
                       <button 
                         onClick={(e) => handleToggleFavorite(e, song._id)}
-                        className="text-white opacity-50 hover:opacity-100 transition-opacity"
+                        className="sm:opacity-0 group-hover:opacity-100 transition-opacity text-neutral-400 hover:text-white"
+                        aria-label="Toggle favorite"
                       >
                         {isFavorite(song._id) ? 
-                          <MdFavorite className="text-fuchsia-500" size={20} /> : 
-                          <MdFavoriteBorder size={20} />
+                          <MdFavorite className="text-fuchsia-500" size={18} /> : 
+                          <MdFavoriteBorder size={18} />
                         }
                       </button>
-                      <button 
-                        onClick={(e) => handleAddToPlaylist(e, song._id)}
-                        className="text-white opacity-50 hover:opacity-100 transition-opacity"
-                      >
-                        <MdPlaylistAdd size={22} />
-                      </button>
-                      <span className="text-neutral-400 ml-1 min-w-[45px] text-right">{song.duration || "--:--"}</span>
+                      
+                      <div className="text-neutral-400 md:hidden text-[14px] sm:text-[15px]">
+                        {song.duration || "--:--"}
+                      </div>
+                      
+                      <div className="relative song-options">
+                        <button 
+                          onClick={(e) => handleToggleOptions(e, song._id)}
+                          className="sm:opacity-0 group-hover:opacity-100 transition-opacity text-neutral-400 hover:text-white"
+                          aria-label="More options"
+                        >
+                          <MdMoreVert size={18} />
+                        </button>
+                        
+                        {showOptions === song._id && (
+                          <div className="absolute right-0 top-full mt-2 w-48 bg-neutral-800 rounded-md shadow-lg py-1 z-50 border border-neutral-700">
+                            <button 
+                              onClick={(e) => {e.stopPropagation(); handleAddToQueue(e, song._id)}}
+                              className="w-full text-left px-4 py-2 text-white hover:bg-neutral-700 flex items-center gap-2"
+                            >
+                              <MdQueueMusic size={18} />
+                              Add to Queue
+                            </button>
+                            <button 
+                              onClick={(e) => {e.stopPropagation(); handleAddToPlaylist(e, song._id)}}
+                              className="w-full text-left px-4 py-2 text-white hover:bg-neutral-700 flex items-center gap-2"
+                            >
+                              <MdPlaylistAdd size={18} />
+                              Add to Playlist
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -204,6 +312,13 @@ const ArtistDetail = () => {
           )}
         </motion.div>
       </div>
+      
+      {showPlaylistModal && (
+        <AddToPlaylistModal 
+          songId={selectedSongId} 
+          onClose={() => setShowPlaylistModal(false)} 
+        />
+      )}
     </div>
   );
 };

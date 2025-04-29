@@ -1,17 +1,19 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
-import { MdPlayArrow, MdFavorite, MdFavoriteBorder, MdPlaylistAdd, MdArrowBack, MdSearch, MdClear } from 'react-icons/md';
+import { MdPlayArrow, MdFavorite, MdFavoriteBorder, MdPlaylistAdd, MdArrowBack, MdSearch, MdClear, MdPause } from 'react-icons/md';
 import { PlayerContext } from '../context/PlayerContext';
 import AddToPlaylistModal from './AddToPlaylistModal';
 
-const TrendingSongs = () => {
-  const { playWithId, toggleFavorite, favorites } = useContext(PlayerContext);
-  const [trendingSongs, setTrendingSongs] = useState([]);
-  const [loading, setLoading] = useState(true);
+const TrendingSongs = ({ songs }) => {
+  const { playWithId, track, playStatus } = useContext(PlayerContext);
+  const [selectedGenre, setSelectedGenre] = useState('All');
+  const [showFilter, setShowFilter] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [error, setError] = useState(null);
   const [selectedSongId, setSelectedSongId] = useState(null);
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
+  const [trendingSongs, setTrendingSongs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchTrendingSongs = async () => {
@@ -142,11 +144,22 @@ const TrendingSongs = () => {
                         className="w-full h-full object-cover rounded"
                       />
                     ) : (
-                      <MdPlayArrow size={24} className="text-fuchsia-500" />
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-200">
+                        {track && track._id === song._id ? (
+                          playStatus ? (
+                            <div className="bg-fuchsia-500 rounded-full p-1">
+                              <MdPause className="text-white" size={24} />
+                            </div>
+                          ) : (
+                            <div className="bg-fuchsia-500 rounded-full p-1">
+                              <MdPlayArrow className="text-white" size={24} />
+                            </div>
+                          )
+                        ) : (
+                          <MdPlayArrow className="text-white" size={24} />
+                        )}
+                      </div>
                     )}
-                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-200">
-                      <MdPlayArrow size={24} className="text-white" />
-                    </div>
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold truncate text-white">{song.name}</h3>

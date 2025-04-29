@@ -93,51 +93,151 @@ const PremiumPlayer = () => {
   
   // Fix for the play/pause button to correctly toggle
   const handlePlayPause = () => {
+    console.log('Current playStatus:', playStatus);
+    
+    // First handle the pause case which doesn't need special handling
     if (playStatus) {
+      console.log('Attempting to pause...');
       pause();
+      return;
+    }
+    
+    console.log('Attempting to play...');
+    
+    // Check audio reference and source
+    if (!audioRef.current) {
+      console.error('Audio reference not available');
+      
+      // Attempt to get the track started anyway
+      if (track) {
+        console.log('Trying to force play even without audio reference');
+        setTimeout(() => play(), 100);
+      }
+      return;
+    }
+    
+    if (!audioRef.current.src && track && track.file) {
+      console.log('Setting audio source directly:', track.file);
+      audioRef.current.src = track.file;
+      audioRef.current.load();
+    } else if (!audioRef.current.src) {
+      console.error('No audio source available and no track.file to use');
+      return;
+    }
+    
+    // Force initialize any audio contexts
+    if (window._audioContext && window._audioContext.state === 'suspended') {
+      console.log('Resuming suspended AudioContext...');
+      window._audioContext.resume().catch(() => console.error('Error resuming AudioContext'));
+    }
+    
+    // Create a silent audio element to help unlock audio on mobile devices
+    const unlockAudio = () => {
+      const silent = document.createElement('audio');
+      silent.src = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjMyLjEwNAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAACWQBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGD/////////////////////////////////////////AAAAAExhdmM1OC41OQAAAAAAAAAAAAAAACQCRgAAAAAAAAJZFiHN3gAAAAAAAAAAAAAAAAAAAAAA';
+      document.body.appendChild(silent);
+      silent.volume = 0.001;
+      
+      try {
+        silent.play().then(() => {
+          setTimeout(() => {
+            silent.pause();
+            document.body.removeChild(silent);
+            console.log('Audio unlocked by silent play');
+            
+            // Now try to play the actual audio
+            play();
+          }, 20);
+        }).catch(e => {
+          console.log('Silent play failed:', e);
+          document.body.removeChild(silent);
+          
+          // Try direct play anyway
+          play();
+        });
+      } catch (e) {
+        // For browsers that don't support promises on play
+        console.log('Silent play failed (no promise support):', e);
+        try {
+          document.body.removeChild(silent);
+        } catch (removeError) {
+          console.log('Error removing silent audio element:', removeError);
+        }
+        
+        // Try direct play anyway
+        play();
+      }
+    };
+    
+    // Special handling for mobile browsers and Safari
+    if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || 
+        /^((?!chrome|android).)*safari/i.test(navigator.userAgent)) {
+      console.log('Mobile device or Safari detected, using special unlock method');
+      unlockAudio();
     } else {
+      // For desktop browsers, just attempt to play
       play();
     }
   };
-
+  
   // Add event listeners to help with autoplay restrictions
   useEffect(() => {
-    const unlockAudio = () => {
-      // This is a common technique to unlock audio on mobile devices
-      // that require user interaction before playing audio
-      if (audioRef.current) {
-        const silentPlay = () => {
-          const context = new (window.AudioContext || window.webkitAudioContext)();
-          context.resume().then(() => {
-            if (!playStatus && audioRef.current) {
-              const originalVolume = audioRef.current.volume;
-              audioRef.current.volume = 0;
-              audioRef.current.play().then(() => {
-                audioRef.current.pause();
-                audioRef.current.volume = originalVolume;
-              }).catch(error => {
-                console.error("Silent play failed:", error);
+    // Create one-time unlock function for first user interaction
+    const unlockAudioOnFirstInteraction = () => {
+      console.log('User interaction detected, preparing audio playback capability');
+      
+      // Create and play a silent audio element to unlock audio playback
+      const unlockElement = document.createElement('audio');
+      unlockElement.src = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjMyLjEwNAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAACWQBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGD/////////////////////////////////////////AAAAAExhdmM1OC41OQAAAAAAAAAAAAAAACQCRgAAAAAAAAJZFiHN3gAAAAAAAAAAAAAAAAAAAAAA';
+      unlockElement.volume = 0.001;
+      
+      try {
+        // Resume any existing audio context
+        if (window._audioContext && window._audioContext.state === 'suspended') {
+          window._audioContext.resume().catch(err => console.error('Failed to resume audio context:', err));
+        }
+        
+        // Create a new audio context if none exists
+        if (!window._audioContext && window.AudioContext) {
+          window._audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        
+        // Play the silent sound to unlock audio
+        unlockElement.play()
+          .then(() => {
+            setTimeout(() => {
+              unlockElement.pause();
+              unlockElement.remove();
+              
+              // Remove the event listeners as they're no longer needed
+              events.forEach(eventType => {
+                document.documentElement.removeEventListener(eventType, unlockAudioOnFirstInteraction);
               });
-            }
+              
+              console.log('Audio playback capability unlocked successfully');
+            }, 10);
+          })
+          .catch(err => {
+            console.error('Failed to unlock audio:', err);
+            unlockElement.remove();
           });
-        };
-
-        silentPlay();
+      } catch (error) {
+        console.error('Error during audio unlock:', error);
       }
     };
 
     // Listen for user interaction to unlock audio
-    const events = ['touchstart', 'touchend', 'mousedown', 'keydown'];
+    const events = ['touchstart', 'touchend', 'mousedown', 'click', 'keydown'];
     events.forEach(event => {
-      document.documentElement.addEventListener(event, unlockAudio, { once: true });
+      document.documentElement.addEventListener(event, unlockAudioOnFirstInteraction, { once: true });
     });
 
     return () => {
       events.forEach(event => {
-        document.documentElement.removeEventListener(event, unlockAudio);
+        document.documentElement.removeEventListener(event, unlockAudioOnFirstInteraction);
       });
     };
-  }, [audioRef, playStatus]);
+  }, []);
 
   if (!track) return null;
 
@@ -304,50 +404,50 @@ const PremiumPlayer = () => {
           {/* Controls + Progress - hidden on small screens when extended view is not shown */}
           {(!isSmallScreen || !showExtraControls) && (
             <div className={`flex flex-col items-center ${isSmallScreen ? "hidden" : "w-[50%] max-w-md"}`}>
-              <div className="flex items-center gap-3 mb-0.5">
-                <button
-                  onClick={() => { shuffle(); handleShuffle(); }}
-                  className={`text-base transition ${shuffleActive ? "text-fuchsia-500" : "text-neutral-400 hover:text-fuchsia-500"}`}
-                  title="Shuffle"
-                >
-                  <FaRandom />
-                </button>
-                <button onClick={Previous} className="text-base text-neutral-400 hover:text-fuchsia-500 transition" title="Previous">
-                  <FaStepBackward />
-                </button>
-                <button
+            <div className="flex items-center gap-3 mb-0.5">
+              <button
+                onClick={() => { shuffle(); handleShuffle(); }}
+                className={`text-base transition ${shuffleActive ? "text-fuchsia-500" : "text-neutral-400 hover:text-fuchsia-500"}`}
+                title="Shuffle"
+              >
+                <FaRandom />
+              </button>
+              <button onClick={Previous} className="text-base text-neutral-400 hover:text-fuchsia-500 transition" title="Previous">
+                <FaStepBackward />
+              </button>
+              <button
                   onClick={handlePlayPause}
-                  className="bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white rounded-full p-2 shadow-lg hover:scale-110 transition-transform border-2 border-fuchsia-800 text-lg"
-                  title={playStatus ? "Pause" : "Play"}
-                >
-                  {playStatus ? <FaPause /> : <FaPlay />}
-                </button>
-                <button onClick={Next} className="text-base text-neutral-400 hover:text-fuchsia-500 transition" title="Next">
-                  <FaStepForward />
-                </button>
-                <button
+                className="bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white rounded-full p-2 shadow-lg hover:scale-110 transition-transform border-2 border-fuchsia-800 text-lg"
+                title={playStatus ? "Pause" : "Play"}
+              >
+                  {playStatus ? <FaPause /> : <FaPlay className="relative ml-0.5" />}
+              </button>
+              <button onClick={Next} className="text-base text-neutral-400 hover:text-fuchsia-500 transition" title="Next">
+                <FaStepForward />
+              </button>
+              <button
                   onClick={toggleLoop}
-                  className={`text-base transition ${loop ? "text-fuchsia-500" : "text-neutral-400 hover:text-fuchsia-500"}`}
-                  title="Repeat"
-                >
-                  <FaRedo />
-                </button>
-              </div>
-              {/* Progress Bar */}
-              <div className="flex items-center gap-1 w-full">
-                <span className="text-[10px] text-neutral-400 min-w-[28px]">{formatTime(time.currentTime.minute, time.currentTime.second)}</span>
-                <input
-                  type="range"
-                  min={0}
-                  max={durationSec || 1}
-                  step={0.1}
-                  value={currentSec}
-                  onChange={handleSeek}
-                  className="w-full accent-fuchsia-600 h-1 cursor-pointer"
-                />
-                <span className="text-[10px] text-neutral-400 min-w-[28px]">{formatTime(time.totalTime.minute, time.totalTime.second)}</span>
-              </div>
+                className={`text-base transition ${loop ? "text-fuchsia-500" : "text-neutral-400 hover:text-fuchsia-500"}`}
+                title="Repeat"
+              >
+                <FaRedo />
+              </button>
             </div>
+            {/* Progress Bar */}
+            <div className="flex items-center gap-1 w-full">
+              <span className="text-[10px] text-neutral-400 min-w-[28px]">{formatTime(time.currentTime.minute, time.currentTime.second)}</span>
+              <input
+                type="range"
+                min={0}
+                max={durationSec || 1}
+                step={0.1}
+                value={currentSec}
+                onChange={handleSeek}
+                className="w-full accent-fuchsia-600 h-1 cursor-pointer"
+              />
+              <span className="text-[10px] text-neutral-400 min-w-[28px]">{formatTime(time.totalTime.minute, time.totalTime.second)}</span>
+            </div>
+          </div>
           )}
 
           {/* Mobile controls - when not in expanded view */}
@@ -390,18 +490,18 @@ const PremiumPlayer = () => {
                 className="text-base text-neutral-400 hover:text-fuchsia-500 transition"
                 title={isMuted ? "Unmute" : "Mute"}
               >
-                {isMuted || volume === 0 ? <FaVolumeMute /> : <FaVolumeUp />}
-              </button>
-              <input
-                type="range"
-                min={0}
-                max={1}
-                step={0.01}
-                value={isMuted ? 0 : volume}
-                onChange={(e) => setVolume(Number(e.target.value))}
+              {isMuted || volume === 0 ? <FaVolumeMute /> : <FaVolumeUp />}
+            </button>
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.01}
+              value={isMuted ? 0 : volume}
+              onChange={(e) => setVolume(Number(e.target.value))}
                 className="w-16 accent-fuchsia-600 cursor-pointer h-1"
-                disabled={isMuted}
-              />
+              disabled={isMuted}
+            />
               <button 
                 className="text-base text-neutral-400 hover:text-fuchsia-500 transition"
                 title="Devices"
@@ -421,7 +521,7 @@ const PremiumPlayer = () => {
                   ></div>
                 </div>
               </div>
-            </div>
+          </div>
           )}
         </div>
         

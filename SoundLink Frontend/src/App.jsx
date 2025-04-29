@@ -28,6 +28,7 @@ import Terms from "./components/Terms";
 import Privacy from "./components/Privacy";
 import Contact from "./components/Contact";
 import DisclaimerPopup from "./components/DisclaimerPopup";
+import SearchPage from "./components/SearchPage";
 
 // Protected route component that requires authentication
 const ProtectedRoute = ({ children }) => {
@@ -79,6 +80,7 @@ const App = () => {
             <Route path="/artist/:id" element={<ArtistDetail />} />
             <Route path="/artists" element={<Artists />} />
             <Route path="/trending" element={<TrendingSongs />} />
+            <Route path="/search" element={<SearchPage />} />
             <Route path="/premium" element={<Premium />} />
             <Route path="/about" element={<About />} />
             <Route path="/terms" element={<Terms />} />
