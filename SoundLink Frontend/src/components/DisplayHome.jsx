@@ -32,6 +32,7 @@ const DisplayHome = () => {
   const albumRowRef = useRef(null);
   const artistsRowRef = useRef(null);
   const movieAlbumRowRef = useRef(null);
+  const topRef = useRef(null);
   
   // State management
   const [movieAlbums, setMovieAlbums] = useState([]);
@@ -138,6 +139,13 @@ const DisplayHome = () => {
     navigate(`/artist/${artistId}`);
   };
 
+  // Scroll to top handler
+  const scrollToTop = () => {
+    topRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // Fallback if ref doesn't work
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex justify-center items-center bg-black text-white">
@@ -147,7 +155,7 @@ const DisplayHome = () => {
   }
 
   return (
-    <div className="min-h-screen w-full flex flex-col justify-start items-center bg-gradient-to-b from-black via-black to-neutral-900 pt-0 mt-[-5px] pb-0 px-2 md:px-8">
+    <div ref={topRef} className="min-h-screen w-full flex flex-col justify-start items-center bg-gradient-to-b from-black via-black to-neutral-900 pt-0 mt-[-5px] pb-0 px-2 md:px-8 content-container">
       {/* Welcome Section */}
       <motion.div 
         initial={{ opacity: 0, y: -20 }} 
@@ -345,7 +353,6 @@ const DisplayHome = () => {
                     )}
                   </div>
                   <h3 className="text-white font-medium text-sm text-center">{artist.name}</h3>
-                  {artist.bio && <p className="text-xs text-neutral-400 text-center truncate max-w-[120px]">{artist.bio}</p>}
                 </div>
               ))}
               
@@ -510,7 +517,7 @@ const DisplayHome = () => {
           {/* Back to Top Button */}
           <div className="flex justify-center mb-10">
             <button
-              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              onClick={scrollToTop}
               className="group flex flex-col items-center gap-2 transition-transform hover:scale-105"
             >
               <div className="w-10 h-10 bg-fuchsia-600 rounded-full flex items-center justify-center group-hover:bg-fuchsia-500 transition-colors">

@@ -12,6 +12,14 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
   const [loadingPlaylists, setLoadingPlaylists] = useState(false);
   const url = import.meta.env.VITE_BACKEND_URL;
 
+  // Function to handle navigation and close sidebar on mobile
+  const handleNavigate = (path) => {
+    navigate(path);
+    if (window.innerWidth < 768) {
+      setMobileOpen(false);
+    }
+  };
+
   useEffect(() => {
     if (user && token) {
       setLoadingPlaylists(true);
@@ -55,26 +63,26 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
               icon={<FaHome />} 
               label="Home" 
               active={location.pathname === '/'} 
-              onClick={() => navigate('/')} 
+              onClick={() => handleNavigate('/')} 
               highlight={true}
             />
             <SidebarItem 
               icon={<FaFire />} 
               label="Trending" 
               active={location.pathname === '/trending'} 
-              onClick={() => navigate('/trending')} 
+              onClick={() => handleNavigate('/trending')} 
             />
             <SidebarItem 
               icon={<FaUser />} 
               label="Artists" 
               active={location.pathname === '/artists'} 
-              onClick={() => navigate('/artists')}
+              onClick={() => handleNavigate('/artists')}
             />
             <SidebarItem icon={<FaMusic />} label="Playlists" onClick={() => {
               if (playlists.length > 0) {
-                navigate(`/playlist/${playlists[0]._id}`);
+                handleNavigate(`/playlist/${playlists[0]._id}`);
               } else {
-                navigate('/playlist');
+                handleNavigate('/playlist');
               }
             }} />
           </div>
@@ -89,14 +97,14 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
                   <div className="text-neutral-600 text-xs">No playlists yet</div>
                 ) : (
                   playlists.map(pl => (
-                    <Link
+                    <div
                       key={pl._id}
-                      to={`/playlist/${pl._id}`}
+                      onClick={() => handleNavigate(`/playlist/${pl._id}`)}
                       className="flex items-center gap-2 px-3 py-2 rounded-lg mb-1 cursor-pointer text-neutral-200 hover:bg-neutral-800"
                     >
                       <FaMusic className="text-fuchsia-400" />
                       <span className="truncate">{pl.name}</span>
-                    </Link>
+                    </div>
                   ))
                 )
               )}
@@ -108,7 +116,7 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
               icon={<FaHeart />} 
               label="Favorites" 
               active={location.pathname === '/favorites'} 
-              onClick={() => navigate('/favorites')} 
+              onClick={() => handleNavigate('/favorites')} 
             />
           </div>
         </nav>

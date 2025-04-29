@@ -9,30 +9,71 @@ export const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isIOS, setIsIOS] = useState(false);
   const [token, setToken] = useState(getCombinedToken());
   const [isEmailVerified, setIsEmailVerified] = useState(false);
   const [verificationEmailSent, setVerificationEmailSent] = useState(false);
 
+  // Detect iOS devices on mount
+  useEffect(() => {
+    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+    const isiOS = /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
+    setIsIOS(isiOS);
+    
+    // Log device info for debugging
+    console.log("Device detection:", { 
+      isIOS: isiOS,
+      userAgent 
+    });
+  }, []);
+
   // Get token from either cookies or localStorage (fallback)
   function getCombinedToken() {
+    // Check if we're on iOS first - user agent detection happens after initial render
+    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+    const isiOS = /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
+    
+    // For iOS devices, prioritize localStorage to avoid cookie issues
+    if (isiOS) {
+      return localStorage.getItem("token") || "";
+    }
+    
+    // For other devices, try cookie first, then localStorage
     return Cookies.get('auth_token') || localStorage.getItem("token") || "";
   }
 
-  // Save token to both storage methods
+  // Save token to storage methods based on device
   function saveTokenToStorage(newToken) {
     if (newToken) {
-      // Save to cookie (expires in 7 days, secure in production)
-      Cookies.set('auth_token', newToken, { 
-        expires: 7, 
-        secure: window.location.protocol === 'https:',
-        sameSite: 'Lax'
-      });
-      // Also save to localStorage as fallback
-      localStorage.setItem("token", newToken);
+      // For iOS devices, prioritize localStorage and avoid cookies
+      if (isIOS) {
+        localStorage.setItem("token", newToken);
+        try {
+          // Still try to set cookie as fallback, but with minimal options
+          Cookies.set('auth_token', newToken, { 
+            expires: 7,
+            sameSite: 'Lax'
+          });
+        } catch(err) {
+          console.log("Could not set cookie on iOS, using localStorage only:", err.message);
+        }
+      } else {
+        // For non-iOS devices, use both storage methods
+        Cookies.set('auth_token', newToken, { 
+          expires: 7, 
+          secure: window.location.protocol === 'https:',
+          sameSite: 'Lax'
+        });
+        localStorage.setItem("token", newToken);
+      }
+      
+      // Set token in axios headers immediately
+      axios.defaults.headers.common["Authorization"] = `Bearer ${newToken}`;
     } else {
       // Remove token
       Cookies.remove('auth_token');
       localStorage.removeItem("token");
+      delete axios.defaults.headers.common["Authorization"];
     }
   }
 
@@ -73,50 +114,168 @@ export const AuthProvider = ({ children }) => {
 
   // Load user data if token exists
   useEffect(() => {
-    setLoading(true);
-    if (token) {
-      axios
-        .get(`${API_BASE_URL}/api/auth/me`, {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-        .then((res) => {
-          if (res.data.success) {
-            setUser(res.data.user);
-            setIsEmailVerified(res.data.user.isEmailVerified || false);
-            // Process any pending actions
-            processPendingActions();
-          }
-          else {
-            setUser(null);
-            saveTokenToStorage(""); // Clear invalid token
-          }
-        })
-        .catch(() => {
+    const loadUserData = async () => {
+      setLoading(true);
+      
+      try {
+        // Double-check that we have the token in headers
+        const currentToken = token || getCombinedToken();
+        if (!currentToken) {
+          setUser(null);
+          setLoading(false);
+          return;
+        }
+        
+        // Ensure token is in axios headers
+        axios.defaults.headers.common["Authorization"] = `Bearer ${currentToken}`;
+        
+        const res = await axios.get(`${API_BASE_URL}/api/auth/me`);
+        
+        if (res.data.success) {
+          setUser(res.data.user);
+          setIsEmailVerified(res.data.user.isEmailVerified || false);
+          // Process any pending actions
+          processPendingActions();
+        } else {
+          console.log("Failed to load user data: Invalid response");
           setUser(null);
           saveTokenToStorage(""); // Clear invalid token
-        })
-        .finally(() => {
-          setLoading(false);
-        });
-    } else {
-      setUser(null);
-      setLoading(false);
-    }
+        }
+      } catch (error) {
+        console.log("Failed to load user data:", error);
+        setUser(null);
+        saveTokenToStorage(""); // Clear invalid token
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadUserData();
   }, [token]);
+
+  // Special login method for iOS devices
+  const iOSLogin = async (email, password) => {
+    console.log("Using iOS-specific login method");
+    try {
+      // Clear any existing tokens
+      localStorage.removeItem("token");
+      delete axios.defaults.headers.common["Authorization"];
+      
+      // Direct API call without using stored tokens
+      const res = await axios.post(`${API_BASE_URL}/api/auth/login`, { 
+        email, 
+        password,
+        deviceType: 'ios' // Let the server know this is an iOS device
+      });
+      
+      if (res.data.success) {
+        const newToken = res.data.token;
+        
+        // Set in localStorage only first
+        localStorage.setItem("token", newToken);
+        
+        // Small delay before updating state
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Update token in state and axios headers
+        setToken(newToken);
+        axios.defaults.headers.common["Authorization"] = `Bearer ${newToken}`;
+        
+        // Then update user data
+        setUser(res.data.user);
+        setIsEmailVerified(res.data.user.isEmailVerified || false);
+        
+        return { success: true };
+      }
+      
+      return { success: false, message: "Invalid credentials" };
+    } catch (error) {
+      console.error("iOS login error:", error);
+      return { 
+        success: false, 
+        message: error.response?.data?.message || "Login failed on iOS device" 
+      };
+    }
+  };
 
   const login = async (email, password) => {
     try {
-      const res = await axios.post(`${API_BASE_URL}/api/auth/login`, { email, password });
-      if (res.data.success) {
-        const newToken = res.data.token;
-        setToken(newToken);
-        saveTokenToStorage(newToken);
-        setUser(res.data.user);
-        setIsEmailVerified(res.data.user.isEmailVerified || false);
-        return { success: true };
+      // For iOS devices, use dedicated method
+      if (isIOS) {
+        return await iOSLogin(email, password);
       }
-      return { success: false, message: "Invalid credentials" };
+      
+      // Regular login flow for non-iOS devices
+      // Clear any existing tokens first to avoid conflicts
+      saveTokenToStorage("");
+      
+      let retryCount = 0;
+      const maxRetries = 2;
+      let lastError = null;
+      
+      // Retry logic for login
+      while (retryCount <= maxRetries) {
+        try {
+          // Add a slight delay on retry attempts
+          if (retryCount > 0) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+            console.log(`Retry attempt ${retryCount}...`);
+          }
+          
+          const res = await axios.post(`${API_BASE_URL}/api/auth/login`, { email, password });
+          
+          if (res.data.success) {
+            const newToken = res.data.token;
+            
+            // Clear the token storage first
+            Cookies.remove('auth_token');
+            localStorage.removeItem("token");
+            
+            // Small delay before setting the new token
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            // Now set the token in both places
+            setToken(newToken);
+            saveTokenToStorage(newToken);
+            setUser(res.data.user);
+            setIsEmailVerified(res.data.user.isEmailVerified || false);
+            
+            console.log("Login successful");
+            
+            // Clear any previous errors
+            lastError = null;
+            
+            return { success: true };
+          }
+          
+          lastError = { success: false, message: "Invalid credentials" };
+          return lastError;
+        } catch (error) {
+          console.error(`Login attempt ${retryCount + 1} failed:`, error.message);
+          
+          lastError = { 
+            success: false, 
+            message: error.response?.data?.message || "Login failed" 
+          };
+          
+          // Only retry if it's a network or server error, not for invalid credentials
+          if (error.response?.status >= 500 || !error.response) {
+            retryCount++;
+            
+            // If we've reached max retries, break out
+            if (retryCount > maxRetries) {
+              break;
+            }
+          } else {
+            // Client error (like invalid credentials) - don't retry
+            break;
+          }
+        }
+      }
+      
+      return lastError;
     } catch (error) {
+      console.error("Login error:", error);
       return { 
         success: false, 
         message: error.response?.data?.message || "Login failed" 
@@ -132,6 +291,11 @@ export const AuthProvider = ({ children }) => {
       formData.append('username', username);
       formData.append('email', email);
       formData.append('password', password);
+      
+      // Add device info for iOS-specific handling on the server
+      if (isIOS) {
+        formData.append('deviceType', 'ios');
+      }
       
       if (avatar) {
         formData.append('avatar', avatar);
@@ -156,9 +320,31 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
+    // Special handling for iOS devices
+    if (isIOS) {
+      // For iOS, focus on localStorage
+      localStorage.removeItem("token");
+      try {
+        Cookies.remove('auth_token');
+      } catch (err) {
+        console.log("Could not remove cookie on iOS:", err.message);
+      }
+    } else {
+      // Normal logout for other devices
+      Cookies.remove('auth_token');
+      localStorage.removeItem("token");
+    }
+    
     setToken("");
     setUser(null);
-    saveTokenToStorage("");
+    delete axios.defaults.headers.common["Authorization"];
+    
+    // Force refresh on iOS to clear any session issues
+    if (isIOS) {
+      setTimeout(() => {
+        window.location.href = "/auth";
+      }, 100);
+    }
   };
 
   const sendVerificationEmail = async () => {
@@ -210,15 +396,11 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Attach token to all axios requests
-  useEffect(() => {
-    axios.defaults.headers.common["Authorization"] = token ? `Bearer ${token}` : "";
-  }, [token]);
-
   return (
     <AuthContext.Provider value={{ 
       user, 
-      token, 
+      token,
+      isIOS,
       login, 
       register, 
       logout,

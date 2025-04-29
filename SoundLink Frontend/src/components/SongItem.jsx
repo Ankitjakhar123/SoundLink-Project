@@ -72,12 +72,12 @@ const SongItem = ({ name, image, desc, id }) => {
       className='min-w-[180px] p-2 px-3 rounded cursor-pointer hover:bg-[#ffffff26] bg-black/90 shadow-2xl relative'
     >
       {image ? (
-        <img className='rounded' src={image} alt="" />
+        <img className='rounded w-full object-cover aspect-square' src={image} alt="" />
       ) : (
         <MdMusicNote className='w-24 h-24 text-fuchsia-500 mx-auto' />
       )}
-      <p className='font-bold mt-2 mb-1'>{name}</p>
-      <p className='text-slate-200 text-sm'>{desc}</p>
+      <p className='font-bold mt-2 mb-1 truncate text-sm sm:text-base'>{name}</p>
+      <p className='text-slate-200 text-xs sm:text-sm truncate'>{desc}</p>
       {/* Add to Playlist Button */}
       {user && (
         <button

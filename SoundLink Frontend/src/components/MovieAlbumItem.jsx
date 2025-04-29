@@ -27,7 +27,7 @@ const MovieAlbumItem = ({ id, title, image }) => {
           )}
         </div>
         <div className="p-2">
-          <h3 className="text-white font-bold text-lg truncate">{title}</h3>
+          <h3 className="text-white font-bold text-sm sm:text-lg truncate">{title}</h3>
         </div>
       </Link>
     </div>

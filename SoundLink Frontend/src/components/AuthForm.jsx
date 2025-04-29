@@ -1,6 +1,5 @@
 import React, { useState, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
-import { motion } from "framer-motion";
 import { FaUser, FaLock, FaEnvelope, FaUserCircle } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
@@ -15,7 +14,7 @@ const DEFAULT_AVATARS = [
 ];
 
 const AuthForm = ({ mode = "login" }) => {
-  const { login, register } = useContext(AuthContext);
+  const { login, register, isIOS } = useContext(AuthContext);
   const navigate = useNavigate();
   const [form, setForm] = useState({ username: "", email: "", password: "" });
   const [loading, setLoading] = useState(false);
@@ -24,7 +23,8 @@ const AuthForm = ({ mode = "login" }) => {
   const [customAvatar, setCustomAvatar] = useState(null);
   const [selectedAvatar, setSelectedAvatar] = useState(null);
   const [showAvatars, setShowAvatars] = useState(false);
-  
+  const [loginAttempts, setLoginAttempts] = useState(0);
+
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleAvatarUpload = (e) => {
@@ -50,12 +50,81 @@ const AuthForm = ({ mode = "login" }) => {
     
     try {
       if (mode === "login") {
-        const result = await login(form.email, form.password);
-        if (result.success) {
-          setSuccess("Welcome back!");
-          navigate("/");
-        } else {
-          setError(result.message || "Invalid credentials");
+        // Set specific timeouts based on device type
+        const timeoutDuration = isIOS ? 8000 : 5000; // Longer timeout for iOS
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error("Login request timed out")), timeoutDuration)
+        );
+
+        // iOS-specific success message
+        const successMessage = isIOS ? "Welcome back! iOS login successful." : "Welcome back!";
+        
+        // Increment login attempts counter
+        setLoginAttempts(prev => prev + 1);
+        
+        try {
+          // Race between the login request and the timeout
+          const result = await Promise.race([
+            login(form.email, form.password),
+            timeoutPromise
+          ]);
+          
+          if (result.success) {
+            setSuccess(successMessage);
+            
+            // For iOS, we need a small delay before navigation to ensure token is saved
+            const navigationDelay = isIOS ? 800 : 500;
+            setTimeout(() => {
+              // For iOS devices, we want a full page refresh
+              if (isIOS && loginAttempts > 0) {
+                window.location.href = "/";
+              } else {
+                navigate("/");
+              }
+            }, navigationDelay);
+          } else {
+            // Login failed handling
+            const maxAttempts = isIOS ? 2 : 3; // Fewer attempts for iOS before special handling
+            
+            if (loginAttempts >= maxAttempts) {
+              if (isIOS) {
+                setError("iOS login issue detected. Trying alternative method...");
+                
+                // Force a refresh of token storage on iOS
+                localStorage.removeItem("token");
+                document.cookie = "auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                
+                // Try once more with the iOS-optimized login
+                const retryResult = await login(form.email, form.password);
+                if (retryResult.success) {
+                  setSuccess(successMessage);
+                  // Using location.href instead of navigate for a full page reload
+                  setTimeout(() => window.location.href = "/", 800);
+                } else {
+                  setError("Login failed. Please check your details or try again.");
+                }
+              } else {
+                // For non-iOS devices
+                const retryResult = await login(form.email, form.password);
+                if (retryResult.success) {
+                  setSuccess("Welcome back!");
+                  setTimeout(() => navigate("/"), 500);
+                } else {
+                  setError("Multiple login failures. Please check your details or try again later.");
+                }
+              }
+            } else {
+              setError(result.message || "Invalid credentials");
+            }
+          }
+        } catch (err) {
+          // Handle timeout or other errors
+          console.error("Login error:", err);
+          if (err.message === "Login request timed out") {
+            setError(isIOS ? "Login timed out on iOS device. Please try again." : "Login request timed out. Please try again.");
+          } else {
+            setError("Login failed. Please try again.");
+          }
         }
       } else {
         // For registration
@@ -91,155 +160,196 @@ const AuthForm = ({ mode = "login" }) => {
         }
       }
     } catch (err) {
+      console.error("Auth error:", err);
       setError("Something went wrong. Please try again.");
-      console.error(err);
     } finally {
-      setLoading(false);
+    setLoading(false);
     }
   };
 
   return (
-    <motion.form
-      initial={{ opacity: 0, y: 40 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, ease: "easeOut" }}
-      onSubmit={handleSubmit}
-      className="bg-black/90 rounded-xl shadow-2xl p-8 w-full max-w-md mx-auto flex flex-col gap-6"
-    >
-      <h2 className="text-3xl font-bold text-white text-center mb-2">
-        {mode === "login" ? "Sign In" : "Create Account"}
-      </h2>
+    <>
+      <style>
+        {`
+          @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+          }
+          .animate-fadeIn {
+            animation: fadeIn 0.3s ease-out;
+          }
+        `}
+      </style>
       
-      {/* Avatar selection (register only) */}
-      {mode === "register" && (
-        <div className="flex flex-col items-center gap-4">
-          <div 
-            className="relative w-24 h-24 rounded-full bg-neutral-800 flex items-center justify-center border-2 border-fuchsia-600 cursor-pointer overflow-hidden"
-            onClick={() => setShowAvatars(prev => !prev)}
-          >
-            {selectedAvatar ? (
-              <img 
-                src={selectedAvatar} 
-                alt="Selected avatar" 
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <FaUserCircle className="text-neutral-600" size={60} />
+      <div className="backdrop-blur-sm bg-black/40 rounded-2xl shadow-2xl p-8 w-full">
+        <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-fuchsia-400 to-pink-300 text-center mb-8">
+          {mode === "login" ? "Welcome Back" : "Create Account"}
+        </h2>
+        
+        {/* Avatar selection (register only) */}
+        {mode === "register" && (
+          <div className="flex flex-col items-center gap-4 mb-6">
+            <div 
+              className="relative w-24 h-24 rounded-full bg-black/50 flex items-center justify-center border-2 border-fuchsia-500 cursor-pointer overflow-hidden shadow-lg hover:shadow-fuchsia-500/20 transition"
+              onClick={() => setShowAvatars(prev => !prev)}
+            >
+              {selectedAvatar ? (
+                <img 
+                  src={selectedAvatar} 
+                  alt="Selected avatar" 
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <FaUserCircle className="text-fuchsia-300 opacity-50" size={50} />
+              )}
+              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                <span className="text-white text-sm font-medium px-2 py-1 rounded-full bg-fuchsia-600/70">Choose</span>
+              </div>
+            </div>
+            
+            {/* Avatar options */}
+            {showAvatars && (
+              <div className="bg-black/70 rounded-xl p-4 border border-fuchsia-900/50 shadow-xl animate-fadeIn">
+                <div className="grid grid-cols-3 gap-3 mb-3">
+                  {DEFAULT_AVATARS.map((avatar, index) => (
+                    <div 
+                      key={index}
+                      className={`relative w-16 h-16 rounded-full cursor-pointer overflow-hidden transition-transform ${selectedAvatar === avatar ? 'ring-2 ring-fuchsia-500 scale-105' : 'hover:scale-105'}`}
+                      onClick={() => handleSelectAvatar(avatar)}
+                    >
+                      <img 
+                        src={avatar}
+                        alt={`Avatar ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ))}
+                </div>
+                <div className="flex justify-center">
+                  <label className="bg-gradient-to-r from-fuchsia-600 to-purple-600 text-white text-xs font-medium px-3 py-1.5 rounded-full cursor-pointer hover:shadow-lg hover:from-fuchsia-500 hover:to-purple-500 transition">
+                    Upload Custom
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleAvatarUpload}
+                    />
+                  </label>
+                </div>
+              </div>
             )}
-            <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-              <span className="text-white text-xs font-medium">Select Avatar</span>
+          </div>
+        )}
+        
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Username field (register only) */}
+      {mode === "register" && (
+            <div className="space-y-1">
+              <label className="text-sm text-neutral-300 font-medium pl-1">Username</label>
+              <div className="relative">
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-fuchsia-400">
+                  <FaUser />
+                </div>
+        <input
+          name="username"
+          type="text"
+                  placeholder="Choose a username"
+          value={form.username}
+          onChange={handleChange}
+                  className="bg-black/50 text-white border border-neutral-800 rounded-lg px-10 py-3 w-full focus:outline-none focus:ring-2 focus:ring-fuchsia-500 focus:border-transparent transition-all hover:bg-black/70"
+          required
+                  autoComplete="username"
+                />
+              </div>
+            </div>
+          )}
+          
+          {/* Email field */}
+          <div className="space-y-1">
+            <label className="text-sm text-neutral-300 font-medium pl-1">Email</label>
+            <div className="relative">
+              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-fuchsia-400">
+                <FaEnvelope />
+              </div>
+      <input
+        name="email"
+        type="email"
+                placeholder="Your email address"
+        value={form.email}
+        onChange={handleChange}
+                className="bg-black/50 text-white border border-neutral-800 rounded-lg px-10 py-3 w-full focus:outline-none focus:ring-2 focus:ring-fuchsia-500 focus:border-transparent transition-all hover:bg-black/70"
+        required
+                autoComplete="email"
+              />
             </div>
           </div>
           
-          {/* Avatar options */}
-          {showAvatars && (
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="bg-neutral-900 rounded-xl p-4 border border-neutral-800"
-            >
-              <div className="grid grid-cols-3 gap-3 mb-3">
-                {DEFAULT_AVATARS.map((avatar, index) => (
-                  <img 
-                    key={index}
-                    src={avatar}
-                    alt={`Avatar ${index + 1}`}
-                    className={`w-16 h-16 rounded-full object-cover cursor-pointer border-2 ${selectedAvatar === avatar ? 'border-fuchsia-500' : 'border-transparent'} hover:border-fuchsia-500 transition`}
-                    onClick={() => handleSelectAvatar(avatar)}
-                  />
-                ))}
+          {/* Password field */}
+          <div className="space-y-1">
+            <label className="text-sm text-neutral-300 font-medium pl-1">Password</label>
+            <div className="relative">
+              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-fuchsia-400">
+                <FaLock />
               </div>
-              <div className="flex justify-center">
-                <label className="bg-fuchsia-600 text-white text-xs font-medium px-3 py-1.5 rounded-full cursor-pointer hover:bg-fuchsia-700 transition">
-                  Upload Custom
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleAvatarUpload}
-                  />
-                </label>
-              </div>
-            </motion.div>
-          )}
-        </div>
-      )}
-      
-      {/* Username field (register only) */}
-      {mode === "register" && (
-        <div className="relative">
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500">
-            <FaUser />
+      <input
+        name="password"
+        type="password"
+                placeholder="Your password"
+        value={form.password}
+        onChange={handleChange}
+                className="bg-black/50 text-white border border-neutral-800 rounded-lg px-10 py-3 w-full focus:outline-none focus:ring-2 focus:ring-fuchsia-500 focus:border-transparent transition-all hover:bg-black/70"
+        required
+                autoComplete={mode === "login" ? "current-password" : "new-password"}
+              />
+            </div>
           </div>
-          <input
-            name="username"
-            type="text"
-            placeholder="Username"
-            value={form.username}
-            onChange={handleChange}
-            className="bg-neutral-900 text-white border border-neutral-700 rounded-lg px-10 py-3 w-full focus:outline-none focus:ring-2 focus:ring-fuchsia-500"
-            required
-          />
-        </div>
-      )}
-      
-      {/* Email field */}
-      <div className="relative">
-        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500">
-          <FaEnvelope />
-        </div>
-        <input
-          name="email"
-          type="email"
-          placeholder="Email"
-          value={form.email}
-          onChange={handleChange}
-          className="bg-neutral-900 text-white border border-neutral-700 rounded-lg px-10 py-3 w-full focus:outline-none focus:ring-2 focus:ring-fuchsia-500"
-          required
-        />
-      </div>
-      
-      {/* Password field */}
-      <div className="relative">
-        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500">
-          <FaLock />
-        </div>
-        <input
-          name="password"
-          type="password"
-          placeholder="Password"
-          value={form.password}
-          onChange={handleChange}
-          className="bg-neutral-900 text-white border border-neutral-700 rounded-lg px-10 py-3 w-full focus:outline-none focus:ring-2 focus:ring-fuchsia-500"
-          required
-        />
-      </div>
-      
-      {/* Submit button */}
+          
+          {/* Forgotten password link (login only) */}
+          {mode === "login" && (
+            <div className="text-right">
+              <a href="#" className="text-fuchsia-400 text-sm hover:text-fuchsia-300 transition">
+                Forgot password?
+              </a>
+            </div>
+          )}
+          
+          {/* Messages */}
+          {error && (
+            <div className="bg-red-900/20 border border-red-800 text-red-200 px-4 py-2 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
+          
+          {success && (
+            <div className="bg-green-900/20 border border-green-800 text-green-200 px-4 py-2 rounded-lg text-sm">
+              {success}
+            </div>
+          )}
+          
+          {/* Submit button */}
       <button
         type="submit"
         disabled={loading}
-        className="bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white font-semibold py-3 rounded-lg shadow-lg hover:scale-105 transition-transform mt-2 relative overflow-hidden group"
+            className="w-full bg-gradient-to-r from-fuchsia-600 to-purple-600 text-white font-medium py-3 rounded-lg hover:shadow-lg hover:from-fuchsia-500 hover:to-purple-500 transition-all disabled:opacity-70 disabled:cursor-not-allowed relative overflow-hidden group mt-2"
       >
-        <span className="relative z-10">
-          {loading ? "Please wait..." : mode === "login" ? "Sign In" : "Create Account"}
-        </span>
-        <div className="absolute inset-0 bg-gradient-to-r from-pink-600 to-fuchsia-600 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
+            <span className="relative z-10 flex items-center justify-center gap-2">
+              {loading ? (
+                <>
+                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span>Processing...</span>
+                </>
+              ) : (
+                mode === "login" ? "Sign In" : "Create Account"
+              )}
+            </span>
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-fuchsia-600 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
       </button>
-      
-      {/* Messages */}
-      {error && <div className="text-red-400 text-center text-sm">{error}</div>}
-      {success && <div className="text-green-400 text-center text-sm">{success}</div>}
-      
-      {/* Forgotten password link (login only) */}
-      {mode === "login" && (
-        <div className="text-center">
-          <a href="#" className="text-fuchsia-400 text-sm hover:underline">
-            Forgot your password?
-          </a>
-        </div>
-      )}
-    </motion.form>
+        </form>
+      </div>
+    </>
   );
 };
 

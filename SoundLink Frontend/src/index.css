@@ -5,9 +5,47 @@
 body {
   @apply bg-black text-white;
   font-family: 'Inter', 'Roboto', sans-serif;
+  /* Add padding for player bar globally but with reduced value */
+  padding-bottom: 60px;
 }
 
 ::-webkit-scrollbar{
     display:none;
+}
+
+/* Add class for extra small screens */
+@media (min-width: 320px) {
+  .xs\:block {
+    display: block;
+  }
+  
+  .xs\:hidden {
+    display: none;
+  }
+}
+
+/* Footer spacing for premium player - reduced */
+footer {
+  margin-bottom: 20px;
+}
+
+/* Ensure content containers have space - reduced */
+.content-container {
+  padding-bottom: 30px;
+}
+
+/* Responsive adjustments for small screens */
+@media (max-width: 768px) {
+  body {
+    padding-bottom: 50px;
+  }
+  
+  footer {
+    margin-bottom: 15px;
+  }
+  
+  .content-container {
+    padding-bottom: 20px;
+  }
 }
 

@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { AuthContext } from '../context/AuthContext'
 import { FaCrown, FaBars, FaUser, FaSignOutAlt, FaUserShield, FaCog, FaSearch, FaTimes, FaMusic, FaHeadphones, FaHeart } from 'react-icons/fa';
 import axios from 'axios';
+import { PlayerContext } from '../context/PlayerContext';
 
 const Navbar = (props) => {
     const navigate = useNavigate()
@@ -15,6 +16,7 @@ const Navbar = (props) => {
     const inputRef = useRef(null)
     const searchResultsRef = useRef(null);
     const { user, logout } = useContext(AuthContext);
+    const { playWithId } = useContext(PlayerContext);
     const [showDropdown, setShowDropdown] = useState(false);
     const dropdownRef = useRef(null);
 
@@ -45,7 +47,7 @@ const Navbar = (props) => {
 
     const handleLogout = () => {
         logout();
-        navigate('/login');
+        navigate('/auth');
         setShowDropdown(false);
     };
 
@@ -114,7 +116,8 @@ const Navbar = (props) => {
         
         switch(type) {
             case 'song':
-                navigate(`/song/${item._id}`);
+                // Play the song directly instead of navigating to a song page
+                playWithId(item._id);
                 break;
             case 'album':
                 navigate(`/album/${item._id}`);
@@ -123,6 +126,7 @@ const Navbar = (props) => {
                 navigate(`/artist/${item._id}`);
                 break;
             case 'user':
+                // Check if there's a profile route; if not, handle appropriately
                 navigate(`/profile/${item._id}`);
                 break;
             default:
@@ -227,23 +231,27 @@ const Navbar = (props) => {
                         <FaSearch className="w-5 h-5" />
                     </button>
 
-                    {/* Library button - Hidden on smallest screens */}
-                    <button 
-                        onClick={() => navigate('/library')}
-                        className="hidden sm:flex md:flex items-center gap-1 md:gap-2 px-3 md:px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white font-medium rounded-full border border-neutral-800 transition-colors text-sm"
-                    >
-                        <FaHeadphones className="text-fuchsia-400" />
-                        <span className="hidden md:inline">Library</span>
-                    </button>
+                    {/* Library button - Hidden on smallest screens and when not logged in */}
+                    {user && (
+                        <button 
+                            onClick={() => navigate('/library')}
+                            className="hidden sm:flex md:flex items-center gap-1 md:gap-2 px-3 md:px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white font-medium rounded-full border border-neutral-800 transition-colors text-sm"
+                        >
+                            <FaHeadphones className="text-fuchsia-400" />
+                            <span className="hidden md:inline">Library</span>
+                        </button>
+                    )}
 
-                    {/* Favorites button - hidden on smallest screens */}
-                    <button 
-                        onClick={() => navigate('/favorites')}
-                        className="hidden sm:flex md:flex items-center gap-1 md:gap-2 px-3 md:px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white font-medium rounded-full border border-neutral-800 transition-colors text-sm"
-                    >
-                        <FaHeart className="text-fuchsia-400" />
-                        <span className="hidden md:inline">Favorites</span>
-                    </button>
+                    {/* Favorites button - hidden on smallest screens and when not logged in */}
+                    {user && (
+                        <button 
+                            onClick={() => navigate('/favorites')}
+                            className="hidden sm:flex md:flex items-center gap-1 md:gap-2 px-3 md:px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white font-medium rounded-full border border-neutral-800 transition-colors text-sm"
+                        >
+                            <FaHeart className="text-fuchsia-400" />
+                            <span className="hidden md:inline">Favorites</span>
+                        </button>
+                    )}
 
                     {/* Premium button */}
                     <button 
@@ -254,73 +262,85 @@ const Navbar = (props) => {
                         <span className="hidden md:inline">Buy Premium</span>
                     </button>
                     
-                    {/* Profile Dropdown */}
+                    {/* Profile Dropdown or Sign In Button */}
                     <div className="relative" ref={dropdownRef}>
-                        <button 
-                            onClick={() => setShowDropdown(!showDropdown)}
-                            className="flex items-center justify-center w-10 h-10 rounded-full overflow-hidden border-2 border-fuchsia-500 hover:border-fuchsia-400 transition-colors"
-                        >
-                            {user && user.image ? (
-                                <img 
-                                    src={user.image} 
-                                    alt={user.username} 
-                                    className="w-full h-full object-cover"
-                                    onError={(e) => {
-                                        e.target.onerror = null;
-                                        e.target.src = '/default-avatar.png';
-                                    }}
-                                />
-                            ) : (
-                                <FaUser className="text-white text-lg" />
-                            )}
-                        </button>
-                        
-                        {/* Dropdown Menu */}
-                        {showDropdown && (
-                            <div className="absolute right-0 mt-2 w-48 bg-neutral-800 rounded-md shadow-lg py-1 z-50 border border-neutral-700">
-                                {/* User Info */}
-                                <div className="px-4 py-2 border-b border-neutral-700">
-                                    <p className="text-white font-medium truncate">{user?.username || 'User'}</p>
-                                    <p className="text-neutral-400 text-sm truncate">{user?.email || ''}</p>
-                                </div>
-                                
-                                {/* Menu Items */}
+                        {user ? (
+                            <>
                                 <button 
-                                    onClick={() => { navigate('/profile'); setShowDropdown(false); }}
-                                    className="w-full text-left px-4 py-2 text-white hover:bg-neutral-700 flex items-center gap-2"
+                                    onClick={() => setShowDropdown(!showDropdown)}
+                                    className="flex items-center justify-center w-10 h-10 rounded-full overflow-hidden border-2 border-fuchsia-500 hover:border-fuchsia-400 transition-colors"
                                 >
-                                    <FaUser className="text-fuchsia-400" />
-                                    Profile
+                                    {user.image ? (
+                                        <img 
+                                            src={user.image} 
+                                            alt={user.username} 
+                                            className="w-full h-full object-cover"
+                                            onError={(e) => {
+                                                e.target.onerror = null;
+                                                e.target.src = '/default-avatar.png';
+                                            }}
+                                        />
+                                    ) : (
+                                        <FaUser className="text-white text-lg" />
+                                    )}
                                 </button>
                                 
-                                {user && user.role === 'admin' && (
-                                    <button 
-                                        onClick={() => { navigate('/admin'); setShowDropdown(false); }}
-                                        className="w-full text-left px-4 py-2 text-white hover:bg-neutral-700 flex items-center gap-2"
-                                    >
-                                        <FaUserShield className="text-fuchsia-400" />
-                                        Admin Dashboard
-                                    </button>
+                                {/* Dropdown Menu */}
+                                {showDropdown && (
+                                    <div className="absolute right-0 mt-2 w-48 bg-neutral-800 rounded-md shadow-lg py-1 z-50 border border-neutral-700">
+                                        {/* User Info */}
+                                        <div className="px-4 py-2 border-b border-neutral-700">
+                                            <p className="text-white font-medium truncate">{user.username || 'User'}</p>
+                                            <p className="text-neutral-400 text-sm truncate">{user.email || ''}</p>
+                                        </div>
+                                        
+                                        {/* Menu Items */}
+                                        <button 
+                                            onClick={() => { navigate('/profile'); setShowDropdown(false); }}
+                                            className="w-full text-left px-4 py-2 text-white hover:bg-neutral-700 flex items-center gap-2"
+                                        >
+                                            <FaUser className="text-fuchsia-400" />
+                                            Profile
+                                        </button>
+                                        
+                                        {user.role === 'admin' && (
+                                            <button 
+                                                onClick={() => { navigate('/admin'); setShowDropdown(false); }}
+                                                className="w-full text-left px-4 py-2 text-white hover:bg-neutral-700 flex items-center gap-2"
+                                            >
+                                                <FaUserShield className="text-fuchsia-400" />
+                                                Admin Dashboard
+                                            </button>
+                                        )}
+                                        
+                                        <button 
+                                            onClick={() => { navigate('/settings'); setShowDropdown(false); }}
+                                            className="w-full text-left px-4 py-2 text-white hover:bg-neutral-700 flex items-center gap-2"
+                                        >
+                                            <FaCog className="text-fuchsia-400" />
+                                            Settings
+                                        </button>
+                                        
+                                        <div className="border-t border-neutral-700 my-1"></div>
+                                        
+                                        <button 
+                                            onClick={handleLogout}
+                                            className="w-full text-left px-4 py-2 text-red-400 hover:bg-neutral-700 flex items-center gap-2"
+                                        >
+                                            <FaSignOutAlt />
+                                            Logout
+                                        </button>
+                                    </div>
                                 )}
-                                
-                                <button 
-                                    onClick={() => { navigate('/settings'); setShowDropdown(false); }}
-                                    className="w-full text-left px-4 py-2 text-white hover:bg-neutral-700 flex items-center gap-2"
-                                >
-                                    <FaCog className="text-fuchsia-400" />
-                                    Settings
-                                </button>
-                                
-                                <div className="border-t border-neutral-700 my-1"></div>
-                                
-                                <button 
-                                    onClick={handleLogout}
-                                    className="w-full text-left px-4 py-2 text-red-400 hover:bg-neutral-700 flex items-center gap-2"
-                                >
-                                    <FaSignOutAlt />
-                                    Logout
-                                </button>
-                            </div>
+                            </>
+                        ) : (
+                            <button 
+                                onClick={() => navigate('/auth')}
+                                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-fuchsia-500 to-purple-600 text-white font-medium rounded-full hover:shadow-lg hover:from-fuchsia-600 hover:to-purple-700 transition-all"
+                            >
+                                <FaUser className="text-sm" />
+                                <span>Sign In</span>
+                            </button>
                         )}
                     </div>
                 </div>

@@ -248,7 +248,7 @@ const MovieAlbumDetail = () => {
       initial={{ opacity: 0, y: 40 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
-      className="min-h-screen text-white p-4 md:p-8 transition-all duration-500"
+      className="min-h-screen text-white p-4 md:p-8 transition-all duration-500 content-container"
     >
       <Link to="/" className="inline-flex items-center gap-2 text-fuchsia-500 hover:text-fuchsia-400 mb-6">
         <MdArrowBack /> Back to Home
@@ -331,8 +331,8 @@ const MovieAlbumDetail = () => {
                   onClick={() => playWithId(song._id)}
                   className={`grid grid-cols-4 px-4 py-3 hover:bg-white/5 cursor-pointer group border-b border-neutral-800/50 ${isPlaying(song._id) ? 'bg-white/10' : ''}`}
                 >
-                  <div className="flex items-center gap-4">
-                    <div className="w-6 text-neutral-400 flex items-center justify-center">
+                  <div className="flex items-center gap-4 col-span-3 sm:col-span-1">
+                    <div className="w-6 min-w-6 text-neutral-400 flex items-center justify-center">
                       <span className={isPlaying(song._id) ? 'hidden' : 'group-hover:hidden'}>{index + 1}</span>
                       <button 
                         className={isPlaying(song._id) ? 'block' : 'hidden group-hover:block'}
@@ -343,8 +343,8 @@ const MovieAlbumDetail = () => {
                     </div>
                     
                     <div className="flex-1 min-w-0">
-                      <div className={`font-medium truncate ${isPlaying(song._id) ? 'text-fuchsia-500' : 'text-white'}`}>{song.name}</div>
-                      <div className="text-sm text-neutral-400 truncate">{song.desc}</div>
+                      <div className={`font-medium truncate ${isPlaying(song._id) ? 'text-fuchsia-500' : 'text-white'} text-xs sm:text-base`}>{song.name}</div>
+                      <div className="text-xs text-neutral-400 truncate hidden xs:block">{song.desc}</div>
                     </div>
                   </div>
                   
@@ -356,10 +356,10 @@ const MovieAlbumDetail = () => {
                     {song.duration}
                   </div>
                   
-                  <div className="flex items-center justify-end gap-1 sm:gap-3">
+                  <div className="flex items-center justify-end gap-1 sm:gap-3 col-span-1">
                     <button 
                       onClick={(e) => handleToggleFavorite(e, song._id)}
-                      className="sm:opacity-0 group-hover:opacity-100 transition-opacity text-neutral-400 hover:text-white"
+                      className="opacity-70 sm:opacity-0 group-hover:opacity-100 transition-opacity text-neutral-400 hover:text-white"
                     >
                       {isFavorite(song._id) ? 
                         <MdFavorite className="text-fuchsia-500" /> : 
@@ -374,7 +374,7 @@ const MovieAlbumDetail = () => {
                     <div className="relative song-options">
                       <button 
                         onClick={(e) => handleToggleOptions(e, song._id)}
-                        className="sm:opacity-0 group-hover:opacity-100 transition-opacity text-neutral-400 hover:text-white"
+                        className="opacity-70 sm:opacity-0 group-hover:opacity-100 transition-opacity text-neutral-400 hover:text-white"
                       >
                         <MdMoreVert />
                       </button>

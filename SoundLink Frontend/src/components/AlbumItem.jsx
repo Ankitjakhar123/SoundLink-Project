@@ -16,11 +16,11 @@ const AlbumItem = ({ id, name, image }) => {
       className='min-w-[180px] p-2 px-3 rounded cursor-pointer hover:bg-[#ffffff26] bg-black/90 shadow-2xl'
     >
       {image ? (
-        <img className='rounded' src={image} alt={name} />
+        <img className='rounded w-full object-cover aspect-square' src={image} alt={name} />
       ) : (
         <MdAlbum className='w-24 h-24 text-fuchsia-500 mx-auto' />
       )}
-      <p className='font-bold mt-2 mb-1'>{name}</p>
+      <p className='font-bold mt-2 mb-1 truncate text-sm sm:text-base'>{name}</p>
     </motion.div>
   );
 };

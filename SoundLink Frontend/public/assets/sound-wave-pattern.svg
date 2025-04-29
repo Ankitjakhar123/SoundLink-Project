@@ -1,0 +1,23 @@
+<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <pattern id="sound-wave" width="100" height="100" patternUnits="userSpaceOnUse">
+      <!-- Horizontal waves -->
+      <path d="M0,30 Q25,20 50,30 T100,30" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.5" />
+      <path d="M0,50 Q25,40 50,50 T100,50" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.5" />
+      <path d="M0,70 Q25,60 50,70 T100,70" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.5" />
+      
+      <!-- Vertical waves -->
+      <path d="M30,0 Q20,25 30,50 T30,100" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.5" />
+      <path d="M50,0 Q40,25 50,50 T50,100" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.5" />
+      <path d="M70,0 Q60,25 70,50 T70,100" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.5" />
+      
+      <!-- Music-related icons -->
+      <circle cx="25" cy="25" r="2" fill="rgba(255,255,255,0.05)" />
+      <circle cx="75" cy="75" r="2" fill="rgba(255,255,255,0.05)" />
+      <circle cx="75" cy="25" r="2" fill="rgba(255,255,255,0.05)" />
+      <circle cx="25" cy="75" r="2" fill="rgba(255,255,255,0.05)" />
+    </pattern>
+  </defs>
+  
+  <rect width="100%" height="100%" fill="url(#sound-wave)" />
+</svg> 

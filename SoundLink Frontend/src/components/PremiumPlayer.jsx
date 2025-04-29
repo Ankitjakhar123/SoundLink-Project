@@ -34,6 +34,38 @@ const PremiumPlayer = () => {
   const [showLyrics, setShowLyrics] = useState(false);
   const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth < 768);
 
+  // Add player height to document for styling
+  useEffect(() => {
+    // If track exists, add a class and style to the body
+    if (track) {
+      // Add a style tag for the padding
+      const playerHeight = isSmallScreen ? '50px' : '60px'; // Reduced height values
+      
+      const style = document.createElement('style');
+      style.id = 'premium-player-padding';
+      style.innerHTML = `
+        body {
+          padding-bottom: ${playerHeight} !important;
+        }
+        .content-container {
+          padding-bottom: ${playerHeight} !important;
+        }
+        footer {
+          margin-bottom: ${playerHeight} !important;
+        }
+      `;
+      document.head.appendChild(style);
+      
+      // Cleanup function to remove style
+      return () => {
+        const existingStyle = document.getElementById('premium-player-padding');
+        if (existingStyle) {
+          existingStyle.remove();
+        }
+      };
+    }
+  }, [track, isSmallScreen]);
+
   // Update screen size state on resize
   useEffect(() => {
     const handleResize = () => {
@@ -91,7 +123,7 @@ const PremiumPlayer = () => {
     }
   }, [pause, playStatus, audioRef]);
   
-  // Fix for the play/pause button to correctly toggle
+  // Modified play function to ensure audio context is properly initialized
   const handlePlayPause = () => {
     console.log('Current playStatus:', playStatus);
     
@@ -103,6 +135,22 @@ const PremiumPlayer = () => {
     }
     
     console.log('Attempting to play...');
+    
+    // Initialize audio context
+    if (window._audioContext && window._audioContext.state === 'suspended') {
+      console.log('Resuming suspended AudioContext...');
+      window._audioContext.resume().catch(() => console.error('Error resuming AudioContext'));
+    }
+    
+    // Create a new audio context if none exists
+    if (!window._audioContext && window.AudioContext) {
+      try {
+        window._audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        console.log('Created new AudioContext');
+      } catch (err) {
+        console.error('Failed to create AudioContext:', err);
+      }
+    }
     
     // Check audio reference and source
     if (!audioRef.current) {
@@ -125,50 +173,6 @@ const PremiumPlayer = () => {
       return;
     }
     
-    // Force initialize any audio contexts
-    if (window._audioContext && window._audioContext.state === 'suspended') {
-      console.log('Resuming suspended AudioContext...');
-      window._audioContext.resume().catch(() => console.error('Error resuming AudioContext'));
-    }
-    
-    // Create a silent audio element to help unlock audio on mobile devices
-    const unlockAudio = () => {
-      const silent = document.createElement('audio');
-      silent.src = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjMyLjEwNAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAACWQBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGD/////////////////////////////////////////AAAAAExhdmM1OC41OQAAAAAAAAAAAAAAACQCRgAAAAAAAAJZFiHN3gAAAAAAAAAAAAAAAAAAAAAA';
-      document.body.appendChild(silent);
-      silent.volume = 0.001;
-      
-      try {
-        silent.play().then(() => {
-          setTimeout(() => {
-            silent.pause();
-            document.body.removeChild(silent);
-            console.log('Audio unlocked by silent play');
-            
-            // Now try to play the actual audio
-            play();
-          }, 20);
-        }).catch(e => {
-          console.log('Silent play failed:', e);
-          document.body.removeChild(silent);
-          
-          // Try direct play anyway
-          play();
-        });
-      } catch (e) {
-        // For browsers that don't support promises on play
-        console.log('Silent play failed (no promise support):', e);
-        try {
-          document.body.removeChild(silent);
-        } catch (removeError) {
-          console.log('Error removing silent audio element:', removeError);
-        }
-        
-        // Try direct play anyway
-        play();
-      }
-    };
-    
     // Special handling for mobile browsers and Safari
     if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || 
         /^((?!chrome|android).)*safari/i.test(navigator.userAgent)) {
@@ -180,6 +184,44 @@ const PremiumPlayer = () => {
     }
   };
   
+  // Create a silent audio element to help unlock audio on mobile devices
+  const unlockAudio = () => {
+    const silent = document.createElement('audio');
+    silent.src = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjMyLjEwNAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAACWQBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGD/////////////////////////////////////////AAAAAExhdmM1OC41OQAAAAAAAAAAAAAAACQCRgAAAAAAAAJZFiHN3gAAAAAAAAAAAAAAAAAAAAAA';
+    document.body.appendChild(silent);
+    silent.volume = 0.001;
+    
+    try {
+      silent.play().then(() => {
+        setTimeout(() => {
+          silent.pause();
+          document.body.removeChild(silent);
+          console.log('Audio unlocked by silent play');
+          
+          // Now try to play the actual audio
+          play();
+        }, 20);
+      }).catch(e => {
+        console.log('Silent play failed:', e);
+        document.body.removeChild(silent);
+        
+        // Try direct play anyway
+        play();
+      });
+    } catch (e) {
+      // For browsers that don't support promises on play
+      console.log('Silent play failed (no promise support):', e);
+      try {
+        document.body.removeChild(silent);
+      } catch (removeError) {
+        console.log('Error removing silent audio element:', removeError);
+      }
+      
+      // Try direct play anyway
+      play();
+    }
+  };
+
   // Add event listeners to help with autoplay restrictions
   useEffect(() => {
     // Create one-time unlock function for first user interaction
@@ -454,13 +496,19 @@ const PremiumPlayer = () => {
           {isSmallScreen && !showExtraControls && (
             <div className="flex items-center gap-2">
               <button
-                onClick={handlePlayPause}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handlePlayPause();
+                }}
                 className="bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white rounded-full p-1.5 text-sm"
               >
-                {playStatus ? <FaPause /> : <FaPlay />}
+                {playStatus ? <FaPause /> : <FaPlay className="relative ml-0.5" />}
               </button>
               <button 
-                onClick={Next}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  Next();
+                }}
                 className="text-sm text-neutral-400"
               >
                 <FaStepForward />
@@ -516,7 +564,7 @@ const PremiumPlayer = () => {
                 >
                   <div
                     className={`absolute w-3 h-3 bg-white rounded-full top-0.5 transition-transform ${
-                      autoplayEnabled ? "translate-x-4.5" : "translate-x-0.5"
+                      autoplayEnabled ? "translate-x-[18px]" : "translate-x-0.5"
                     }`}
                   ></div>
                 </div>

@@ -29,6 +29,7 @@ import Privacy from "./components/Privacy";
 import Contact from "./components/Contact";
 import DisclaimerPopup from "./components/DisclaimerPopup";
 import SearchPage from "./components/SearchPage";
+import Library from "./components/Library";
 
 // Protected route component that requires authentication
 const ProtectedRoute = ({ children }) => {
@@ -66,9 +67,9 @@ const App = () => {
     <div className="flex min-h-screen bg-gradient-to-br from-black via-neutral-900 to-black">
       <DisclaimerPopup />
       <Sidebar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
-      <div className={`flex-1 flex flex-col h-screen overflow-y-auto transition-all duration-300 w-full ${mobileOpen ? 'opacity-30 pointer-events-none select-none' : ''} md:opacity-100 md:pointer-events-auto md:select-auto`}>
+      <div className={`flex-1 flex flex-col h-screen overflow-y-auto transition-all duration-300 w-full content-container ${mobileOpen ? 'opacity-30 pointer-events-none select-none' : ''} md:opacity-100 md:pointer-events-auto md:select-auto`}>
         <Navbar onHamburgerClick={() => setMobileOpen(true)} />
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto pb-10">
           <Routes>
             {/* Auth page route */}
             <Route path="/auth" element={user ? <Navigate to="/" /> : <AuthPage />} />
@@ -90,6 +91,7 @@ const App = () => {
             {/* Protected routes - login required */}
             <Route path="/playlist/:id" element={<ProtectedRoute><PlaylistView /></ProtectedRoute>} />
             <Route path="/favorites" element={<ProtectedRoute><Favorites /></ProtectedRoute>} />
+            <Route path="/library" element={<ProtectedRoute><Library /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             

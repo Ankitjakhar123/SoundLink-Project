@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import axios from "axios";
 // eslint-disable-next-line no-unused-vars
@@ -17,10 +17,116 @@ const ArtistDetail = () => {
   const [showOptions, setShowOptions] = useState(null);
   const [selectedSongId, setSelectedSongId] = useState(null);
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
+  const [dominantColor, setDominantColor] = useState("#8E24AA");
+  const [secondaryColor, setSecondaryColor] = useState("#121212");
+  const displayRef = useRef();
+  const imageRef = useRef();
+  const canvasRef = useRef(document.createElement('canvas'));
 
   // Check if a song is in favorites
   const isFavorite = (songId) => {
     return favorites && favorites.some(fav => fav._id === songId);
+  };
+
+  // Extract colors from image
+  const extractColors = (imageElement) => {
+    try {
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      
+      // Set canvas dimensions
+      canvas.width = 50;
+      canvas.height = 50;
+      
+      // Draw image to canvas
+      ctx.drawImage(imageElement, 0, 0, canvas.width, canvas.height);
+      
+      // Get image data
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+      
+      // Color analysis
+      const colorCounts = {};
+      const sampleSize = 50;
+      
+      for (let i = 0; i < sampleSize; i++) {
+        const x = Math.floor(Math.random() * canvas.width);
+        const y = Math.floor(Math.random() * canvas.height);
+        const index = (y * canvas.width + x) * 4;
+        
+        const r = imageData[index];
+        const g = imageData[index + 1];
+        const b = imageData[index + 2];
+        
+        // Skip transparent pixels
+        if (imageData[index + 3] < 128) continue;
+        
+        // Round colors to reduce unique values
+        const roundTo = 16;
+        const rRounded = Math.round(r / roundTo) * roundTo;
+        const gRounded = Math.round(g / roundTo) * roundTo;
+        const bRounded = Math.round(b / roundTo) * roundTo;
+        
+        const hex = `#${rRounded.toString(16).padStart(2, '0')}${gRounded.toString(16).padStart(2, '0')}${bRounded.toString(16).padStart(2, '0')}`;
+        
+        colorCounts[hex] = (colorCounts[hex] || 0) + 1;
+      }
+      
+      // Sort colors by frequency
+      const sortedColors = Object.entries(colorCounts)
+        .sort((a, b) => b[1] - a[1])
+        .map(entry => entry[0]);
+      
+      // Get top colors
+      let colors = sortedColors.slice(0, 2);
+      
+      // Fallback if not enough colors
+      if (colors.length < 2) {
+        colors = [...colors, ...['#8E24AA', '#121212'].slice(0, 2 - colors.length)];
+      }
+      
+      // Brighten if too dark
+      colors = colors.map(color => {
+        const r = parseInt(color.slice(1, 3), 16);
+        const g = parseInt(color.slice(3, 5), 16);
+        const b = parseInt(color.slice(5, 7), 16);
+        
+        if (r + g + b < 120) {
+          const newR = Math.min(255, r + 100);
+          const newG = Math.min(255, g + 80);
+          const newB = Math.min(255, b + 100);
+          return `#${newR.toString(16).padStart(2, '0')}${newG.toString(16).padStart(2, '0')}${newB.toString(16).padStart(2, '0')}`;
+        }
+        
+        return color;
+      });
+      
+      return colors;
+    } catch (error) {
+      console.error("Error extracting colors:", error);
+      return ['#8E24AA', '#121212']; // Default fallback
+    }
+  };
+
+  // Handle image load
+  const handleImageLoad = (e) => {
+    if (!e.target) return;
+    
+    try {
+      const extractedColors = extractColors(e.target);
+      
+      setDominantColor(extractedColors[0]);
+      setSecondaryColor(extractedColors[1]);
+      
+      // Apply gradient background
+      if (displayRef.current) {
+        displayRef.current.style.background = `linear-gradient(135deg, ${extractedColors[0]}, ${extractedColors[1]}, #121212)`;
+      }
+      
+      // Display the extracted colors
+      console.log("Extracted colors:", extractedColors);
+    } catch (error) {
+      console.error("Error processing image colors:", error);
+    }
   };
 
   useEffect(() => {
@@ -140,7 +246,7 @@ const ArtistDetail = () => {
   }
 
   return (
-    <div className="min-h-screen w-full flex flex-col justify-start items-center bg-gradient-to-b from-black via-black to-neutral-900 pb-16 px-4">
+    <div ref={displayRef} className="min-h-screen w-full flex flex-col justify-start items-center pb-16 px-4 content-container transition-all duration-500">
       <div className="w-full max-w-6xl mx-auto">
         {/* Back navigation */}
         <Link to="/" className="inline-flex items-center text-white/80 hover:text-white py-4">
@@ -158,9 +264,12 @@ const ArtistDetail = () => {
           >
             {artist.image ? (
               <img 
+                ref={imageRef}
                 src={artist.image} 
                 alt={artist.name} 
                 className="w-full h-full object-cover"
+                onLoad={handleImageLoad}
+                crossOrigin="anonymous"
               />
             ) : (
               <div className="w-full h-full bg-neutral-800 flex items-center justify-center">
@@ -179,10 +288,19 @@ const ArtistDetail = () => {
             {artist.bio && (
               <p className="text-neutral-300 text-lg mb-6 max-w-2xl">{artist.bio}</p>
             )}
+            
+            {/* Display extracted colors */}
+            <div className="flex items-center gap-3 mb-6">
+              <div className="text-sm text-white/80">Dominant colors:</div>
+              <div className="w-6 h-6 rounded-full" style={{ background: dominantColor }}></div>
+              <div className="w-6 h-6 rounded-full" style={{ background: secondaryColor }}></div>
+            </div>
+            
             {artistSongs.length > 0 && (
               <button
                 onClick={() => playWithId(artistSongs[0]._id)}
-                className="bg-fuchsia-600 hover:bg-fuchsia-700 text-white py-2 px-6 rounded-full flex items-center gap-2 transition-colors mx-auto md:mx-0"
+                className="text-white py-2 px-6 rounded-full flex items-center gap-2 transition-colors mx-auto md:mx-0"
+                style={{ background: dominantColor }}
               >
                 <MdPlayArrow size={24} /> Play Artist
               </button>
@@ -214,11 +332,11 @@ const ArtistDetail = () => {
                 {artistSongs.map((song, index) => (
                   <div 
                     key={song._id} 
-                    className={`grid grid-cols-4 p-4 hover:bg-white/10 transition-all cursor-pointer group ${isPlaying(song._id) ? 'bg-white/10' : ''}`}
+                    className={`grid grid-cols-12 p-4 hover:bg-white/10 transition-all cursor-pointer group ${isPlaying(song._id) ? 'bg-white/10' : ''}`}
                     onClick={() => playWithId(song._id)}
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="w-6 text-neutral-400 flex items-center justify-center">
+                    <div className="col-span-9 sm:col-span-10 md:col-span-3 flex items-center gap-3">
+                      <div className="w-6 min-w-[24px] text-neutral-400 flex items-center justify-center">
                         <span className={isPlaying(song._id) ? 'hidden' : 'group-hover:hidden'}>{index + 1}</span>
                         <button 
                           className={isPlaying(song._id) ? 'block' : 'hidden group-hover:block'}
@@ -228,7 +346,7 @@ const ArtistDetail = () => {
                         </button>
                       </div>
                       
-                      <div className="bg-neutral-800 w-10 h-10 rounded flex-shrink-0 overflow-hidden">
+                      <div className="bg-neutral-800 w-10 h-10 min-w-[40px] rounded flex-shrink-0 overflow-hidden">
                         {song.image ? (
                           <img 
                             src={song.image} 
@@ -248,18 +366,18 @@ const ArtistDetail = () => {
                       </div>
                     </div>
                     
-                    <div className="hidden md:block text-neutral-400 truncate">
+                    <div className="hidden md:block md:col-span-3 text-neutral-400 truncate">
                       {song.album || "Single"}
                     </div>
                     
-                    <div className="hidden md:flex items-center text-neutral-400">
+                    <div className="hidden md:flex md:col-span-3 items-center text-neutral-400">
                       {song.duration || "--:--"}
                     </div>
                     
-                    <div className="flex items-center justify-end gap-1 sm:gap-3">
+                    <div className="col-span-3 sm:col-span-2 md:col-span-3 flex items-center justify-end gap-1 sm:gap-3">
                       <button 
                         onClick={(e) => handleToggleFavorite(e, song._id)}
-                        className="sm:opacity-0 group-hover:opacity-100 transition-opacity text-neutral-400 hover:text-white"
+                        className="opacity-70 group-hover:opacity-100 transition-opacity text-neutral-400 hover:text-white"
                         aria-label="Toggle favorite"
                       >
                         {isFavorite(song._id) ? 
@@ -275,7 +393,7 @@ const ArtistDetail = () => {
                       <div className="relative song-options">
                         <button 
                           onClick={(e) => handleToggleOptions(e, song._id)}
-                          className="sm:opacity-0 group-hover:opacity-100 transition-opacity text-neutral-400 hover:text-white"
+                          className="opacity-70 group-hover:opacity-100 transition-opacity text-neutral-400 hover:text-white"
                           aria-label="More options"
                         >
                           <MdMoreVert size={18} />

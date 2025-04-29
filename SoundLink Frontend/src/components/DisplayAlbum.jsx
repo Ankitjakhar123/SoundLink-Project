@@ -117,7 +117,7 @@ const DisplayAlbum = () => {
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
-        className="rounded text-white transition-all duration-500 shadow-2xl p-4 md:p-8 w-full mx-auto flex flex-col gap-6 mt-[-15px]"
+        className="rounded text-white transition-all duration-500 shadow-2xl p-4 md:p-8 w-full mx-auto flex flex-col gap-6 mt-[-15px] content-container"
       >
         <Link to="/" className="inline-flex items-center gap-2 text-white/80 hover:text-white mt-4">
           <MdArrowBack /> Back to Home
@@ -153,8 +153,8 @@ const DisplayAlbum = () => {
             key={item._id}
             className={`grid grid-cols-4 gap-2 p-2 items-center text-[#a7a7a7] hover:bg-[#ffffff2b] cursor-pointer group rounded ${isPlaying(item._id) ? 'bg-[#ffffff15]' : ''}`}
           >
-            <div className="flex items-center text-white">
-              <div className="w-6 mr-2 text-center">
+            <div className="flex items-center text-white col-span-3 sm:col-span-1">
+              <div className="w-6 min-w-6 mr-2 text-center">
                 <span className={isPlaying(item._id) ? 'hidden' : 'group-hover:hidden'}>{index + 1}</span>
                 <button 
                   className={isPlaying(item._id) ? 'block' : 'hidden group-hover:block'}
@@ -163,18 +163,18 @@ const DisplayAlbum = () => {
                   {isPlaying(item._id) ? <MdPause className="text-fuchsia-500" /> : <MdPlayArrow className="text-white" />}
                 </button>
               </div>
-              <img className="w-10 h-10 mr-3 rounded" src={item.image} alt={item.name} />
+              <img className="w-10 h-10 min-w-[40px] mr-3 rounded" src={item.image} alt={item.name} />
               <div className="flex-1 min-w-0">
-                <p className={`truncate ${isPlaying(item._id) ? 'text-fuchsia-500' : 'text-white'}`}>{item.name}</p>
-                <p className="text-xs truncate">{item.desc}</p>
+                <p className={`truncate ${isPlaying(item._id) ? 'text-fuchsia-500' : 'text-white'} text-xs sm:text-base`}>{item.name}</p>
+                <p className="text-xs truncate hidden xs:block">{item.desc}</p>
               </div>
             </div>
             <p className="text-[15px] hidden md:block truncate">{albumData.name}</p>
             <p className="text-[15px] hidden md:block">5 days ago</p>
-            <div className="flex items-center justify-end gap-1 sm:gap-3 pr-2">
+            <div className="flex items-center justify-end gap-1 sm:gap-3 pr-2 col-span-1">
               <button 
                 onClick={(e) => handleToggleFavorite(e, item._id)}
-                className="sm:opacity-0 group-hover:opacity-100 transition-opacity"
+                className="opacity-70 sm:opacity-0 group-hover:opacity-100 transition-opacity"
               >
                 {isFavorite(item._id) ? 
                   <MdFavorite className="text-fuchsia-500" size={18} /> : 
@@ -185,7 +185,7 @@ const DisplayAlbum = () => {
               <div className="relative song-options">
                 <button 
                   onClick={(e) => handleToggleOptions(e, item._id)}
-                  className="sm:opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="opacity-70 sm:opacity-0 group-hover:opacity-100 transition-opacity"
                 >
                   <MdMoreVert size={18} />
                 </button>
