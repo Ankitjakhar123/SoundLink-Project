@@ -1,9 +1,10 @@
 import React, { useState, useRef, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom'
 import { AuthContext } from '../context/AuthContext'
-import { FaCrown, FaBars, FaUser, FaSignOutAlt, FaUserShield, FaCog, FaSearch, FaTimes, FaMusic, FaHeadphones, FaHeart, FaHome } from 'react-icons/fa';
+import { FaCrown, FaBars, FaUser, FaSignOutAlt, FaUserShield, FaCog, FaSearch, FaTimes, FaMusic, FaHeadphones, FaHeart, FaHome, FaList, FaEllipsisH, FaChevronUp, FaChevronDown } from 'react-icons/fa';
 import axios from 'axios';
 import { PlayerContext } from '../context/PlayerContext';
+import QueueComponent from './QueueComponent';
 
 const Navbar = (props) => {
     const navigate = useNavigate()
@@ -15,9 +16,50 @@ const Navbar = (props) => {
     const inputRef = useRef(null)
     const searchResultsRef = useRef(null);
     const { user, logout } = useContext(AuthContext);
-    const { playWithId } = useContext(PlayerContext);
+    const { playWithId, track, hidePlayer, togglePlayerVisibility } = useContext(PlayerContext);
     const [showDropdown, setShowDropdown] = useState(false);
     const dropdownRef = useRef(null);
+    const [showBottomNav, setShowBottomNav] = useState(true);
+    const [showQueue, setShowQueue] = useState(false);
+
+    // Adjust bottom navigation position when a track is playing
+    useEffect(() => {
+        // No need for the style injection, we'll handle this with direct styles
+    }, [track]);
+
+    // Mobile keyboard detection for iOS and Android
+    const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+    
+    useEffect(() => {
+        const detectKeyboard = () => {
+            // On iOS and many Android devices, when keyboard shows, the viewport height changes
+            const viewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+            const windowHeight = window.innerHeight;
+            
+            // If the viewport height is significantly less than window height, keyboard is likely visible
+            setIsKeyboardVisible(viewportHeight < windowHeight * 0.8);
+        };
+        
+        window.addEventListener('resize', detectKeyboard);
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', detectKeyboard);
+        }
+        
+        return () => {
+            window.removeEventListener('resize', detectKeyboard);
+            if (window.visualViewport) {
+                window.visualViewport.removeEventListener('resize', detectKeyboard);
+            }
+        };
+    }, []);
+
+    // Store user preference for bottom nav in localStorage
+    useEffect(() => {
+        const savedPref = localStorage.getItem('showBottomNav');
+        if (savedPref !== null) {
+            setShowBottomNav(savedPref === 'true');
+        }
+    }, []);
 
     // Handle click outside of dropdown to close it
     useEffect(() => {
@@ -353,6 +395,128 @@ const Navbar = (props) => {
                     </div>
                 </div>
             </div>
+
+            {/* Mobile Bottom Navigation Bar - Only visible on small screens when preferred and no keyboard */}
+            <div 
+                className={`md:hidden fixed left-0 right-0 bg-black border-t border-neutral-800 py-2 px-4 z-[30] backdrop-blur-xl ${isKeyboardVisible || !showBottomNav ? 'hidden' : 'block'}`} 
+                style={{
+                    bottom: 0
+                }}
+            >
+                <div className="flex items-center justify-between">
+                    {/* Home */}
+                    <button 
+                        onClick={() => navigate('/')}
+                        className="flex flex-col items-center gap-1"
+                    >
+                        <FaHome className="w-5 h-5 text-[#a855f7]" />
+                        <span className="text-xs text-white">Home</span>
+                    </button>
+
+                    {/* Library */}
+                    <button 
+                        onClick={() => navigate('/library')}
+                        className="flex flex-col items-center gap-1"
+                    >
+                        <FaHeadphones className="w-5 h-5 text-[#a855f7]" />
+                        <span className="text-xs text-white">Library</span>
+                    </button>
+
+                    {/* Player Toggle Button in Center instead of SoundLink logo */}
+                    {track ? (
+                        <button 
+                            onClick={togglePlayerVisibility}
+                            className="flex flex-col items-center gap-1 cursor-pointer"
+                        >
+                            {hidePlayer ? (
+                                <>
+                                    <FaChevronUp className="w-5 h-5 text-[#a855f7]" />
+                                    <span className="text-xs text-white mt-1">Show Player</span>
+                                </>
+                            ) : (
+                                <>
+                                    <FaChevronDown className="w-5 h-5 text-[#a855f7]" />
+                                    <span className="text-xs text-white mt-1">Hide Player</span>
+                                </>
+                            )}
+                        </button>
+                    ) : (
+                        <div 
+                            onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})}
+                            className="flex flex-col items-center cursor-pointer"
+                        >
+                            <img src="/icons/soundlink-icon.svg" alt="SoundLink" className="h-7 w-7" />
+                            <span className="text-xs text-white mt-1">SoundLink</span>
+                        </div>
+                    )}
+
+                    {/* Queue */}
+                    <button 
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setShowQueue(!showQueue);
+                        }}
+                        className="flex flex-col items-center gap-1"
+                    >
+                        <FaList className="w-5 h-5 text-[#a855f7]" />
+                        <span className="text-xs text-white">Queue</span>
+                    </button>
+
+                    {/* More (Three dots) */}
+                    <button 
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setShowDropdown(!showDropdown);
+                        }}
+                        className="flex flex-col items-center gap-1 relative"
+                    >
+                        <FaEllipsisH className="w-5 h-5 text-[#a855f7]" />
+                        <span className="text-xs text-white">More</span>
+                        
+                        {/* Mobile more menu dropdown */}
+                        {showDropdown && (
+                            <div 
+                                ref={dropdownRef}
+                                className="absolute bottom-full mb-2 right-0 w-48 rounded-lg overflow-hidden bg-neutral-800 shadow-lg border border-neutral-700 z-50"
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                <button 
+                                    onClick={() => { navigate('/playlists'); setShowDropdown(false); }}
+                                    className="w-full text-left px-4 py-2 text-white hover:bg-neutral-700 flex items-center gap-2"
+                                >
+                                    <FaList className="text-fuchsia-400" />
+                                    Playlists
+                                </button>
+                                
+                                {user && (
+                                    <>
+                                        <button 
+                                            onClick={() => { navigate('/settings'); setShowDropdown(false); }}
+                                            className="w-full text-left px-4 py-2 text-white hover:bg-neutral-700 flex items-center gap-2"
+                                        >
+                                            <FaCog className="text-fuchsia-400" />
+                                            Settings
+                                        </button>
+                                        
+                                        <div className="border-t border-neutral-700 my-1"></div>
+                                        
+                                        <button 
+                                            onClick={handleLogout}
+                                            className="w-full text-left px-4 py-2 text-red-400 hover:bg-neutral-700 flex items-center gap-2"
+                                        >
+                                            <FaSignOutAlt />
+                                            Logout
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+                        )}
+                    </button>
+                </div>
+            </div>
+            
+            {/* Queue panel */}
+            <QueueComponent isOpen={showQueue} onClose={() => setShowQueue(false)} />
         </>
     )
 }

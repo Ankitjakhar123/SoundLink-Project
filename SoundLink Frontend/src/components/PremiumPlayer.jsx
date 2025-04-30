@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from "react";
+import React, { useContext, useState, useEffect, useRef } from "react";
 import { PlayerContext } from "../context/PlayerContext";
 import { AnimatePresence } from "framer-motion";
 import { FaPlay, FaPause, FaStepForward, FaStepBackward, FaRandom, FaRedo, FaVolumeUp, FaVolumeMute, FaHeart } from "react-icons/fa";
@@ -24,6 +24,7 @@ const PremiumPlayer = () => {
     isFavorite,
     autoplayEnabled,
     setAutoplayEnabled,
+    hidePlayer,
   } = useContext(PlayerContext);
   
   const [volume, setVolume] = useState(0.7);
@@ -33,6 +34,54 @@ const PremiumPlayer = () => {
   const [showQueue, setShowQueue] = useState(false);
   const [showLyrics, setShowLyrics] = useState(false);
   const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth < 768);
+  
+  // Touch gesture variables
+  const [touchStartY, setTouchStartY] = useState(0);
+  const [touchStartX, setTouchStartX] = useState(0);
+  const playerRef = useRef(null);
+  const MIN_SWIPE_DISTANCE = 50; // Minimum distance for a swipe to be detected
+
+  // Handler for touch start
+  const handleTouchStart = (e) => {
+    setTouchStartY(e.touches[0].clientY);
+    setTouchStartX(e.touches[0].clientX);
+  };
+
+  // Handler for touch end
+  const handleTouchEnd = (e) => {
+    if (!touchStartY || !touchStartX) return;
+    
+    const touchEndY = e.changedTouches[0].clientY;
+    const touchEndX = e.changedTouches[0].clientX;
+    
+    const yDistance = touchStartY - touchEndY;
+    const xDistance = touchStartX - touchEndX;
+    
+    // Vertical swipe detection (for showing/hiding player)
+    if (Math.abs(yDistance) > Math.abs(xDistance) && Math.abs(yDistance) > MIN_SWIPE_DISTANCE) {
+      if (yDistance > 0) {
+        // Swipe up - show player if hidden
+        if (hidePlayer) setShowExtraControls(true);
+      } else {
+        // Swipe down - hide player
+        setShowExtraControls(false);
+      }
+    } 
+    // Horizontal swipe detection (for changing tracks)
+    else if (Math.abs(xDistance) > Math.abs(yDistance) && Math.abs(xDistance) > MIN_SWIPE_DISTANCE) {
+      if (xDistance > 0) {
+        // Swipe left - next track
+        Next();
+      } else {
+        // Swipe right - previous track
+        Previous();
+      }
+    }
+    
+    // Reset touch coordinates
+    setTouchStartY(0);
+    setTouchStartX(0);
+  };
 
   // Add player height to document for styling
   useEffect(() => {
@@ -40,18 +89,22 @@ const PremiumPlayer = () => {
     if (track) {
       // Add a style tag for the padding
       const playerHeight = isSmallScreen ? '50px' : '60px'; // Reduced height values
+      const navHeight = isSmallScreen ? '50px' : '0'; // Navigation bar height on mobile
+      const totalPadding = isSmallScreen 
+        ? (hidePlayer ? navHeight : `calc(${playerHeight} + ${navHeight})`) 
+        : playerHeight;
       
       const style = document.createElement('style');
       style.id = 'premium-player-padding';
       style.innerHTML = `
         body {
-          padding-bottom: ${playerHeight} !important;
+          padding-bottom: ${totalPadding} !important;
         }
         .content-container {
-          padding-bottom: ${playerHeight} !important;
+          padding-bottom: ${totalPadding} !important;
         }
         footer {
-          margin-bottom: ${playerHeight} !important;
+          margin-bottom: ${totalPadding} !important;
         }
       `;
       document.head.appendChild(style);
@@ -64,7 +117,7 @@ const PremiumPlayer = () => {
         }
       };
     }
-  }, [track, isSmallScreen]);
+  }, [track, isSmallScreen, hidePlayer]);
 
   // Update screen size state on resize
   useEffect(() => {
@@ -285,12 +338,16 @@ const PremiumPlayer = () => {
 
   return (
     <AnimatePresence>
-      <div
-        className="fixed bottom-0 left-0 w-full z-50"
+      <div 
+        className="fixed left-0 w-full z-50" 
+        style={{ bottom: '50px' }}
+        ref={playerRef}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
       >
         {/* Mobile Player (full controls) */}
-        {isSmallScreen && showExtraControls && (
-          <div className="fixed inset-0 bg-black/95 flex flex-col p-4 z-50">
+        {isSmallScreen && showExtraControls && !hidePlayer && (
+          <div className="fixed inset-0 bottom-[50px] bg-black/95 flex flex-col p-4 z-40">
             {/* Close button */}
             <div className="flex justify-between items-center mb-6">
               <div className="w-8"></div> {/* Spacer */}
@@ -415,166 +472,168 @@ const PremiumPlayer = () => {
         )}
 
         {/* Main player bar */}
-        <div className="flex items-center justify-between px-4 py-2 bg-black/95 border-t border-neutral-800 backdrop-blur-xl gap-4">
-          {/* Song Info - clickable on mobile to show full player */}
-          <div 
-            className={`flex items-center gap-3 min-w-[80px] ${isSmallScreen ? "flex-1" : "w-[25%]"}`}
-            onClick={() => isSmallScreen && setShowExtraControls(true)}
-          >
-            <img
-              src={track.image}
-              alt={track.name}
-              className="w-10 h-10 rounded object-cover border border-neutral-800"
-            />
-            <div className="flex flex-col min-w-0">
-              <span className="text-sm font-bold text-white truncate max-w-[120px]">{track.name}</span>
-              <span className="text-xs text-neutral-400 truncate max-w-[120px]">{track.artist || track.album}</span>
+        {!hidePlayer && (
+          <div className="flex items-center justify-between px-4 py-2 bg-black/95 border-t border-neutral-800 backdrop-blur-xl gap-4">
+            {/* Song Info - clickable on mobile to show full player */}
+            <div 
+              className={`flex items-center gap-3 min-w-[80px] ${isSmallScreen ? "flex-1" : "w-[25%]"}`}
+              onClick={() => isSmallScreen && setShowExtraControls(true)}
+            >
+              <img
+                src={track.image}
+                alt={track.name}
+                className="w-10 h-10 rounded object-cover border border-neutral-800"
+              />
+              <div className="flex flex-col min-w-0">
+                <span className="text-sm font-bold text-white truncate max-w-[120px]">{track.name}</span>
+                <span className="text-xs text-neutral-400 truncate max-w-[120px]">{track.artist || track.album}</span>
+              </div>
+              {isSmallScreen && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleFavorite(track._id);
+                  }}
+                  className={`ml-auto ${isFavorite(track._id) ? "text-fuchsia-500" : "text-neutral-400"}`}
+                >
+                  <FaHeart />
+                </button>
+              )}
             </div>
-            {isSmallScreen && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleFavorite(track._id);
-                }}
-                className={`ml-auto ${isFavorite(track._id) ? "text-fuchsia-500" : "text-neutral-400"}`}
-              >
-                <FaHeart />
-              </button>
-            )}
-          </div>
 
-          {/* Controls + Progress - hidden on small screens when extended view is not shown */}
-          {(!isSmallScreen || !showExtraControls) && (
-            <div className={`flex flex-col items-center ${isSmallScreen ? "hidden" : "w-[50%] max-w-md"}`}>
-            <div className="flex items-center gap-3 mb-0.5">
-              <button
-                onClick={() => { shuffle(); handleShuffle(); }}
-                className={`text-base transition ${shuffleActive ? "text-fuchsia-500" : "text-neutral-400 hover:text-fuchsia-500"}`}
-                title="Shuffle"
-              >
-                <FaRandom />
-              </button>
-              <button onClick={Previous} className="text-base text-neutral-400 hover:text-fuchsia-500 transition" title="Previous">
-                <FaStepBackward />
-              </button>
-              <button
-                  onClick={handlePlayPause}
-                className="bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white rounded-full p-2 shadow-lg hover:scale-110 transition-transform border-2 border-fuchsia-800 text-lg"
-                title={playStatus ? "Pause" : "Play"}
-              >
-                  {playStatus ? <FaPause /> : <FaPlay className="relative ml-0.5" />}
-              </button>
-              <button onClick={Next} className="text-base text-neutral-400 hover:text-fuchsia-500 transition" title="Next">
-                <FaStepForward />
-              </button>
-              <button
-                  onClick={toggleLoop}
-                className={`text-base transition ${loop ? "text-fuchsia-500" : "text-neutral-400 hover:text-fuchsia-500"}`}
-                title="Repeat"
-              >
-                <FaRedo />
-              </button>
+            {/* Controls + Progress - hidden on small screens when extended view is not shown */}
+            {(!isSmallScreen || !showExtraControls) && (
+              <div className={`flex flex-col items-center ${isSmallScreen ? "hidden" : "w-[50%] max-w-md"}`}>
+              <div className="flex items-center gap-3 mb-0.5">
+                <button
+                  onClick={() => { shuffle(); handleShuffle(); }}
+                  className={`text-base transition ${shuffleActive ? "text-fuchsia-500" : "text-neutral-400 hover:text-fuchsia-500"}`}
+                  title="Shuffle"
+                >
+                  <FaRandom />
+                </button>
+                <button onClick={Previous} className="text-base text-neutral-400 hover:text-fuchsia-500 transition" title="Previous">
+                  <FaStepBackward />
+                </button>
+                <button
+                    onClick={handlePlayPause}
+                  className="bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white rounded-full p-2 shadow-lg hover:scale-110 transition-transform border-2 border-fuchsia-800 text-lg"
+                  title={playStatus ? "Pause" : "Play"}
+                >
+                    {playStatus ? <FaPause /> : <FaPlay className="relative ml-0.5" />}
+                </button>
+                <button onClick={Next} className="text-base text-neutral-400 hover:text-fuchsia-500 transition" title="Next">
+                  <FaStepForward />
+                </button>
+                <button
+                    onClick={toggleLoop}
+                  className={`text-base transition ${loop ? "text-fuchsia-500" : "text-neutral-400 hover:text-fuchsia-500"}`}
+                  title="Repeat"
+                >
+                  <FaRedo />
+                </button>
+              </div>
+              {/* Progress Bar */}
+              <div className="flex items-center gap-1 w-full">
+                <span className="text-[10px] text-neutral-400 min-w-[28px]">{formatTime(time.currentTime.minute, time.currentTime.second)}</span>
+                <input
+                  type="range"
+                  min={0}
+                  max={durationSec || 1}
+                  step={0.1}
+                  value={currentSec}
+                  onChange={handleSeek}
+                  className="w-full accent-fuchsia-600 h-1 cursor-pointer"
+                />
+                <span className="text-[10px] text-neutral-400 min-w-[28px]">{formatTime(time.totalTime.minute, time.totalTime.second)}</span>
+              </div>
             </div>
-            {/* Progress Bar */}
-            <div className="flex items-center gap-1 w-full">
-              <span className="text-[10px] text-neutral-400 min-w-[28px]">{formatTime(time.currentTime.minute, time.currentTime.second)}</span>
+            )}
+
+            {/* Mobile controls - when not in expanded view */}
+            {isSmallScreen && !showExtraControls && (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handlePlayPause();
+                  }}
+                  className="bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white rounded-full p-1.5 text-sm"
+                >
+                  {playStatus ? <FaPause /> : <FaPlay className="relative ml-0.5" />}
+                </button>
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    Next();
+                  }}
+                  className="text-sm text-neutral-400"
+                >
+                  <FaStepForward />
+                </button>
+              </div>
+            )}
+
+            {/* Volume + Extras - hidden on mobile */}
+            {!isSmallScreen && (
+              <div className="flex items-center gap-4 min-w-[90px] w-[25%] justify-end">
+                <button 
+                  onClick={() => toggleFavorite(track._id)}
+                  className={`text-base transition ${isFavorite(track._id) ? "text-fuchsia-500" : "text-neutral-400 hover:text-fuchsia-500"}`}
+                  title="Like"
+                >
+                  <FaHeart />
+                </button>
+                <button 
+                  onClick={toggleQueue}
+                  className={`text-base transition ${showQueue ? "text-fuchsia-500" : "text-neutral-400 hover:text-fuchsia-500"}`}
+                  title="Queue"
+                >
+                  <MdQueueMusic />
+                </button>
+                <button
+                  onClick={handleMute}
+                  className="text-base text-neutral-400 hover:text-fuchsia-500 transition"
+                  title={isMuted ? "Unmute" : "Mute"}
+                >
+                {isMuted || volume === 0 ? <FaVolumeMute /> : <FaVolumeUp />}
+              </button>
               <input
                 type="range"
                 min={0}
-                max={durationSec || 1}
-                step={0.1}
-                value={currentSec}
-                onChange={handleSeek}
-                className="w-full accent-fuchsia-600 h-1 cursor-pointer"
+                max={1}
+                step={0.01}
+                value={isMuted ? 0 : volume}
+                onChange={(e) => setVolume(Number(e.target.value))}
+                  className="w-16 accent-fuchsia-600 cursor-pointer h-1"
+                disabled={isMuted}
               />
-              <span className="text-[10px] text-neutral-400 min-w-[28px]">{formatTime(time.totalTime.minute, time.totalTime.second)}</span>
-            </div>
-          </div>
-          )}
-
-          {/* Mobile controls - when not in expanded view */}
-          {isSmallScreen && !showExtraControls && (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handlePlayPause();
-                }}
-                className="bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white rounded-full p-1.5 text-sm"
-              >
-                {playStatus ? <FaPause /> : <FaPlay className="relative ml-0.5" />}
-              </button>
-              <button 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  Next();
-                }}
-                className="text-sm text-neutral-400"
-              >
-                <FaStepForward />
-              </button>
-            </div>
-          )}
-
-          {/* Volume + Extras - hidden on mobile */}
-          {!isSmallScreen && (
-            <div className="flex items-center gap-4 min-w-[90px] w-[25%] justify-end">
-              <button 
-                onClick={() => toggleFavorite(track._id)}
-                className={`text-base transition ${isFavorite(track._id) ? "text-fuchsia-500" : "text-neutral-400 hover:text-fuchsia-500"}`}
-                title="Like"
-              >
-                <FaHeart />
-              </button>
-              <button 
-                onClick={toggleQueue}
-                className={`text-base transition ${showQueue ? "text-fuchsia-500" : "text-neutral-400 hover:text-fuchsia-500"}`}
-                title="Queue"
-              >
-                <MdQueueMusic />
-              </button>
-              <button
-                onClick={handleMute}
-                className="text-base text-neutral-400 hover:text-fuchsia-500 transition"
-                title={isMuted ? "Unmute" : "Mute"}
-              >
-              {isMuted || volume === 0 ? <FaVolumeMute /> : <FaVolumeUp />}
-            </button>
-            <input
-              type="range"
-              min={0}
-              max={1}
-              step={0.01}
-              value={isMuted ? 0 : volume}
-              onChange={(e) => setVolume(Number(e.target.value))}
-                className="w-16 accent-fuchsia-600 cursor-pointer h-1"
-              disabled={isMuted}
-            />
-              <button 
-                className="text-base text-neutral-400 hover:text-fuchsia-500 transition"
-                title="Devices"
-              >
-                <MdDevices />
-              </button>
-              <div className="flex items-center gap-1 ml-2 text-neutral-400">
-                <span className="text-[10px]">Autoplay</span>
-                <div
-                  onClick={handleAutoplayToggle}
-                  className={`w-8 h-4 rounded-full relative cursor-pointer transition-colors ${autoplayEnabled ? "bg-fuchsia-600" : "bg-neutral-600"}`}
+                <button 
+                  className="text-base text-neutral-400 hover:text-fuchsia-500 transition"
+                  title="Devices"
                 >
+                  <MdDevices />
+                </button>
+                <div className="flex items-center gap-1 ml-2 text-neutral-400">
+                  <span className="text-[10px]">Autoplay</span>
                   <div
-                    className={`absolute w-3 h-3 bg-white rounded-full top-0.5 transition-transform ${
-                      autoplayEnabled ? "translate-x-[18px]" : "translate-x-0.5"
-                    }`}
-                  ></div>
+                    onClick={handleAutoplayToggle}
+                    className={`w-8 h-4 rounded-full relative cursor-pointer transition-colors ${autoplayEnabled ? "bg-fuchsia-600" : "bg-neutral-600"}`}
+                  >
+                    <div
+                      className={`absolute w-3 h-3 bg-white rounded-full top-0.5 transition-transform ${
+                        autoplayEnabled ? "translate-x-[18px]" : "translate-x-0.5"
+                      }`}
+                    ></div>
+                  </div>
                 </div>
-              </div>
+            </div>
+            )}
           </div>
-          )}
-        </div>
+        )}
         
         {/* Queue panel */}
-        <QueueComponent isOpen={showQueue} onClose={() => setShowQueue(false)} />
+        <QueueComponent isOpen={showQueue && !hidePlayer} onClose={() => setShowQueue(false)} />
       </div>
     </AnimatePresence>
   );

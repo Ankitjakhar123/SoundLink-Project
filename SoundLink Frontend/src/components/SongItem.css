@@ -1,0 +1,107 @@
+/* Touch-friendly styles for SongItem component */
+
+/* Larger touch targets for mobile */
+@media (max-width: 768px) {
+  .song-item button,
+  .song-item-controls button {
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .song-item {
+    padding: 12px 8px;
+  }
+}
+
+/* Double-tap feedback animation */
+.song-item-double-tapped {
+  animation: heartbeat 0.3s ease-in-out;
+}
+
+@keyframes heartbeat {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+    background-color: rgba(168, 85, 247, 0.2); /* Fuchsia color with low opacity */
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Active/playing state for song items */
+.song-item-playing {
+  background-color: rgba(168, 85, 247, 0.15);
+  border-left: 3px solid #a855f7;
+}
+
+/* Active state for controls */
+.song-item button:active,
+.song-item-controls button:active {
+  transform: scale(0.95);
+  opacity: 0.8;
+}
+
+/* Touch-friendly hover states that work on mobile */
+.song-item-favorite-btn {
+  transition: transform 0.2s ease;
+}
+
+.song-item-favorite-btn.active {
+  color: #f43f5e; /* Red heart color */
+  transform: scale(1.1);
+}
+
+/* Improve scrolling on touch devices */
+.touch-scroll {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  overscroll-behavior: contain;
+}
+
+/* Active states for list items */
+.song-list-item:active {
+  background-color: rgba(168, 85, 247, 0.15);
+}
+
+/* Feedback for touch actions */
+.touch-ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+.touch-ripple:after {
+  content: "";
+  display: block;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  background-image: radial-gradient(circle, #fff 10%, transparent 10.01%);
+  background-repeat: no-repeat;
+  background-position: 50%;
+  transform: scale(10, 10);
+  opacity: 0;
+  transition: transform 0.5s, opacity 0.5s;
+}
+
+.touch-ripple:active:after {
+  transform: scale(0, 0);
+  opacity: 0.2;
+  transition: 0s;
+}
+
+/* Prevent text selection on mobile */
+.no-select {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+} 

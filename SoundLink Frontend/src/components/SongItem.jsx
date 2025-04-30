@@ -1,20 +1,82 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useRef } from 'react';
 import { PlayerContext } from '../context/PlayerContext';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
 import { MdMusicNote } from 'react-icons/md';
-import { FaPlus } from 'react-icons/fa';
+import { FaPlus, FaPlay, FaPause, FaHeart, FaEllipsisV } from 'react-icons/fa';
 // eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
+import "./SongItem.css";
 
 const SongItem = ({ name, image, desc, id }) => {
-  const { playWithId } = useContext(PlayerContext);
+  const { playWithId, playStatus, track, toggleFavorite, isFavorite, play, pause } = useContext(PlayerContext);
   const { user, token } = useContext(AuthContext);
   const [showModal, setShowModal] = useState(false);
   const [playlists, setPlaylists] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [selectedPlaylist, setSelectedPlaylist] = useState(null);
+  const [showNewPlaylist, setShowNewPlaylist] = useState(false);
   const [newPlaylist, setNewPlaylist] = useState("");
   const url = import.meta.env.VITE_BACKEND_URL;
+
+  // Double tap detection
+  const tapTimeoutRef = useRef(null);
+  const lastTapRef = useRef(0);
+  const DOUBLE_TAP_DELAY = 300; // ms between taps to be considered a double tap
+  
+  const handleTap = (e) => {
+    // Prevent double tap from zooming on mobile
+    e.preventDefault();
+    
+    const currentTime = new Date().getTime();
+    const tapLength = currentTime - lastTapRef.current;
+    
+    clearTimeout(tapTimeoutRef.current);
+    
+    if (tapLength < DOUBLE_TAP_DELAY && tapLength > 0) {
+      // Double tap detected - toggle favorite
+      toggleFavorite(id);
+      
+      // Add visual feedback
+      const target = e.currentTarget;
+      target.classList.add('song-item-double-tapped');
+      setTimeout(() => {
+        target.classList.remove('song-item-double-tapped');
+      }, 300);
+      
+      // Clear timeout and last tap time
+      lastTapRef.current = 0;
+    } else {
+      // First tap - set timeout to handle single tap after delay
+      tapTimeoutRef.current = setTimeout(() => {
+        // Single tap behavior - play/pause the song
+        if (track && track._id === id) {
+          if (playStatus) {
+            pause();
+          } else {
+            play();
+          }
+        } else {
+          playWithId(id);
+        }
+        lastTapRef.current = 0;
+      }, DOUBLE_TAP_DELAY);
+      
+      lastTapRef.current = currentTime;
+    }
+  };
+  
+  // Clean up timeout if component unmounts
+  React.useEffect(() => {
+    return () => {
+      if (tapTimeoutRef.current) {
+        clearTimeout(tapTimeoutRef.current);
+      }
+    };
+  }, []);
+  
+  const isPlaying = track && track._id === id && playStatus;
+  // Show favorite indication when applicable
+  const songIsFavorite = isFavorite(id);
 
   const openModal = async (e) => {
     e.stopPropagation();
@@ -68,8 +130,10 @@ const SongItem = ({ name, image, desc, id }) => {
       initial={{ opacity: 0, y: 40 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
-      onClick={() => playWithId(id)}
-      className='min-w-[180px] p-2 px-3 rounded cursor-pointer hover:bg-[#ffffff26] bg-black/90 shadow-2xl relative'
+      onClick={handleTap}
+      className={`min-w-[180px] p-2 px-3 rounded cursor-pointer hover:bg-[#ffffff26] bg-black/90 shadow-2xl relative ${
+        isPlaying ? "song-item-playing" : ""
+      }`}
     >
       {image ? (
         <img className='rounded w-full object-cover aspect-square' src={image} alt="" />

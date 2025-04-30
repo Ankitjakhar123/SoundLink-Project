@@ -24,6 +24,7 @@ export const PlayerContextProvider = ({ children }) => {
   const [queueSongs, setQueueSongs] = useState([]);
   const [autoplayEnabled, setAutoplayEnabled] = useState(false);
   const [firstLoad, setFirstLoad] = useState(true);
+  const [hidePlayer, setHidePlayer] = useState(false);
   const [loading, setLoading] = useState({
     songs: true,
     albums: true,
@@ -750,6 +751,26 @@ export const PlayerContextProvider = ({ children }) => {
     }
   }, [track, firstLoad]);
 
+  // Load and manage player visibility preference
+  useEffect(() => {
+    const savedPref = localStorage.getItem('hidePlayer');
+    if (savedPref !== null) {
+      setHidePlayer(savedPref === 'true');
+    }
+  }, []);
+
+  // Toggle player visibility function
+  const togglePlayerVisibility = () => {
+    const newState = !hidePlayer;
+    setHidePlayer(newState);
+    localStorage.setItem('hidePlayer', String(newState));
+    
+    // Dispatch a custom event for any components that need to react
+    window.dispatchEvent(new CustomEvent('player-visibility-change', { 
+      detail: { isHidden: newState }
+    }));
+  };
+
   const contextValue = {
     audioRef,
     seekBar,
@@ -793,7 +814,10 @@ export const PlayerContextProvider = ({ children }) => {
     clearQueue,
     // Autoplay settings
     autoplayEnabled,
-    setAutoplayEnabled
+    setAutoplayEnabled,
+    // Player visibility settings
+    hidePlayer,
+    togglePlayerVisibility
   };
 
   return (
