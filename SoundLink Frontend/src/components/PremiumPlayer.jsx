@@ -407,6 +407,16 @@ const PremiumPlayer = () => {
           border: 2px solid #222;
         }
         
+        /* Fix volume slider */
+        .volume-slider {
+          width: 60px !important;
+          -webkit-appearance: none;
+          height: 4px !important;
+          background: rgba(50, 50, 50, 0.6);
+          border-radius: 4px;
+          margin: 0 8px;
+        }
+        
         /* Reduce animation and blur during playback to improve performance */
         .mobile-player-overlay {
           backface-visibility: hidden;
@@ -672,24 +682,33 @@ const PremiumPlayer = () => {
 
             {/* Mobile controls - when not in expanded view */}
             {isSmallScreen && !showExtraControls && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     handlePlayPause();
                   }}
-                  className="bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white rounded-full p-1.5 text-sm"
+                  className="bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white rounded-full p-2 shadow-md flex items-center justify-center w-8 h-8"
                 >
-                  {playStatus ? <FaPause /> : <FaPlay className="relative ml-0.5" />}
+                  {playStatus ? <FaPause className="text-sm" /> : <FaPlay className="text-sm ml-0.5" />}
                 </button>
                 <button 
                   onClick={(e) => {
                     e.stopPropagation();
                     Next();
                   }}
-                  className="text-sm text-neutral-400"
+                  className="text-sm text-neutral-400 flex items-center justify-center w-6 h-6"
                 >
                   <FaStepForward />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleMute();
+                  }}
+                  className="text-sm text-neutral-400 flex items-center justify-center w-6 h-6"
+                >
+                  {isMuted || volume === 0 ? <FaVolumeMute /> : <FaVolumeUp />}
                 </button>
               </div>
             )}

@@ -61,6 +61,26 @@ const Navbar = (props) => {
         if (savedPref !== null) {
             setShowBottomNav(savedPref === 'true');
         }
+        
+        // Prevent accidental swipe triggers on homepage
+        const preventSwipeTriggering = (e) => {
+            // Only prevent if it's a horizontal swipe on the homepage
+            if (window.location.pathname === '/' && Math.abs(e.touches[0].clientX) > 50) {
+                // Check if we're not interacting with a specific control
+                if (!e.target.closest('.player-controls') && 
+                    !e.target.closest('.progress-container') &&
+                    !e.target.closest('.volume-control')) {
+                    e.preventDefault();
+                }
+            }
+        };
+        
+        // Add passive event listener for touch events
+        document.addEventListener('touchmove', preventSwipeTriggering, { passive: false });
+        
+        return () => {
+            document.removeEventListener('touchmove', preventSwipeTriggering);
+        };
     }, []);
 
     // Handle click outside of dropdown to close it
@@ -283,14 +303,6 @@ const Navbar = (props) => {
                         <FaBars className="w-5 h-5" />
                     </button>
                     
-                    {/* Logo for mobile */}
-                    <div 
-                        className="flex items-center cursor-pointer md:hidden"
-                        onClick={() => navigate('/')}
-                    >
-                        <img src="/icons/soundlink-icon.svg" alt="SoundLink" className="h-10 w-10" />
-                    </div>
-                    
                     {/* Home Icon - show on all screens */}
                     <button
                         onClick={() => navigate('/')}
@@ -511,7 +523,7 @@ const Navbar = (props) => {
 
             {/* Mobile Bottom Navigation Bar - Only visible on small screens when preferred and no keyboard */}
             <div 
-                className={`md:hidden fixed left-0 right-0 bg-black border-t border-neutral-800 py-2 px-4 z-[30] backdrop-blur-xl ${isKeyboardVisible || !showBottomNav ? 'hidden' : 'block'}`} 
+                className={`md:hidden fixed left-0 right-0 bg-black border-t border-neutral-800 py-1 px-3 z-[30] backdrop-blur-xl ${isKeyboardVisible || !showBottomNav ? 'hidden' : 'block'}`} 
                 style={{
                     bottom: 0
                 }}
@@ -520,7 +532,7 @@ const Navbar = (props) => {
                     {/* Home */}
                     <button 
                         onClick={() => navigate('/')}
-                        className="flex flex-col items-center gap-1"
+                        className="flex flex-col items-center"
                     >
                         <FaHome className="w-5 h-5 text-[#a855f7]" />
                         <span className="text-xs text-white">Home</span>
@@ -529,7 +541,7 @@ const Navbar = (props) => {
                     {/* Library */}
                     <button 
                         onClick={() => navigate('/library')}
-                        className="flex flex-col items-center gap-1"
+                        className="flex flex-col items-center"
                     >
                         <FaHeadphones className="w-5 h-5 text-[#a855f7]" />
                         <span className="text-xs text-white">Library</span>
@@ -539,17 +551,17 @@ const Navbar = (props) => {
                     {track ? (
                         <button 
                             onClick={togglePlayerVisibility}
-                            className="flex flex-col items-center gap-1 cursor-pointer"
+                            className="flex flex-col items-center cursor-pointer"
                         >
                             {hidePlayer ? (
                                 <>
                                     <FaChevronUp className="w-5 h-5 text-[#a855f7]" />
-                                    <span className="text-xs text-white mt-1">Show Player</span>
+                                    <span className="text-xs text-white">Player</span>
                                 </>
                             ) : (
                                 <>
                                     <FaChevronDown className="w-5 h-5 text-[#a855f7]" />
-                                    <span className="text-xs text-white mt-1">Hide Player</span>
+                                    <span className="text-xs text-white">Player</span>
                                 </>
                             )}
                         </button>
@@ -559,7 +571,7 @@ const Navbar = (props) => {
                             className="flex flex-col items-center cursor-pointer"
                         >
                             <img src="/icons/soundlink-icon.svg" alt="SoundLink" className="h-7 w-7" />
-                            <span className="text-xs text-white mt-1">SoundLink</span>
+                            <span className="text-xs text-white">SoundLink</span>
                         </div>
                     )}
 
@@ -569,7 +581,7 @@ const Navbar = (props) => {
                             e.stopPropagation();
                             setShowQueue(!showQueue);
                         }}
-                        className="flex flex-col items-center gap-1"
+                        className="flex flex-col items-center"
                     >
                         <FaList className="w-5 h-5 text-[#a855f7]" />
                         <span className="text-xs text-white">Queue</span>
@@ -581,7 +593,7 @@ const Navbar = (props) => {
                             e.stopPropagation();
                             setShowMobileDropdown(!showMobileDropdown);
                         }}
-                        className="flex flex-col items-center gap-1 relative more-button"
+                        className="flex flex-col items-center more-button"
                     >
                         <FaEllipsisH className="w-5 h-5 text-[#a855f7]" />
                         <span className="text-xs text-white">More</span>
@@ -590,20 +602,10 @@ const Navbar = (props) => {
                         {showMobileDropdown && (
                             <div 
                                 ref={mobileDropdownRef}
-                                className="absolute bottom-full mb-2 right-0 w-48 rounded-lg overflow-hidden bg-neutral-800 shadow-lg border border-neutral-700 z-50 max-h-[60vh] overflow-y-auto"
+                                className="absolute bottom-full mb-2 right-0 w-40 rounded-lg overflow-hidden bg-neutral-800 shadow-lg border border-neutral-700 z-50"
                                 onClick={(e) => e.stopPropagation()}
                             >
-                                {/* Profile option for small screens */}
-                                {user && (
-                                    <button 
-                                        onClick={() => { navigate('/profile'); setShowMobileDropdown(false); }}
-                                        className="w-full text-left px-4 py-2 text-white hover:bg-neutral-700 flex items-center gap-2"
-                                    >
-                                        <FaUser className="text-fuchsia-400" />
-                                        Profile
-                                    </button>
-                                )}
-                                
+                                {/* Only show Playlists option for small screens */}
                                 <button 
                                     onClick={() => { navigate('/playlists'); setShowMobileDropdown(false); }}
                                     className="w-full text-left px-4 py-2 text-white hover:bg-neutral-700 flex items-center gap-2"
@@ -611,38 +613,6 @@ const Navbar = (props) => {
                                     <FaList className="text-fuchsia-400" />
                                     Playlists
                                 </button>
-                                
-                                {user && (
-                                    <>
-                                        {user.role === 'admin' && (
-                                            <button 
-                                                onClick={() => { navigate('/admin'); setShowMobileDropdown(false); }}
-                                                className="w-full text-left px-4 py-2 text-white hover:bg-neutral-700 flex items-center gap-2"
-                                            >
-                                                <FaUserShield className="text-fuchsia-400" />
-                                                Admin Dashboard
-                                            </button>
-                                        )}
-                                        
-                                        <button 
-                                            onClick={() => { navigate('/settings'); setShowMobileDropdown(false); }}
-                                            className="w-full text-left px-4 py-2 text-white hover:bg-neutral-700 flex items-center gap-2"
-                                        >
-                                            <FaCog className="text-fuchsia-400" />
-                                            Settings
-                                        </button>
-                                        
-                                        <div className="border-t border-neutral-700 my-1"></div>
-                                        
-                                        <button 
-                                            onClick={handleLogout}
-                                            className="w-full text-left px-4 py-2 text-red-400 hover:bg-neutral-700 flex items-center gap-2"
-                                        >
-                                            <FaSignOutAlt />
-                                            Logout
-                                        </button>
-                                    </>
-                                )}
                             </div>
                         )}
                     </button>
