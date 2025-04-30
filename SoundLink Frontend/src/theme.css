@@ -1,0 +1,85 @@
+/* SoundLink custom theme overrides */
+:root {
+  --soundlink-primary: #a855f7;    /* Purple */
+  --soundlink-primary-dark: #9333ea; 
+  --soundlink-primary-hover: #c084fc;
+  --soundlink-background: #121212;  /* Dark background */
+  --soundlink-surface: #1e1e1e;    /* Slightly lighter surface */
+  --soundlink-surface-hover: #2a2a2a;
+  --soundlink-text: #ffffff;
+  --soundlink-text-secondary: #a0a0a0;
+  --soundlink-highlight: #c084fc;  /* Lighter purple for highlights */
+}
+
+/* Apply the theme to buttons */
+.btn-primary, 
+.bg-cyan-400, 
+.bg-cyan-500, 
+.bg-cyan-600,
+.bg-cyan-700,
+.bg-cyan-800,
+.bg-cyan-900 {
+  background-color: var(--soundlink-primary) !important;
+  color: white !important;
+}
+
+.btn-primary:hover,
+.hover\:bg-cyan-400:hover,
+.hover\:bg-cyan-500:hover,
+.hover\:bg-cyan-600:hover,
+.hover\:bg-cyan-700:hover,
+.hover\:bg-cyan-800:hover,
+.hover\:bg-cyan-900:hover {
+  background-color: var(--soundlink-primary-hover) !important;
+}
+
+/* Apply theme to text */
+.text-cyan-400,
+.text-cyan-500,
+.text-cyan-600 {
+  color: var(--soundlink-primary) !important;
+}
+
+/* Apply theme to borders */
+.border-cyan-500,
+.border-cyan-600,
+.border-cyan-700 {
+  border-color: var(--soundlink-primary) !important;
+}
+
+/* Update progress bars */
+progress::-webkit-progress-value,
+.progress-bar,
+.range-slider::-webkit-slider-thumb {
+  background-color: var(--soundlink-primary) !important;
+}
+
+/* Update loading spinners */
+.animate-spin {
+  border-color: var(--soundlink-primary) !important;
+  border-top-color: transparent !important;
+}
+
+/* Update sidebar items */
+.bg-cyan-900 {
+  background-color: rgba(168, 85, 247, 0.2) !important;
+}
+
+/* Update sidebar highlights */
+.text-cyan-400 {
+  color: var(--soundlink-primary) !important;
+}
+
+/* Keep the fuchsia-400 class used in various places */
+.text-fuchsia-400 {
+  color: #c084fc !important;
+}
+
+/* Keep the purple gradient for buttons */
+.from-fuchsia-500, .to-purple-600 {
+  /* Keep original values */
+}
+
+.hover\:from-fuchsia-600:hover, .hover\:to-purple-700:hover {
+  /* Keep original values */
+} 

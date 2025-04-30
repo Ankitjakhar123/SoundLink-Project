@@ -1,8 +1,7 @@
 import React, { useState, useRef, useContext, useEffect } from 'react';
-import { assets } from '../assets/assets'
 import { useNavigate } from 'react-router-dom'
 import { AuthContext } from '../context/AuthContext'
-import { FaCrown, FaBars, FaUser, FaSignOutAlt, FaUserShield, FaCog, FaSearch, FaTimes, FaMusic, FaHeadphones, FaHeart } from 'react-icons/fa';
+import { FaCrown, FaBars, FaUser, FaSignOutAlt, FaUserShield, FaCog, FaSearch, FaTimes, FaMusic, FaHeadphones, FaHeart, FaHome } from 'react-icons/fa';
 import axios from 'axios';
 import { PlayerContext } from '../context/PlayerContext';
 
@@ -143,13 +142,22 @@ const Navbar = (props) => {
                     <button className="md:hidden flex items-center justify-center w-10 h-10 rounded-full bg-neutral-900 hover:bg-neutral-800 transition text-white border border-neutral-800" onClick={props.onHamburgerClick}>
                         <FaBars className="w-5 h-5" />
                     </button>
-                    {/* Home Icon */}
+                    
+                    {/* Logo for mobile */}
+                    <div 
+                        className="flex items-center cursor-pointer md:hidden"
+                        onClick={() => navigate('/')}
+                    >
+                        <img src="/icons/soundlink-icon.svg" alt="SoundLink" className="h-10 w-10" />
+                    </div>
+                    
+                    {/* Home Icon - show on all screens */}
                     <button
                         onClick={() => navigate('/')}
-                        className="flex items-center justify-center w-10 h-10 md:w-11 md:h-11 rounded-full bg-neutral-900 hover:bg-neutral-800 transition text-white border border-neutral-800"
+                        className="flex items-center justify-center w-10 h-10 rounded-full bg-neutral-900 hover:bg-neutral-800 transition text-white border border-neutral-800"
                         title="Home"
                     >
-                        <img className="w-5 md:w-6" src={assets.home_icon} alt="Home" />
+                        <FaHome className="w-5 h-5" />
                     </button>
                 </div>
 

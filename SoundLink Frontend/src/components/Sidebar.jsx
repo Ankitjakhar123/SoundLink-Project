@@ -50,9 +50,16 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
           <FaTimes size={22} />
         </button>
         {/* Logo */}
-        <div className="flex items-center gap-2 px-6 py-4 border-b border-neutral-800">
-          <span className="text-3xl font-bold">S</span>
-          <span className="text-2xl font-bold">Sound Link</span>
+        <div 
+          className="flex items-center px-4 py-4 border-b border-neutral-800 cursor-pointer"
+          onClick={() => handleNavigate('/')}
+        >
+          <img 
+            src="/icons/soundlink-icon.svg" 
+            alt="SoundLink Logo" 
+            className="h-10 w-10 mr-3" 
+          />
+          <span className="text-xl font-bold text-white">SoundLink</span>
         </div>
         {/* Menu */}
         <nav className="flex-1 px-4 py-4 overflow-y-auto">

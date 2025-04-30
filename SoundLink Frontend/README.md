@@ -1,15 +1,15 @@
 # 🎵 SoundLink
 
 <div align="center">
-  <img src="public/icons/icon-192x192.svg" alt="SoundLink Logo" width="120px" height="120px">
+  <img src="public/icons/soundlink-logo.svg" alt="SoundLink Logo" width="300px">
   <br>
   <h3>Your music, anywhere, anytime.</h3>
   <p>A modern, responsive music streaming platform that works seamlessly across all your devices.</p>
   
-  [![PWA Ready](https://img.shields.io/badge/PWA-Ready-5E35B1?style=for-the-badge&logo=pwa&logoColor=white)](https://web.dev/progressive-web-apps/)
+  [![PWA Ready](https://img.shields.io/badge/PWA-Ready-c0ff00?style=for-the-badge&logo=pwa&logoColor=black)](https://web.dev/progressive-web-apps/)
   [![Built with React](https://img.shields.io/badge/Built%20with-React-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://reactjs.org/)
   [![Powered by Vite](https://img.shields.io/badge/Powered%20by-Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
-  [![Mobile Friendly](https://img.shields.io/badge/Mobile-Friendly-1DB954?style=for-the-badge&logo=android&logoColor=white)](https://www.apple.com/ios/app-store/)
+  [![Mobile Friendly](https://img.shields.io/badge/Mobile-Friendly-c0ff00?style=for-the-badge&logo=android&logoColor=black)](https://www.apple.com/ios/app-store/)
 </div>
 
 ---
@@ -86,7 +86,7 @@ npm run preview
 
 ## 🎨 Design Philosophy
 
-SoundLink is built with a focus on user experience and accessibility. The dark-themed UI with vibrant accents creates a perfect environment for music discovery and enjoyment. The interface is intuitive and minimalist, putting your music front and center.
+SoundLink is built with a focus on user experience and accessibility. The dark-themed UI with vibrant lime accents creates a perfect environment for music discovery and enjoyment. The interface is intuitive and minimalist, putting your music front and center.
 
 ## 📸 Screenshots
 

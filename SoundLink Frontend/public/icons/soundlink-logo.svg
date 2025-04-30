@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="400" height="400">
+  <!-- Optional background for visibility -->
+  <rect width="100%" height="100%" fill="#121212"/>
+
+  <!-- Headphone arc -->
+  <path d="M160 200C160 130 352 130 352 200" fill="none" stroke="#a855f7" stroke-width="20" stroke-linecap="round"/>
+
+  <!-- Left ear cup -->
+  <rect x="120" y="200" width="40" height="80" rx="10" fill="#a855f7"/>
+
+  <!-- Right ear cup -->
+  <rect x="352" y="200" width="40" height="80" rx="10" fill="#a855f7"/>
+
+  <!-- Centered vertical sound bars inside headphones -->
+  <rect x="236" y="180" width="8" height="80" fill="#a855f7"/>
+  <rect x="256" y="160" width="8" height="120" fill="#a855f7"/>
+  <rect x="276" y="180" width="8" height="80" fill="#a855f7"/>
+  <rect x="216" y="200" width="8" height="40" fill="#a855f7"/>
+  <rect x="296" y="200" width="8" height="40" fill="#a855f7"/>
+
+  <!-- SOUND -->
+  <text x="420" y="230" font-family="Arial, sans-serif" font-size="42" font-weight="900" fill="#a855f7" text-anchor="start">SOUND</text>
+
+  <!-- LINK -->
+  <text x="420" y="275" font-family="Arial, sans-serif" font-size="42" font-weight="900" fill="#a855f7" text-anchor="start">LINK</text>
+</svg> 

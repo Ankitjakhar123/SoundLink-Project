@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="400" height="400">
+  <!-- Background Circle -->
+  <circle cx="256" cy="256" r="256" fill="#121212"/>
+  
+  <!-- Headphone arc -->
+  <path d="M160 256C160 186 352 186 352 256" fill="none" stroke="#a855f7" stroke-width="20" stroke-linecap="round"/>
+
+  <!-- Left ear cup -->
+  <rect x="120" y="256" width="40" height="80" rx="10" fill="#a855f7"/>
+
+  <!-- Right ear cup -->
+  <rect x="352" y="256" width="40" height="80" rx="10" fill="#a855f7"/>
+
+  <!-- Centered vertical sound bars inside headphones -->
+  <rect x="236" y="236" width="8" height="80" fill="#a855f7"/>
+  <rect x="256" y="216" width="8" height="120" fill="#a855f7"/>
+  <rect x="276" y="236" width="8" height="80" fill="#a855f7"/>
+  <rect x="216" y="256" width="8" height="40" fill="#a855f7"/>
+  <rect x="296" y="256" width="8" height="40" fill="#a855f7"/>
+</svg> 

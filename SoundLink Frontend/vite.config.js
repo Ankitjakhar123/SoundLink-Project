@@ -7,12 +7,12 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'robots.txt', 'apple-touch-icon.png', 'offline.html'],
+      includeAssets: ['favicon.ico', 'robots.txt', 'apple-touch-icon.png', 'offline.html', 'icons/soundlink-logo.svg', 'icons/soundlink-icon.svg'],
       manifest: {
         name: 'SoundLink',
         short_name: 'SoundLink',
         description: 'A music streaming platform',
-        theme_color: '#1DB954',
+        theme_color: '#a855f7',
         icons: [
           {
             src: '/icons/icon-72x72.svg',

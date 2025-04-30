@@ -12,15 +12,22 @@ if (!fs.existsSync(iconsDir)) {
   fs.mkdirSync(iconsDir, { recursive: true });
 }
 
-// Generate a basic SVG icon with the given size and text
-function generateSvgIcon(size, text) {
-  const fontSize = Math.floor(size / 4);
-  return `<svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
-    <rect width="${size}" height="${size}" fill="#1DB954" rx="15%" />
-    <text x="50%" y="50%" font-family="Arial" font-size="${fontSize}" fill="white" text-anchor="middle" dominant-baseline="middle">
-      ${text}
-    </text>
-  </svg>`;
+// Read the source icon
+const sourceIconPath = path.join(iconsDir, 'soundlink-icon.svg');
+if (!fs.existsSync(sourceIconPath)) {
+  console.error('Error: Source icon not found at', sourceIconPath);
+  process.exit(1);
+}
+
+const sourceIcon = fs.readFileSync(sourceIconPath, 'utf8');
+
+// Helper function to create a resized SVG
+function createResizedSVG(size) {
+  // Create a new SVG with updated viewBox and dimensions
+  const resizedSVG = sourceIcon
+    .replace(/width="400"/, `width="${size}"`)
+    .replace(/height="400"/, `height="${size}"`);
+  return resizedSVG;
 }
 
 // Icon sizes to generate
@@ -28,10 +35,10 @@ const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
 
 // Generate icons for each size
 sizes.forEach(size => {
-  const svgContent = generateSvgIcon(size, 'SL');
+  const svgContent = createResizedSVG(size);
   const filePath = path.join(iconsDir, `icon-${size}x${size}.svg`);
   fs.writeFileSync(filePath, svgContent);
   console.log(`Generated icon: ${filePath}`);
 });
 
-console.log('Icons generated successfully! Convert them to PNG format for use in your PWA.'); 
+console.log('Icons generated successfully!'); 
