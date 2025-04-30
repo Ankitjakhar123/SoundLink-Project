@@ -85,13 +85,12 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
               active={location.pathname === '/artists'} 
               onClick={() => handleNavigate('/artists')}
             />
-            <SidebarItem icon={<FaMusic />} label="Playlists" onClick={() => {
-              if (playlists.length > 0) {
-                handleNavigate(`/playlist/${playlists[0]._id}`);
-              } else {
-                handleNavigate('/playlist');
-              }
-            }} />
+            <SidebarItem 
+              icon={<FaMusic />} 
+              label="Playlists" 
+              active={location.pathname === '/playlists'} 
+              onClick={() => handleNavigate('/playlists')} 
+            />
           </div>
           {/* Playlists Section */}
           {user && (

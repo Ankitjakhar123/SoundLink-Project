@@ -10,6 +10,7 @@ import AuthPage from "./components/AuthPage";
 import AdminDashboard from "./components/AdminDashboard";
 import Navbar from "./components/Navbar";
 import PlaylistView from "./components/PlaylistView";
+import PlaylistsPage from "./components/PlaylistsPage";
 import Profile from "./components/Profile";
 import EditAlbum from "./components/EditAlbum";
 import EditSong from "./components/EditSong";
@@ -160,6 +161,7 @@ const App = () => {
             <Route path="/contact" element={<Contact />} />
             
             {/* Protected routes - login required */}
+            <Route path="/playlists" element={<ProtectedRoute><PlaylistsPage /></ProtectedRoute>} />
             <Route path="/playlist/:id" element={<ProtectedRoute><PlaylistView /></ProtectedRoute>} />
             <Route path="/favorites" element={<ProtectedRoute><Favorites /></ProtectedRoute>} />
             <Route path="/library" element={<ProtectedRoute><Library /></ProtectedRoute>} />

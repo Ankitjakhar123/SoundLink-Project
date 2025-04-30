@@ -39,16 +39,41 @@ const PremiumPlayer = () => {
   const [touchStartY, setTouchStartY] = useState(0);
   const [touchStartX, setTouchStartX] = useState(0);
   const playerRef = useRef(null);
+  const progressBarRef = useRef(null);
+  const volumeControlRef = useRef(null);
   const MIN_SWIPE_DISTANCE = 50; // Minimum distance for a swipe to be detected
+  const [isTouchingProgressBar, setIsTouchingProgressBar] = useState(false);
+  const [isTouchingVolumeControl, setIsTouchingVolumeControl] = useState(false);
 
   // Handler for touch start
   const handleTouchStart = (e) => {
+    // Don't process swipe if user is interacting with progress bar or volume control
+    if (e.target.type === 'range') {
+      if (e.target.className.includes('volume-slider')) {
+        setIsTouchingVolumeControl(true);
+      } else {
+        setIsTouchingProgressBar(true);
+      }
+      return;
+    }
+    
     setTouchStartY(e.touches[0].clientY);
     setTouchStartX(e.touches[0].clientX);
   };
 
   // Handler for touch end
   const handleTouchEnd = (e) => {
+    // Reset touch states for controls
+    if (isTouchingProgressBar) {
+      setIsTouchingProgressBar(false);
+      return;
+    }
+    
+    if (isTouchingVolumeControl) {
+      setIsTouchingVolumeControl(false);
+      return;
+    }
+    
     if (!touchStartY || !touchStartX) return;
     
     const touchEndY = e.changedTouches[0].clientY;
@@ -334,12 +359,87 @@ const PremiumPlayer = () => {
     };
   }, []);
 
+  // Progress bar on mobile
+  const handleProgressTouchStart = (e) => {
+    e.stopPropagation();
+    setIsTouchingProgressBar(true);
+  };
+
+  const handleProgressTouchEnd = (e) => {
+    e.stopPropagation();
+    setIsTouchingProgressBar(false);
+  };
+
+  // Volume control on mobile
+  const handleVolumeTouchStart = (e) => {
+    e.stopPropagation();
+    setIsTouchingVolumeControl(true);
+  };
+
+  const handleVolumeTouchEnd = (e) => {
+    e.stopPropagation();
+    setIsTouchingVolumeControl(false);
+  };
+
+  // Add styles for better touch interaction on mobile
+  useEffect(() => {
+    // Add styles to improve touch interactions and reduce blur issues
+    const style = document.createElement('style');
+    style.id = 'player-touch-styles';
+    style.innerHTML = `
+      /* Increase touch target sizes on small screens */
+      @media (max-width: 768px) {
+        input[type="range"] {
+          height: 10px !important;
+          margin: 8px 0;
+          background: rgba(50, 50, 50, 0.3);
+          border-radius: 8px;
+          -webkit-appearance: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          width: 18px;
+          height: 18px;
+          background: #a855f7;
+          border-radius: 50%;
+          cursor: pointer;
+          border: 2px solid #222;
+        }
+        
+        /* Reduce animation and blur during playback to improve performance */
+        .mobile-player-overlay {
+          backface-visibility: hidden;
+          transform: translateZ(0);
+          perspective: 1000;
+          will-change: transform;
+          transition: transform 0.2s ease-out;
+        }
+        
+        /* Prevent text selection during touch */
+        .player-container * {
+          user-select: none;
+          -webkit-user-select: none;
+          -webkit-touch-callout: none;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+    
+    return () => {
+      const existingStyle = document.getElementById('player-touch-styles');
+      if (existingStyle) {
+        existingStyle.remove();
+      }
+    };
+  }, []);
+
   if (!track) return null;
 
   return (
     <AnimatePresence>
       <div 
-        className="fixed left-0 w-full z-50" 
+        className="fixed left-0 w-full z-50 player-container" 
         style={{ bottom: '50px' }}
         ref={playerRef}
         onTouchStart={handleTouchStart}
@@ -347,7 +447,7 @@ const PremiumPlayer = () => {
       >
         {/* Mobile Player (full controls) */}
         {isSmallScreen && showExtraControls && !hidePlayer && (
-          <div className="fixed inset-0 bottom-[50px] bg-black/95 flex flex-col p-4 z-40">
+          <div className="fixed inset-0 bottom-[50px] bg-black/95 flex flex-col p-4 z-40 mobile-player-overlay">
             {/* Close button */}
             <div className="flex justify-between items-center mb-6">
               <div className="w-8"></div> {/* Spacer */}
@@ -383,12 +483,15 @@ const PremiumPlayer = () => {
                 <span>{formatTime(time.totalTime.minute, time.totalTime.second)}</span>
               </div>
               <input
+                ref={progressBarRef}
                 type="range"
                 min={0}
                 max={durationSec || 1}
                 step={0.1}
                 value={currentSec}
                 onChange={handleSeek}
+                onTouchStart={handleProgressTouchStart}
+                onTouchEnd={handleProgressTouchEnd}
                 className="w-full accent-fuchsia-600 h-1 cursor-pointer"
               />
             </div>
@@ -447,12 +550,27 @@ const PremiumPlayer = () => {
                 >
                   <MdOutlineLyrics />
                 </button>
-                <button
-                  onClick={handleMute}
-                  className="text-xl text-neutral-400"
-                >
-                  {isMuted ? <FaVolumeMute /> : <FaVolumeUp />}
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleMute}
+                    className="text-xl text-neutral-400"
+                  >
+                    {isMuted ? <FaVolumeMute /> : <FaVolumeUp />}
+                  </button>
+                  <input
+                    ref={volumeControlRef}
+                    type="range"
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    value={isMuted ? 0 : volume}
+                    onChange={(e) => setVolume(Number(e.target.value))}
+                    onTouchStart={handleVolumeTouchStart}
+                    onTouchEnd={handleVolumeTouchEnd}
+                    className="w-16 accent-fuchsia-600 cursor-pointer h-1 volume-slider"
+                    disabled={isMuted}
+                  />
+                </div>
                 <div className="flex items-center gap-2 text-neutral-400">
                   <span className="text-xs">Autoplay</span>
                   <div
@@ -543,6 +661,8 @@ const PremiumPlayer = () => {
                   step={0.1}
                   value={currentSec}
                   onChange={handleSeek}
+                  onTouchStart={handleProgressTouchStart}
+                  onTouchEnd={handleProgressTouchEnd}
                   className="w-full accent-fuchsia-600 h-1 cursor-pointer"
                 />
                 <span className="text-[10px] text-neutral-400 min-w-[28px]">{formatTime(time.totalTime.minute, time.totalTime.second)}</span>
@@ -605,7 +725,9 @@ const PremiumPlayer = () => {
                 step={0.01}
                 value={isMuted ? 0 : volume}
                 onChange={(e) => setVolume(Number(e.target.value))}
-                  className="w-16 accent-fuchsia-600 cursor-pointer h-1"
+                onTouchStart={handleVolumeTouchStart}
+                onTouchEnd={handleVolumeTouchEnd}
+                className="w-16 accent-fuchsia-600 cursor-pointer h-1 volume-slider"
                 disabled={isMuted}
               />
                 <button 

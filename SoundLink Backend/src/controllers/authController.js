@@ -8,18 +8,43 @@ const JWT_SECRET = process.env.JWT_SECRET || "supersecretkey";
 export const register = async (req, res) => {
   try {
     const { username, email, password, role } = req.body;
+    
+    // Validate required fields
     if (!username || !email || !password) {
       return res.status(400).json({ success: false, message: "All fields are required." });
     }
+    
+    // Check if user already exists
     const existingUser = await userModel.findOne({ $or: [{ email }, { username }] });
     if (existingUser) {
       return res.status(400).json({ success: false, message: "User already exists." });
     }
+    
+    // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new userModel({ username, email, password: hashedPassword, role });
+    
+    // Create user object with basic fields
+    const userData = { 
+      username, 
+      email, 
+      password: hashedPassword,
+      role: role || "user"
+    };
+    
+    // Add avatar path if file was uploaded
+    if (req.file) {
+      // Get the relative path to the avatar file
+      const avatarPath = `/uploads/profiles/${req.file.filename}`;
+      userData.avatar = avatarPath;
+    }
+    
+    // Create and save new user
+    const user = new userModel(userData);
     await user.save();
+    
     res.status(201).json({ success: true, message: "User registered successfully." });
   } catch (error) {
+    console.error("Registration error:", error);
     res.status(500).json({ success: false, message: "Registration failed." });
   }
 };
@@ -40,8 +65,26 @@ export const login = async (req, res) => {
       return res.status(400).json({ success: false, message: "Invalid credentials." });
     }
     const token = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, { expiresIn: "7d" });
-    res.json({ success: true, token, user: { id: user._id, username: user.username, email: user.email, role: user.role } });
+    
+    // Include avatar in response if available
+    const userData = { 
+      id: user._id, 
+      username: user.username, 
+      email: user.email, 
+      role: user.role 
+    };
+    
+    if (user.avatar) {
+      userData.avatar = user.avatar;
+    }
+    
+    res.json({ 
+      success: true, 
+      token, 
+      user: userData 
+    });
   } catch (error) {
+    console.error("Login error:", error);
     res.status(500).json({ success: false, message: "Login failed." });
   }
 };

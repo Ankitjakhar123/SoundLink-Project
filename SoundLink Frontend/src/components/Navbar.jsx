@@ -17,8 +17,10 @@ const Navbar = (props) => {
     const searchResultsRef = useRef(null);
     const { user, logout } = useContext(AuthContext);
     const { playWithId, track, hidePlayer, togglePlayerVisibility } = useContext(PlayerContext);
-    const [showDropdown, setShowDropdown] = useState(false);
-    const dropdownRef = useRef(null);
+    const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+    const [showMobileDropdown, setShowMobileDropdown] = useState(false);
+    const profileDropdownRef = useRef(null);
+    const mobileDropdownRef = useRef(null);
     const [showBottomNav, setShowBottomNav] = useState(true);
     const [showQueue, setShowQueue] = useState(false);
 
@@ -64,9 +66,16 @@ const Navbar = (props) => {
     // Handle click outside of dropdown to close it
     useEffect(() => {
         const handleClickOutside = (event) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-                setShowDropdown(false);
+            // Handle profile dropdown in header
+            if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target)) {
+                setShowProfileDropdown(false);
             }
+            
+            // Handle mobile bottom menu dropdown 
+            if (mobileDropdownRef.current && !mobileDropdownRef.current.contains(event.target)) {
+                setShowMobileDropdown(false);
+            }
+            
             if (searchResultsRef.current && !searchResultsRef.current.contains(event.target) && 
                 inputRef.current && !inputRef.current.contains(event.target)) {
                 setShowSearchResults(false);
@@ -86,10 +95,91 @@ const Navbar = (props) => {
         };
     }, [showSearchBar]);
 
+    // Add specific touchstart handler for mobile
+    const handleTouchStart = (e, type) => {
+        e.stopPropagation();
+        
+        if (type === 'profile') {
+            // For profile dropdown in header
+            setShowProfileDropdown(!showProfileDropdown);
+        } else if (type === 'more') {
+            // For "More" menu in bottom nav
+            setShowMobileDropdown(!showMobileDropdown);
+        }
+    };
+    
+    // Close dropdown when touched outside
+    const handleBodyTouchStart = (e) => {
+        if (profileDropdownRef.current && !profileDropdownRef.current.contains(e.target)) {
+            setShowProfileDropdown(false);
+        }
+        
+        if (mobileDropdownRef.current && !mobileDropdownRef.current.contains(e.target)) {
+            setShowMobileDropdown(false);
+        }
+    };
+    
+    // Add touch event listeners for mobile
+    useEffect(() => {
+        document.body.addEventListener('touchstart', handleBodyTouchStart);
+        
+        // Add proper non-passive touch event listeners to elements
+        if (profileDropdownRef.current) {
+            const profileButton = profileDropdownRef.current.querySelector('button');
+            if (profileButton) {
+                const profileTouchHandler = (e) => handleTouchStart(e, 'profile');
+                profileButton.addEventListener('touchstart', profileTouchHandler, { passive: false });
+                
+                return () => {
+                    document.body.removeEventListener('touchstart', handleBodyTouchStart);
+                    profileButton.removeEventListener('touchstart', profileTouchHandler);
+                };
+            }
+        }
+        
+        return () => {
+            document.body.removeEventListener('touchstart', handleBodyTouchStart);
+        };
+    }, []);
+
+    // Additional effect for the "more" button when it's rendered
+    useEffect(() => {
+        const moreButton = document.querySelector('.more-button');
+        if (moreButton) {
+            const moreTouchHandler = (e) => handleTouchStart(e, 'more');
+            moreButton.addEventListener('touchstart', moreTouchHandler, { passive: false });
+            
+            return () => {
+                moreButton.removeEventListener('touchstart', moreTouchHandler);
+            };
+        }
+    }, []);
+
+    // Add effect for handling mobile dropdown touch events
+    useEffect(() => {
+        // Only set up when the dropdown is shown
+        if (showMobileDropdown && mobileDropdownRef.current) {
+            // Create a handler that stops propagation
+            const stopTouchPropagation = (e) => {
+                e.stopPropagation();
+            };
+            
+            // Add event listener with passive: false
+            mobileDropdownRef.current.addEventListener('touchstart', stopTouchPropagation, { passive: false });
+            
+            return () => {
+                if (mobileDropdownRef.current) {
+                    mobileDropdownRef.current.removeEventListener('touchstart', stopTouchPropagation);
+                }
+            };
+        }
+    }, [showMobileDropdown]);
+
     const handleLogout = () => {
         logout();
         navigate('/auth');
-        setShowDropdown(false);
+        setShowProfileDropdown(false);
+        setShowMobileDropdown(false);
     };
 
     const handleSearch = async (e) => {
@@ -173,6 +263,14 @@ const Navbar = (props) => {
             default:
                 break;
         }
+    };
+
+    // Helper function to get the user's avatar URL
+    const getUserAvatar = () => {
+        if (!user) return null;
+        
+        // Try both avatar and image properties since either might be used in the API
+        return user.avatar || user.image || '/default-avatar.png';
     };
 
     return (
@@ -313,16 +411,16 @@ const Navbar = (props) => {
                     </button>
                     
                     {/* Profile Dropdown or Sign In Button */}
-                    <div className="relative" ref={dropdownRef}>
+                    <div className="relative" ref={profileDropdownRef}>
                         {user ? (
                             <>
                                 <button 
-                                    onClick={() => setShowDropdown(!showDropdown)}
+                                    onClick={() => setShowProfileDropdown(!showProfileDropdown)}
                                     className="flex items-center justify-center w-10 h-10 rounded-full overflow-hidden border-2 border-fuchsia-500 hover:border-fuchsia-400 transition-colors"
                                 >
-                                    {user.image ? (
+                                    {getUserAvatar() ? (
                                         <img 
-                                            src={user.image} 
+                                            src={getUserAvatar()} 
                                             alt={user.username} 
                                             className="w-full h-full object-cover"
                                             onError={(e) => {
@@ -336,17 +434,32 @@ const Navbar = (props) => {
                                 </button>
                                 
                                 {/* Dropdown Menu */}
-                                {showDropdown && (
-                                    <div className="absolute right-0 mt-2 w-48 bg-neutral-800 rounded-md shadow-lg py-1 z-50 border border-neutral-700">
+                                {showProfileDropdown && (
+                                    <div 
+                                        className="absolute right-0 mt-2 w-48 bg-neutral-800 rounded-md shadow-lg py-1 z-50 border border-neutral-700 max-h-[80vh] overflow-y-auto"
+                                    >
                                         {/* User Info */}
-                                        <div className="px-4 py-2 border-b border-neutral-700">
-                                            <p className="text-white font-medium truncate">{user.username || 'User'}</p>
-                                            <p className="text-neutral-400 text-sm truncate">{user.email || ''}</p>
+                                        <div className="px-4 py-2 border-b border-neutral-700 flex items-center gap-2">
+                                            <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
+                                                <img 
+                                                    src={getUserAvatar()} 
+                                                    alt={user.username || 'User'} 
+                                                    className="w-full h-full object-cover"
+                                                    onError={(e) => {
+                                                        e.target.onerror = null;
+                                                        e.target.src = '/default-avatar.png';
+                                                    }}
+                                                />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="text-white font-medium truncate">{user.username || 'User'}</p>
+                                                <p className="text-neutral-400 text-sm truncate">{user.email || ''}</p>
+                                            </div>
                                         </div>
                                         
                                         {/* Menu Items */}
                                         <button 
-                                            onClick={() => { navigate('/profile'); setShowDropdown(false); }}
+                                            onClick={() => { navigate('/profile'); setShowProfileDropdown(false); }}
                                             className="w-full text-left px-4 py-2 text-white hover:bg-neutral-700 flex items-center gap-2"
                                         >
                                             <FaUser className="text-fuchsia-400" />
@@ -355,7 +468,7 @@ const Navbar = (props) => {
                                         
                                         {user.role === 'admin' && (
                                             <button 
-                                                onClick={() => { navigate('/admin'); setShowDropdown(false); }}
+                                                onClick={() => { navigate('/admin'); setShowProfileDropdown(false); }}
                                                 className="w-full text-left px-4 py-2 text-white hover:bg-neutral-700 flex items-center gap-2"
                                             >
                                                 <FaUserShield className="text-fuchsia-400" />
@@ -364,7 +477,7 @@ const Navbar = (props) => {
                                         )}
                                         
                                         <button 
-                                            onClick={() => { navigate('/settings'); setShowDropdown(false); }}
+                                            onClick={() => { navigate('/settings'); setShowProfileDropdown(false); }}
                                             className="w-full text-left px-4 py-2 text-white hover:bg-neutral-700 flex items-center gap-2"
                                         >
                                             <FaCog className="text-fuchsia-400" />
@@ -466,22 +579,33 @@ const Navbar = (props) => {
                     <button 
                         onClick={(e) => {
                             e.stopPropagation();
-                            setShowDropdown(!showDropdown);
+                            setShowMobileDropdown(!showMobileDropdown);
                         }}
-                        className="flex flex-col items-center gap-1 relative"
+                        className="flex flex-col items-center gap-1 relative more-button"
                     >
                         <FaEllipsisH className="w-5 h-5 text-[#a855f7]" />
                         <span className="text-xs text-white">More</span>
                         
                         {/* Mobile more menu dropdown */}
-                        {showDropdown && (
+                        {showMobileDropdown && (
                             <div 
-                                ref={dropdownRef}
-                                className="absolute bottom-full mb-2 right-0 w-48 rounded-lg overflow-hidden bg-neutral-800 shadow-lg border border-neutral-700 z-50"
+                                ref={mobileDropdownRef}
+                                className="absolute bottom-full mb-2 right-0 w-48 rounded-lg overflow-hidden bg-neutral-800 shadow-lg border border-neutral-700 z-50 max-h-[60vh] overflow-y-auto"
                                 onClick={(e) => e.stopPropagation()}
                             >
+                                {/* Profile option for small screens */}
+                                {user && (
+                                    <button 
+                                        onClick={() => { navigate('/profile'); setShowMobileDropdown(false); }}
+                                        className="w-full text-left px-4 py-2 text-white hover:bg-neutral-700 flex items-center gap-2"
+                                    >
+                                        <FaUser className="text-fuchsia-400" />
+                                        Profile
+                                    </button>
+                                )}
+                                
                                 <button 
-                                    onClick={() => { navigate('/playlists'); setShowDropdown(false); }}
+                                    onClick={() => { navigate('/playlists'); setShowMobileDropdown(false); }}
                                     className="w-full text-left px-4 py-2 text-white hover:bg-neutral-700 flex items-center gap-2"
                                 >
                                     <FaList className="text-fuchsia-400" />
@@ -490,8 +614,18 @@ const Navbar = (props) => {
                                 
                                 {user && (
                                     <>
+                                        {user.role === 'admin' && (
+                                            <button 
+                                                onClick={() => { navigate('/admin'); setShowMobileDropdown(false); }}
+                                                className="w-full text-left px-4 py-2 text-white hover:bg-neutral-700 flex items-center gap-2"
+                                            >
+                                                <FaUserShield className="text-fuchsia-400" />
+                                                Admin Dashboard
+                                            </button>
+                                        )}
+                                        
                                         <button 
-                                            onClick={() => { navigate('/settings'); setShowDropdown(false); }}
+                                            onClick={() => { navigate('/settings'); setShowMobileDropdown(false); }}
                                             className="w-full text-left px-4 py-2 text-white hover:bg-neutral-700 flex items-center gap-2"
                                         >
                                             <FaCog className="text-fuchsia-400" />

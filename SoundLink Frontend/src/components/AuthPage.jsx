@@ -2,10 +2,14 @@ import React, { useState, useEffect } from "react";
 import AuthForm from "./AuthForm";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaMusic, FaHeadphones, FaCompactDisc, FaGuitar } from "react-icons/fa";
+import { useLocation } from "react-router-dom";
 
 const AuthPage = () => {
   const [mode, setMode] = useState("login");
   const [currentAnimation, setCurrentAnimation] = useState(0);
+  const location = useLocation();
+  const message = location.state?.message;
+  const returnTo = location.state?.returnTo;
   
   const animations = [
     { icon: FaHeadphones, color: "text-fuchsia-500" },
@@ -90,9 +94,9 @@ const AuthPage = () => {
       
       {/* Right side - Authentication form */}
       <div className="w-full md:w-1/2 flex items-center justify-center p-6">
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={mode}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={mode}
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
@@ -102,29 +106,35 @@ const AuthPage = () => {
             <div className="mb-8 text-center md:hidden">
               <h1 className="text-4xl font-bold text-white mb-2">SoundLink</h1>
               <p className="text-neutral-400">Your premium music experience</p>
-          </div>
+            </div>
             
-          <AuthForm mode={mode} />
+            {message && (
+              <div className="mb-6 p-3 rounded-lg bg-fuchsia-900/50 border border-fuchsia-700 text-white text-center">
+                {message}
+              </div>
+            )}
+            
+            <AuthForm mode={mode} returnTo={returnTo} />
             
             <div className="flex justify-center mt-6">
-            {mode === "login" ? (
-              <button
-                onClick={() => setMode("register")}
+              {mode === "login" ? (
+                <button
+                  onClick={() => setMode("register")}
                   className="text-fuchsia-400 hover:text-fuchsia-300 transition"
-              >
-                New here? <span className="font-bold">Create an account</span>
-              </button>
-            ) : (
-              <button
-                onClick={() => setMode("login")}
+                >
+                  New here? <span className="font-bold">Create an account</span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => setMode("login")}
                   className="text-fuchsia-400 hover:text-fuchsia-300 transition"
-              >
-                Already have an account? <span className="font-bold">Sign in</span>
-              </button>
-            )}
-          </div>
-        </motion.div>
-      </AnimatePresence>
+                >
+                  Already have an account? <span className="font-bold">Sign in</span>
+                </button>
+              )}
+            </div>
+          </motion.div>
+        </AnimatePresence>
       </div>
     </div>
   );

@@ -13,7 +13,7 @@ const DEFAULT_AVATARS = [
   "/avatars/avatar6.svg",
 ];
 
-const AuthForm = ({ mode = "login" }) => {
+const AuthForm = ({ mode = "login", returnTo }) => {
   const { login, register, isIOS } = useContext(AuthContext);
   const navigate = useNavigate();
   const [form, setForm] = useState({ username: "", email: "", password: "" });
@@ -75,11 +75,11 @@ const AuthForm = ({ mode = "login" }) => {
             // For iOS, we need a small delay before navigation to ensure token is saved
             const navigationDelay = isIOS ? 800 : 500;
             setTimeout(() => {
-              // For iOS devices, we want a full page refresh
+              // Navigate to returnTo path if provided, otherwise to home
               if (isIOS && loginAttempts > 0) {
-                window.location.href = "/";
+                window.location.href = returnTo || "/";
               } else {
-                navigate("/");
+                navigate(returnTo || "/");
               }
             }, navigationDelay);
           } else {
@@ -163,7 +163,7 @@ const AuthForm = ({ mode = "login" }) => {
       console.error("Auth error:", err);
       setError("Something went wrong. Please try again.");
     } finally {
-    setLoading(false);
+      setLoading(false);
     }
   };
 
