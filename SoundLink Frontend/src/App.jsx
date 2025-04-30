@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import Sidebar from "./components/Sidebar";
 import PremiumPlayer from "./components/PremiumPlayer";
 import { PlayerContext } from "./context/PlayerContext";
@@ -30,6 +30,7 @@ import Contact from "./components/Contact";
 import DisclaimerPopup from "./components/DisclaimerPopup";
 import SearchPage from "./components/SearchPage";
 import Library from "./components/Library";
+import InstallPwaPrompt from "./components/InstallPwaPrompt";
 
 // Protected route component that requires authentication
 const ProtectedRoute = ({ children }) => {
@@ -44,10 +45,71 @@ const ProtectedRoute = ({ children }) => {
 };
 
 const App = () => {
-  const { audioRef, track, songsData } = useContext(PlayerContext);
+  const { audioRef, track, songsData, play, pause, playStatus, Next, Previous } = useContext(PlayerContext);
   const { user } = useContext(AuthContext);
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  // Handle online/offline status
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  // Setup Media Session API for lock screen controls
+  useEffect(() => {
+    if ('mediaSession' in navigator && track) {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: track.name,
+        artist: track.artist || 'Unknown Artist',
+        album: track.album || 'Unknown Album',
+        artwork: [
+          { src: track.image || '/icons/soundlink-icon.svg', sizes: '512x512', type: 'image/png' }
+        ]
+      });
+      
+      // Define media session actions
+      navigator.mediaSession.setActionHandler('play', () => {
+        play();
+      });
+      
+      navigator.mediaSession.setActionHandler('pause', () => {
+        pause();
+      });
+      
+      navigator.mediaSession.setActionHandler('previoustrack', () => {
+        Previous();
+      });
+      
+      navigator.mediaSession.setActionHandler('nexttrack', () => {
+        Next();
+      });
+      
+      // Update playback state
+      navigator.mediaSession.playbackState = playStatus ? 'playing' : 'paused';
+    }
+  }, [track, playStatus, play, pause, Next, Previous]);
+
+  // Screen orientation lock for landscape mode on video playback
+  const lockOrientation = () => {
+    try {
+      if (document.documentElement.requestFullscreen && screen.orientation && screen.orientation.lock) {
+        document.documentElement.requestFullscreen();
+        screen.orientation.lock('landscape');
+      }
+    } catch (err) {
+      console.error('Orientation lock failed:', err);
+    }
+  };
 
   // If on /admin, render AdminDashboard as a full page (no sidebar, no player)
   if (location.pathname === "/admin") {
@@ -66,8 +128,17 @@ const App = () => {
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-black via-neutral-900 to-black">
       <DisclaimerPopup />
+      <InstallPwaPrompt />
+      
+      {/* Offline indicator */}
+      {!isOnline && (
+        <div className="fixed top-0 left-0 right-0 bg-amber-600 text-black z-50 py-1 px-4 text-center text-sm font-medium">
+          You're offline. Some features may be limited.
+        </div>
+      )}
+      
       <Sidebar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
-      <div className={`flex-1 flex flex-col h-screen overflow-y-auto transition-all duration-300 w-full content-container ${mobileOpen ? 'opacity-30 pointer-events-none select-none' : ''} md:opacity-100 md:pointer-events-auto md:select-auto`}>
+      <div className={`flex-1 flex flex-col h-screen overflow-y-auto transition-all duration-300 w-full content-container touch-scroll ${mobileOpen ? 'opacity-30 pointer-events-none select-none' : ''} md:opacity-100 md:pointer-events-auto md:select-auto`}>
         <Navbar onHamburgerClick={() => setMobileOpen(true)} />
         <div className="flex-1 overflow-y-auto pb-10">
           <Routes>
@@ -77,7 +148,7 @@ const App = () => {
             {/* Public routes - no login required */}
             <Route path="/" element={songsData.length !== 0 ? <DisplayHome /> : <div className="text-white p-4">Loading songs...</div>} />
             <Route path="/album/:id" element={<DisplayAlbum />} />
-            <Route path="/movie/:id" element={<MovieAlbumDetail />} />
+            <Route path="/movie/:id" element={<MovieAlbumDetail onEnterFullscreen={lockOrientation} />} />
             <Route path="/artist/:id" element={<ArtistDetail />} />
             <Route path="/artists" element={<Artists />} />
             <Route path="/trending" element={<TrendingSongs />} />

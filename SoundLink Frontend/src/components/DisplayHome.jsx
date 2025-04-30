@@ -203,13 +203,13 @@ const DisplayHome = () => {
     setIsRefreshing(true);
     
     try {
-      // Refresh trending songs and albums data here
-      // For example, call fetchTrending() again
-      if (typeof fetchTrending === 'function') {
-        await fetchTrending();
-      }
+      // Refresh all the data needed by this component
+      await fetchData(); // Use fetchData instead of fetchTrending
       
-      // Add any other data refresh logic here
+      // Provide haptic feedback on successful refresh (on supported devices)
+      if (navigator.vibrate) {
+        navigator.vibrate(200);
+      }
       
       toast.success("Content refreshed!");
     } catch (error) {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaDownload, FaTimes, FaApple, FaAndroid, FaChrome, FaSafari } from 'react-icons/fa';
+import { FaDownload, FaTimes, FaApple, FaAndroid, FaChrome, FaSafari, FaShare } from 'react-icons/fa';
 
 const InstallPwaPrompt = () => {
   const [showPrompt, setShowPrompt] = useState(false);

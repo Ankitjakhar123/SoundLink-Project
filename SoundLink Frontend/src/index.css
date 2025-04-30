@@ -2,11 +2,34 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --fuchsia: #a855f7;
+  --fuchsia-light: #c084fc;
+  --fuchsia-dark: #86198f;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  /* Prevent pull-to-refresh and bounce effects in iOS */
+  overscroll-behavior-y: none;
+}
+
 body {
-  @apply bg-black text-white;
-  font-family: 'Inter', 'Roboto', sans-serif;
-  /* Add padding for player bar globally but with reduced value */
-  padding-bottom: 60px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #000;
+  color: #fff;
+  min-height: 100vh;
+  
+  /* Better scrolling for mobile */
+  touch-action: manipulation;
+  -webkit-overflow-scrolling: touch;
 }
 
 ::-webkit-scrollbar{
@@ -47,5 +70,171 @@ footer {
   .content-container {
     padding-bottom: 20px;
   }
+  
+  /* Increase tap target sizes */
+  button,
+  a,
+  input[type="checkbox"],
+  input[type="radio"],
+  input[type="submit"],
+  select {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Reduce expensive animations when battery is low */
+  @media (prefers-reduced-motion) {
+    * {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+    }
+  }
+  
+  /* Remove tap highlight on mobile devices */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  /* Make scrollbars thinner for touch */
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  
+  /* Adjust font sizes for better readability */
+  body {
+    font-size: 16px; /* Minimum recommended size for mobile */
+  }
+  
+  /* Improve contrast */
+  input, textarea, select {
+    font-size: 16px; /* Prevents auto-zoom on iOS */
+  }
+}
+
+/* Focus states for keyboard navigation and accessibility */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--fuchsia);
+  outline-offset: 2px;
+}
+
+/* Global touch-friendly classes */
+.touch-scroll {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  overscroll-behavior: contain;
+}
+
+.no-select {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Battery-aware animations */
+@media (prefers-reduced-motion) {
+  .battery-aware {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* CSS for native-like bottom sheet */
+.bottom-sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #1f1f1f;
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
+  transform: translateY(100%);
+  transition: transform 0.3s ease-out;
+  z-index: 1000;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.bottom-sheet.open {
+  transform: translateY(0);
+}
+
+.bottom-sheet-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  z-index: 999;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.bottom-sheet-backdrop.open {
+  opacity: 1;
+}
+
+/* Drag indicator for bottom sheet */
+.bottom-sheet-drag {
+  width: 36px;
+  height: 4px;
+  background-color: #666;
+  border-radius: 2px;
+  margin: 10px auto;
+}
+
+/* Switch component styling */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 22px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #444;
+  transition: .4s;
+  border-radius: 34px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: var(--fuchsia);
+}
+
+input:checked + .slider:before {
+  transform: translateX(22px);
 }
 
