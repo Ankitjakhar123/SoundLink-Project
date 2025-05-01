@@ -52,6 +52,28 @@ const App = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
+  // Handle mobile viewport height for PWA
+  useEffect(() => {
+    // Function to update CSS variable with the viewport height
+    const updateHeight = () => {
+      // Set the value in the --app-height custom property to the root of the document
+      document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
+    };
+    
+    // Initial call
+    updateHeight();
+    
+    // Add event listener for window resize and orientation change
+    window.addEventListener('resize', updateHeight);
+    window.addEventListener('orientationchange', updateHeight);
+    
+    // Cleanup
+    return () => {
+      window.removeEventListener('resize', updateHeight);
+      window.removeEventListener('orientationchange', updateHeight);
+    };
+  }, []);
+
   // Handle online/offline status
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);

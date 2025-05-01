@@ -152,8 +152,8 @@ const DisplayHome = () => {
 
   // Pull to refresh functionality
   const handleTouchStart = (e) => {
-    // Only enable pull to refresh when scrolled to the top
-    if (document.documentElement.scrollTop === 0) {
+    // Only enable pull to refresh when at the top
+    if (window.scrollY === 0 || document.documentElement.scrollTop === 0) {
       setPullStartY(e.touches[0].clientY);
     }
   };
@@ -165,7 +165,7 @@ const DisplayHome = () => {
     const pullDistance = currentY - pullStartY;
     
     // Only allow pulling down when at the top of the content
-    if (pullDistance > 0 && window.scrollY === 0) {
+    if (pullDistance > 0 && (window.scrollY === 0 || document.documentElement.scrollTop === 0)) {
       // Add a visual indicator that shows the pull progress
       if (contentRef.current) {
         contentRef.current.style.transform = `translateY(${Math.min(pullDistance * 0.3, refreshDistance * 0.3)}px)`;
@@ -173,12 +173,7 @@ const DisplayHome = () => {
       
       // Prevent default to disable default browser pull-to-refresh behavior
       // but only if we're at the top of the page
-      if (document.documentElement.scrollTop === 0) {
-        e.preventDefault();
-      }
-    } else {
-      // Allow normal scrolling behavior
-      return true;
+      e.preventDefault();
     }
   };
   
@@ -198,7 +193,7 @@ const DisplayHome = () => {
     }
     
     // If pulled far enough, trigger a refresh
-    if (pullDistance > refreshDistance && document.documentElement.scrollTop === 0) {
+    if (pullDistance > refreshDistance && (window.scrollY === 0 || document.documentElement.scrollTop === 0)) {
       handleRefresh();
     }
     

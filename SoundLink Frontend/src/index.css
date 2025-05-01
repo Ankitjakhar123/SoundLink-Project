@@ -6,18 +6,28 @@
   --fuchsia: #a855f7;
   --fuchsia-light: #c084fc;
   --fuchsia-dark: #86198f;
+  --app-height: 100vh;
 }
 
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Fix height for mobile browsers/PWA */
+@supports (-webkit-touch-callout: none) {
+  :root {
+    --app-height: -webkit-fill-available;
+  }
 }
 
 html {
   /* Prevent pull-to-refresh and bounce effects in iOS */
   overscroll-behavior-y: none;
   height: 100%;
+  height: var(--app-height);
   position: relative;
   overflow-y: auto;
 }
@@ -29,6 +39,7 @@ body {
   background-color: #000;
   color: #fff;
   min-height: 100vh;
+  min-height: var(--app-height);
   position: relative;
   overflow-y: auto;
   
@@ -55,6 +66,7 @@ body {
   /* Ensure scrolling works on small screens */
   html, body, #root {
     height: 100%;
+    height: var(--app-height);
     overflow-y: auto;
   }
 }
@@ -85,6 +97,7 @@ footer {
   .content-container {
     padding-bottom: 20px;
     overflow-y: auto !important;
+    height: var(--app-height);
   }
   
   /* Increase tap target sizes */
@@ -157,6 +170,59 @@ textarea:focus-visible {
 @media (min-width: 768px) {
   .hide-on-large {
     display: none !important;
+  }
+}
+
+/* CSS for mobile app container */
+#root {
+  height: 100%;
+  height: var(--app-height);
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+
+/* Mobile-specific scrolling styles */
+@media (max-width: 576px) {
+  #root,
+  .min-h-screen,
+  body,
+  html {
+    min-height: 100%;
+    min-height: var(--app-height);
+    height: 100%;
+    height: var(--app-height);
+    overflow-y: auto;
+  }
+  
+  .content-container {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    max-height: var(--app-height);
+  }
+  
+  .no-scroll-freeze {
+    overflow: auto !important;
+  }
+}
+
+/* PWA-specific fixes */
+@media all and (display-mode: standalone) {
+  html, body, #root {
+    height: 100%;
+    height: var(--app-height);
+    overflow-y: auto;
+  }
+  
+  .min-h-screen {
+    min-height: var(--app-height);
+    height: auto;
+  }
+  
+  .content-container {
+    height: auto;
+    min-height: calc(var(--app-height) - 80px);
   }
 }
 
@@ -260,35 +326,6 @@ input:checked + .slider {
 
 input:checked + .slider:before {
   transform: translateX(22px);
-}
-
-/* CSS for mobile app container */
-#root {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-/* Mobile-specific scrolling styles */
-@media (max-width: 576px) {
-  #root,
-  .min-h-screen,
-  body,
-  html {
-    min-height: 100%;
-    height: 100%;
-    overflow-y: auto;
-  }
-  
-  .content-container {
-    flex: 1;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-  
-  .no-scroll-freeze {
-    overflow: auto !important;
-  }
 }
 
 /* Battery-aware animations */
