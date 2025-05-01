@@ -120,27 +120,12 @@ const PremiumPlayer = () => {
         ? (hidePlayer ? navHeight : `calc(${playerHeight} + ${navHeight})`) 
         : playerHeight;
       
-      const style = document.createElement('style');
-      style.id = 'premium-player-padding';
-      style.innerHTML = `
-        body {
-          padding-bottom: ${totalPadding} !important;
-        }
-        .content-container {
-          padding-bottom: ${totalPadding} !important;
-        }
-        footer {
-          margin-bottom: ${totalPadding} !important;
-        }
-      `;
-      document.head.appendChild(style);
+      // Use CSS variables instead of direct styling to avoid conflicts
+      document.documentElement.style.setProperty('--player-bottom-padding', totalPadding);
       
-      // Cleanup function to remove style
+      // Cleanup function
       return () => {
-        const existingStyle = document.getElementById('premium-player-padding');
-        if (existingStyle) {
-          existingStyle.remove();
-        }
+        document.documentElement.style.removeProperty('--player-bottom-padding');
       };
     }
   }, [track, isSmallScreen, hidePlayer]);

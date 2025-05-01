@@ -158,7 +158,7 @@ const DisplayHome = () => {
   return (
     <div 
       ref={contentRef}
-      className="min-h-screen w-full flex flex-col justify-start items-center overflow-y-auto"
+      className="min-h-screen w-full flex flex-col justify-start items-center overflow-y-auto display-home-container"
     >
       <div ref={topRef} className="min-h-screen w-full flex flex-col justify-start items-center bg-gradient-to-b from-black via-black to-neutral-900 pt-0 mt-[-5px] pb-0 px-2 md:px-8 content-container overflow-y-auto">
         {/* Welcome Section */}

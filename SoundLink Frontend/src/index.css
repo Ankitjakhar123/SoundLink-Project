@@ -29,6 +29,7 @@ body {
   min-height: 100vh;
   position: relative;
   overflow-y: auto;
+  padding-bottom: var(--player-bottom-padding, 0);
 }
 
 ::-webkit-scrollbar{
@@ -55,12 +56,12 @@ body {
 
 /* Footer spacing for premium player - reduced */
 footer {
-  margin-bottom: 20px;
+  margin-bottom: var(--player-bottom-padding, 0);
 }
 
 /* Ensure content containers have space - reduced */
 .content-container {
-  padding-bottom: 30px;
+  padding-bottom: var(--player-bottom-padding, 0);
   overflow-y: auto;
 }
 
@@ -297,6 +298,50 @@ input:checked + .slider:before {
   .battery-aware {
     animation: none !important;
     transition: none !important;
+  }
+}
+
+/* Make sure fixed position elements don't block content */
+.fixed-bottom {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
+}
+
+/* DisplayHome specific fixes for scrolling */
+.display-home-container {
+  height: auto !important;
+  min-height: 100vh !important;
+  overflow-y: visible !important;
+  position: relative !important;
+}
+
+@media (max-width: 576px) {
+  /* Always enable scrolling on small screens */
+  body, html, #root {
+    height: auto !important;
+    min-height: 100% !important;
+    overflow-y: auto !important;
+    position: static !important;
+  }
+  
+  .min-h-screen {
+    min-height: 100vh !important;
+    height: auto !important;
+    overflow-y: visible !important;
+  }
+  
+  .content-container {
+    overflow-y: visible !important;
+    height: auto !important;
+    min-height: 100vh !important;
+  }
+  
+  /* Ensure margins don't cause overflow issues */
+  footer {
+    margin-bottom: calc(var(--player-bottom-padding, 0) + 1rem) !important; 
   }
 }
 

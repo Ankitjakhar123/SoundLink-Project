@@ -543,7 +543,7 @@ const Navbar = (props) => {
 
             {/* Mobile Bottom Navigation Bar - Only visible on small screens when preferred and no keyboard */}
             <div 
-                className={`md:hidden fixed left-0 right-0 bg-black border-t border-neutral-800 py-1 px-3 z-[30] backdrop-blur-xl ${isKeyboardVisible || !showBottomNav ? 'hidden' : 'block'}`} 
+                className={`md:hidden fixed-bottom bg-black border-t border-neutral-800 py-1 px-3 z-[30] backdrop-blur-xl ${isKeyboardVisible || !showBottomNav ? 'hidden' : 'block'}`} 
                 style={{
                     bottom: 0
                 }}

@@ -35,7 +35,7 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
   // Sidebar classes for mobile/desktop
   const sidebarClass = `fixed top-0 left-0 h-screen w-64 bg-black text-white flex flex-col shadow-lg z-40 transition-transform duration-300
     ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
-    md:translate-x-0 md:static md:h-screen`;
+    md:translate-x-0 md:static md:h-auto md:max-h-screen md:overflow-hidden`;
 
   return (
     <>
