@@ -46,11 +46,23 @@ const DisplayHome = () => {
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [pullStartY, setPullStartY] = useState(0);
+  const [isPwa, setIsPwa] = useState(false);
   const refreshDistance = 100; // Distance in pixels needed to trigger a refresh
   const contentRef = useRef(null);
 
   useEffect(() => {
     fetchData();
+    
+    // Check if the app is running in PWA mode
+    if (window.matchMedia('(display-mode: standalone)').matches || 
+        window.matchMedia('(display-mode: fullscreen)').matches || 
+        window.navigator.standalone === true) {
+      setIsPwa(true);
+      
+      // Apply PWA specific fixes
+      document.documentElement.classList.add('pwa-mode');
+      document.body.classList.add('pwa-mode');
+    }
   }, []);
 
   const fetchData = async () => {
@@ -152,20 +164,20 @@ const DisplayHome = () => {
 
   // Pull to refresh functionality
   const handleTouchStart = (e) => {
-    // Only enable pull to refresh when at the top
-    if (window.scrollY === 0 || document.documentElement.scrollTop === 0) {
+    // Only enable pull to refresh when scrolled to the top and not in PWA mode
+    if (document.documentElement.scrollTop === 0 && !isPwa) {
       setPullStartY(e.touches[0].clientY);
     }
   };
   
   const handleTouchMove = (e) => {
-    if (!pullStartY) return;
+    if (!pullStartY || isPwa) return; // Skip in PWA mode
     
     const currentY = e.touches[0].clientY;
     const pullDistance = currentY - pullStartY;
     
     // Only allow pulling down when at the top of the content
-    if (pullDistance > 0 && (window.scrollY === 0 || document.documentElement.scrollTop === 0)) {
+    if (pullDistance > 0 && window.scrollY === 0) {
       // Add a visual indicator that shows the pull progress
       if (contentRef.current) {
         contentRef.current.style.transform = `translateY(${Math.min(pullDistance * 0.3, refreshDistance * 0.3)}px)`;
@@ -173,12 +185,17 @@ const DisplayHome = () => {
       
       // Prevent default to disable default browser pull-to-refresh behavior
       // but only if we're at the top of the page
-      e.preventDefault();
+      if (document.documentElement.scrollTop === 0) {
+        e.preventDefault();
+      }
+    } else {
+      // Allow normal scrolling behavior
+      return true;
     }
   };
   
   const handleTouchEnd = (e) => {
-    if (!pullStartY) return;
+    if (!pullStartY || isPwa) return; // Skip in PWA mode
     
     const currentY = e.changedTouches[0].clientY;
     const pullDistance = currentY - pullStartY;
@@ -193,7 +210,7 @@ const DisplayHome = () => {
     }
     
     // If pulled far enough, trigger a refresh
-    if (pullDistance > refreshDistance && (window.scrollY === 0 || document.documentElement.scrollTop === 0)) {
+    if (pullDistance > refreshDistance && document.documentElement.scrollTop === 0) {
       handleRefresh();
     }
     
@@ -232,13 +249,13 @@ const DisplayHome = () => {
   return (
     <div 
       ref={contentRef}
-      className="min-h-screen w-full flex flex-col justify-start items-center overflow-y-auto touch-scroll"
+      className={`min-h-screen w-full flex flex-col justify-start items-center overflow-y-auto touch-scroll ${isPwa ? 'pwa-content' : ''}`}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
-      {/* Pull to refresh indicator */}
-      {isRefreshing && (
+      {/* Pull to refresh indicator - don't show in PWA mode */}
+      {isRefreshing && !isPwa && (
         <div className="fixed top-16 left-0 right-0 flex justify-center z-50">
           <div className="bg-fuchsia-600 text-white px-4 py-2 rounded-full text-sm font-medium flex items-center">
             <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -250,7 +267,7 @@ const DisplayHome = () => {
         </div>
       )}
     
-      <div ref={topRef} className="min-h-screen w-full flex flex-col justify-start items-center bg-gradient-to-b from-black via-black to-neutral-900 pt-0 mt-[-5px] pb-0 px-2 md:px-8 content-container overflow-y-auto touch-scroll">
+      <div ref={topRef} className={`min-h-screen w-full flex flex-col justify-start items-center bg-gradient-to-b from-black via-black to-neutral-900 pt-0 mt-[-5px] pb-0 px-2 md:px-8 content-container overflow-y-auto touch-scroll ${isPwa ? 'pwa-content' : ''}`}>
         {/* Welcome Section */}
         <motion.div 
           initial={{ opacity: 0, y: -20 }} 
