@@ -35,92 +35,22 @@ const PremiumPlayer = () => {
   const [showLyrics, setShowLyrics] = useState(false);
   const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth < 768);
   
-  // Touch gesture variables
-  const [touchStartY, setTouchStartY] = useState(0);
-  const [touchStartX, setTouchStartX] = useState(0);
   const playerRef = useRef(null);
   const progressBarRef = useRef(null);
   const volumeControlRef = useRef(null);
-  const MIN_SWIPE_DISTANCE = 50; // Minimum distance for a swipe to be detected
-  const [isTouchingProgressBar, setIsTouchingProgressBar] = useState(false);
-  const [isTouchingVolumeControl, setIsTouchingVolumeControl] = useState(false);
-
-  // Handler for touch start
-  const handleTouchStart = (e) => {
-    // Don't process swipe if user is interacting with progress bar or volume control
-    if (e.target.type === 'range') {
-      if (e.target.className.includes('volume-slider')) {
-        setIsTouchingVolumeControl(true);
-      } else {
-        setIsTouchingProgressBar(true);
-      }
-      return;
-    }
-    
-    setTouchStartY(e.touches[0].clientY);
-    setTouchStartX(e.touches[0].clientX);
-  };
-
-  // Handler for touch end
-  const handleTouchEnd = (e) => {
-    // Reset touch states for controls
-    if (isTouchingProgressBar) {
-      setIsTouchingProgressBar(false);
-      return;
-    }
-    
-    if (isTouchingVolumeControl) {
-      setIsTouchingVolumeControl(false);
-      return;
-    }
-    
-    if (!touchStartY || !touchStartX) return;
-    
-    const touchEndY = e.changedTouches[0].clientY;
-    const touchEndX = e.changedTouches[0].clientX;
-    
-    const yDistance = touchStartY - touchEndY;
-    const xDistance = touchStartX - touchEndX;
-    
-    // Vertical swipe detection (for showing/hiding player)
-    if (Math.abs(yDistance) > Math.abs(xDistance) && Math.abs(yDistance) > MIN_SWIPE_DISTANCE) {
-      if (yDistance > 0) {
-        // Swipe up - show player if hidden
-        if (hidePlayer) setShowExtraControls(true);
-      } else {
-        // Swipe down - hide player
-        setShowExtraControls(false);
-      }
-    } 
-    // Horizontal swipe detection (for changing tracks)
-    else if (Math.abs(xDistance) > Math.abs(yDistance) && Math.abs(xDistance) > MIN_SWIPE_DISTANCE) {
-      if (xDistance > 0) {
-        // Swipe left - next track
-        Next();
-      } else {
-        // Swipe right - previous track
-        Previous();
-      }
-    }
-    
-    // Reset touch coordinates
-    setTouchStartY(0);
-    setTouchStartX(0);
-  };
 
   // Add player height to document for styling
   useEffect(() => {
-    // If track exists, add a class and style to the body
+    // If track exists, set CSS variables for the padding
     if (track) {
-      // Add a style tag for the padding
-      // For large screens without a player visible, set padding to 0
+      // Set a CSS variable for the player height
       const playerHeight = isSmallScreen ? '50px' : hidePlayer ? '0' : '60px';
       const navHeight = isSmallScreen ? '50px' : '0'; // Navigation bar height on mobile
       const totalPadding = isSmallScreen 
         ? (hidePlayer ? navHeight : `calc(${playerHeight} + ${navHeight})`) 
         : playerHeight;
       
-      // Use CSS variables instead of direct styling to avoid conflicts
+      // Use CSS variables for styling
       document.documentElement.style.setProperty('--player-bottom-padding', totalPadding);
       
       // Cleanup function
@@ -345,27 +275,11 @@ const PremiumPlayer = () => {
     };
   }, []);
 
-  // Progress bar on mobile
-  const handleProgressTouchStart = (e) => {
-    e.stopPropagation();
-    setIsTouchingProgressBar(true);
-  };
-
-  const handleProgressTouchEnd = (e) => {
-    e.stopPropagation();
-    setIsTouchingProgressBar(false);
-  };
-
-  // Volume control on mobile
-  const handleVolumeTouchStart = (e) => {
-    e.stopPropagation();
-    setIsTouchingVolumeControl(true);
-  };
-
-  const handleVolumeTouchEnd = (e) => {
-    e.stopPropagation();
-    setIsTouchingVolumeControl(false);
-  };
+  // Progress bar functions
+  const handleProgressTouchStart = () => {};
+  const handleProgressTouchEnd = () => {};
+  const handleVolumeTouchStart = () => {};
+  const handleVolumeTouchEnd = () => {};
 
   // Add styles for better touch interaction on mobile
   useEffect(() => {
@@ -402,22 +316,6 @@ const PremiumPlayer = () => {
           border-radius: 4px;
           margin: 0 8px;
         }
-        
-        /* Reduce animation and blur during playback to improve performance */
-        .mobile-player-overlay {
-          backface-visibility: hidden;
-          transform: translateZ(0);
-          perspective: 1000;
-          will-change: transform;
-          transition: transform 0.2s ease-out;
-        }
-        
-        /* Prevent text selection during touch */
-        .player-container * {
-          user-select: none;
-          -webkit-user-select: none;
-          -webkit-touch-callout: none;
-        }
       }
     `;
     document.head.appendChild(style);
@@ -439,8 +337,6 @@ const PremiumPlayer = () => {
         className="fixed left-0 w-full z-50 player-container"
         style={{ bottom: isSmallScreen ? '50px' : '0' }}
         ref={playerRef}
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
       >
         {/* Mobile Player (full controls) */}
         {isSmallScreen && showExtraControls && !hidePlayer && (

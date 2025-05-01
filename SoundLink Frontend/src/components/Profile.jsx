@@ -55,10 +55,26 @@ const Profile = () => {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Log the selected file info
+      console.log("Selected file:", file.name, file.type, file.size);
+      
+      // Create blob URL for preview
       const objectUrl = URL.createObjectURL(file);
       console.log("Created object URL for preview:", objectUrl);
+      
+      // Set the preview image
       setPreview(objectUrl);
       setSelectedImage(file);
+      
+      // Validate image
+      const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+      if (!validTypes.includes(file.type)) {
+        console.warn("Warning: Selected file may not be a supported image type:", file.type);
+      }
+      
+      if (file.size > 5 * 1024 * 1024) {
+        console.warn("Warning: Image is large (>5MB) and may fail to upload");
+      }
     }
   };
 
@@ -168,12 +184,10 @@ const Profile = () => {
               alt="Profile"
               className="w-32 h-32 rounded-full object-cover border-4 border-fuchsia-700 shadow-lg"
               loading="eager"
-              onLoad={(e) => e.target.classList.add('opacity-100')}
-              style={{ opacity: 0, transition: 'opacity 0.3s ease' }}
               onError={(e) => {
+                console.error("Failed to load avatar:", e.target.src);
                 e.target.onerror = null;
                 e.target.src = '/default-avatar.png';
-                e.target.classList.add('opacity-100');
               }}
             />
             <label htmlFor="profile-image-upload" className="absolute bottom-2 right-2 bg-fuchsia-700 text-white px-3 py-1 rounded-full cursor-pointer text-xs font-semibold hover:bg-fuchsia-800 transition">

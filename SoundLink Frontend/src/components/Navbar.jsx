@@ -24,11 +24,6 @@ const Navbar = (props) => {
     const [showBottomNav, setShowBottomNav] = useState(true);
     const [showQueue, setShowQueue] = useState(false);
 
-    // Adjust bottom navigation position when a track is playing
-    useEffect(() => {
-        // No need for the style injection, we'll handle this with direct styles
-    }, [track]);
-
     // Mobile keyboard detection for iOS and Android
     const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
     
@@ -61,26 +56,6 @@ const Navbar = (props) => {
         if (savedPref !== null) {
             setShowBottomNav(savedPref === 'true');
         }
-        
-        // Prevent accidental swipe triggers on homepage
-        const preventSwipeTriggering = (e) => {
-            // Only prevent if it's a horizontal swipe on the homepage
-            if (window.location.pathname === '/' && Math.abs(e.touches[0].clientX) > 50) {
-                // Check if we're not interacting with a specific control
-                if (!e.target.closest('.player-controls') && 
-                    !e.target.closest('.progress-container') &&
-                    !e.target.closest('.volume-control')) {
-                    e.preventDefault();
-                }
-            }
-        };
-        
-        // Add passive event listener for touch events
-        document.addEventListener('touchmove', preventSwipeTriggering, { passive: false });
-        
-        return () => {
-            document.removeEventListener('touchmove', preventSwipeTriggering);
-        };
     }, []);
 
     // Handle click outside of dropdown to close it
@@ -114,86 +89,6 @@ const Navbar = (props) => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
     }, [showSearchBar]);
-
-    // Add specific touchstart handler for mobile
-    const handleTouchStart = (e, type) => {
-        e.stopPropagation();
-        
-        if (type === 'profile') {
-            // For profile dropdown in header
-            setShowProfileDropdown(!showProfileDropdown);
-        } else if (type === 'more') {
-            // For "More" menu in bottom nav
-            setShowMobileDropdown(!showMobileDropdown);
-        }
-    };
-    
-    // Close dropdown when touched outside
-    const handleBodyTouchStart = (e) => {
-        if (profileDropdownRef.current && !profileDropdownRef.current.contains(e.target)) {
-            setShowProfileDropdown(false);
-        }
-        
-        if (mobileDropdownRef.current && !mobileDropdownRef.current.contains(e.target)) {
-            setShowMobileDropdown(false);
-        }
-    };
-    
-    // Add touch event listeners for mobile
-    useEffect(() => {
-        document.body.addEventListener('touchstart', handleBodyTouchStart);
-        
-        // Add proper non-passive touch event listeners to elements
-        if (profileDropdownRef.current) {
-            const profileButton = profileDropdownRef.current.querySelector('button');
-            if (profileButton) {
-                const profileTouchHandler = (e) => handleTouchStart(e, 'profile');
-                profileButton.addEventListener('touchstart', profileTouchHandler, { passive: false });
-                
-                return () => {
-                    document.body.removeEventListener('touchstart', handleBodyTouchStart);
-                    profileButton.removeEventListener('touchstart', profileTouchHandler);
-                };
-            }
-        }
-        
-        return () => {
-            document.body.removeEventListener('touchstart', handleBodyTouchStart);
-        };
-    }, []);
-
-    // Additional effect for the "more" button when it's rendered
-    useEffect(() => {
-        const moreButton = document.querySelector('.more-button');
-        if (moreButton) {
-            const moreTouchHandler = (e) => handleTouchStart(e, 'more');
-            moreButton.addEventListener('touchstart', moreTouchHandler, { passive: false });
-            
-            return () => {
-                moreButton.removeEventListener('touchstart', moreTouchHandler);
-            };
-        }
-    }, []);
-
-    // Add effect for handling mobile dropdown touch events
-    useEffect(() => {
-        // Only set up when the dropdown is shown
-        if (showMobileDropdown && mobileDropdownRef.current) {
-            // Create a handler that stops propagation
-            const stopTouchPropagation = (e) => {
-                e.stopPropagation();
-            };
-            
-            // Add event listener with passive: false
-            mobileDropdownRef.current.addEventListener('touchstart', stopTouchPropagation, { passive: false });
-            
-            return () => {
-                if (mobileDropdownRef.current) {
-                    mobileDropdownRef.current.removeEventListener('touchstart', stopTouchPropagation);
-                }
-            };
-        }
-    }, [showMobileDropdown]);
 
     const handleLogout = () => {
         logout();
@@ -292,17 +187,51 @@ const Navbar = (props) => {
         // Try both avatar and image properties since either might be used in the API
         const avatarUrl = user.avatar || user.image;
         
+        // Log the avatar URL for debugging
+        console.log("Original Avatar URL:", avatarUrl);
+        
+        // No avatar URL available
+        if (!avatarUrl) {
+            console.log("No avatar URL found, using default");
+            return '/default-avatar.png';
+        }
+        
         // Check if it's a Cloudinary URL and ensure it's using HTTPS
-        if (avatarUrl && avatarUrl.includes('cloudinary.com')) {
-            return avatarUrl.replace('http://', 'https://');
+        if (avatarUrl.includes('cloudinary.com')) {
+            const fixedUrl = avatarUrl.replace('http://', 'https://');
+            console.log("Cloudinary URL fixed:", fixedUrl);
+            return fixedUrl;
+        }
+        
+        // If it's a data URL or base64 image, return it directly
+        if (avatarUrl.startsWith('data:') || avatarUrl.startsWith('blob:')) {
+            console.log("Data/Blob URL detected");
+            return avatarUrl;
         }
         
         // If it's a local path starting with /uploads, prepend the backend URL
-        if (avatarUrl && avatarUrl.startsWith('/uploads')) {
-            return `${import.meta.env.VITE_BACKEND_URL}${avatarUrl}`;
+        if (avatarUrl.startsWith('/uploads')) {
+            const fullUrl = `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000'}${avatarUrl}`;
+            console.log("Local upload URL constructed:", fullUrl);
+            return fullUrl;
         }
         
-        return avatarUrl || '/default-avatar.png';
+        // Handle full URLs
+        if (avatarUrl.startsWith('http://') || avatarUrl.startsWith('https://')) {
+            console.log("Full URL detected");
+            return avatarUrl;
+        }
+        
+        // For other relative paths, also prepend backend URL
+        if (!avatarUrl.startsWith('/')) {
+            const fullUrl = `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000'}/${avatarUrl}`;
+            console.log("Relative path converted:", fullUrl);
+            return fullUrl;
+        }
+        
+        // For any other case, just return the URL as is
+        console.log("Using URL as is");
+        return avatarUrl;
     };
 
     return (
@@ -446,14 +375,11 @@ const Navbar = (props) => {
                                         <img 
                                             src={getUserAvatar()} 
                                             alt={user.username || 'User'} 
-                                            className="w-full h-full object-cover"
+                                            className="w-full h-full object-cover opacity-100"
                                             loading="eager"
-                                            onLoad={(e) => e.target.classList.add('opacity-100')}
-                                            style={{ opacity: 0, transition: 'opacity 0.3s ease' }}
                                             onError={(e) => {
                                                 e.target.onerror = null;
                                                 e.target.src = '/default-avatar.png';
-                                                e.target.classList.add('opacity-100');
                                             }}
                                         />
                                     ) : (
@@ -472,14 +398,11 @@ const Navbar = (props) => {
                                                 <img 
                                                     src={getUserAvatar()} 
                                                     alt={user.username || 'User'} 
-                                                    className="w-full h-full object-cover"
+                                                    className="w-full h-full object-cover opacity-100"
                                                     loading="eager"
-                                                    onLoad={(e) => e.target.classList.add('opacity-100')}
-                                                    style={{ opacity: 0, transition: 'opacity 0.3s ease' }}
                                                     onError={(e) => {
                                                         e.target.onerror = null;
                                                         e.target.src = '/default-avatar.png';
-                                                        e.target.classList.add('opacity-100');
                                                     }}
                                                 />
                                             </div>
@@ -543,10 +466,7 @@ const Navbar = (props) => {
 
             {/* Mobile Bottom Navigation Bar - Only visible on small screens when preferred and no keyboard */}
             <div 
-                className={`md:hidden fixed-bottom bg-black border-t border-neutral-800 py-1 px-3 z-[30] backdrop-blur-xl ${isKeyboardVisible || !showBottomNav ? 'hidden' : 'block'}`} 
-                style={{
-                    bottom: 0
-                }}
+                className={`md:hidden fixed bottom-0 left-0 right-0 bg-black border-t border-neutral-800 py-1 px-3 z-[30] backdrop-blur-xl ${isKeyboardVisible || !showBottomNav ? 'hidden' : 'block'}`} 
             >
                 <div className="flex items-center justify-between">
                     {/* Home */}
@@ -597,10 +517,7 @@ const Navbar = (props) => {
 
                     {/* Queue */}
                     <button 
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            setShowQueue(!showQueue);
-                        }}
+                        onClick={() => setShowQueue(!showQueue)}
                         className="flex flex-col items-center"
                     >
                         <FaList className="w-5 h-5 text-[#a855f7]" />
@@ -609,10 +526,7 @@ const Navbar = (props) => {
 
                     {/* More (Three dots) */}
                     <button 
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            setShowMobileDropdown(!showMobileDropdown);
-                        }}
+                        onClick={() => setShowMobileDropdown(!showMobileDropdown)}
                         className="flex flex-col items-center more-button"
                     >
                         <FaEllipsisH className="w-5 h-5 text-[#a855f7]" />
@@ -623,7 +537,6 @@ const Navbar = (props) => {
                             <div 
                                 ref={mobileDropdownRef}
                                 className="absolute bottom-full mb-2 right-0 w-40 rounded-lg overflow-hidden bg-neutral-800 shadow-lg border border-neutral-700 z-50"
-                                onClick={(e) => e.stopPropagation()}
                             >
                                 {/* Only show Playlists option for small screens */}
                                 <button 
