@@ -164,15 +164,21 @@ const DisplayHome = () => {
     const currentY = e.touches[0].clientY;
     const pullDistance = currentY - pullStartY;
     
-    // Only allow pulling down
-    if (pullDistance > 0 && document.documentElement.scrollTop === 0) {
+    // Only allow pulling down when at the top of the content
+    if (pullDistance > 0 && window.scrollY === 0) {
       // Add a visual indicator that shows the pull progress
       if (contentRef.current) {
         contentRef.current.style.transform = `translateY(${Math.min(pullDistance * 0.3, refreshDistance * 0.3)}px)`;
       }
       
       // Prevent default to disable default browser pull-to-refresh behavior
-      e.preventDefault();
+      // but only if we're at the top of the page
+      if (document.documentElement.scrollTop === 0) {
+        e.preventDefault();
+      }
+    } else {
+      // Allow normal scrolling behavior
+      return true;
     }
   };
   
@@ -231,7 +237,7 @@ const DisplayHome = () => {
   return (
     <div 
       ref={contentRef}
-      className="min-h-screen w-full flex flex-col justify-start items-center"
+      className="min-h-screen w-full flex flex-col justify-start items-center overflow-y-auto touch-scroll"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
@@ -249,7 +255,7 @@ const DisplayHome = () => {
         </div>
       )}
     
-      <div ref={topRef} className="min-h-screen w-full flex flex-col justify-start items-center bg-gradient-to-b from-black via-black to-neutral-900 pt-0 mt-[-5px] pb-0 px-2 md:px-8 content-container">
+      <div ref={topRef} className="min-h-screen w-full flex flex-col justify-start items-center bg-gradient-to-b from-black via-black to-neutral-900 pt-0 mt-[-5px] pb-0 px-2 md:px-8 content-container overflow-y-auto touch-scroll">
         {/* Welcome Section */}
         <motion.div 
           initial={{ opacity: 0, y: -20 }} 
@@ -294,7 +300,7 @@ const DisplayHome = () => {
                 ))}
               </div>
               
-              <div ref={trendingRef} className="flex gap-2 overflow-x-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent py-6 px-4">
+              <div ref={trendingRef} className="flex gap-2 overflow-x-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent py-6 px-4 touch-scroll">
                 {trendingSongs && trendingSongs.map((song) => (
                   <div 
                     key={song._id}
@@ -387,7 +393,7 @@ const DisplayHome = () => {
             <div className="relative">
               <div
                 ref={albumRowRef}
-                className="flex gap-5 overflow-x-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent py-3 px-1"
+                className="flex gap-5 overflow-x-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent py-3 px-1 touch-scroll"
                 style={{ scrollBehavior: 'smooth' }}
               >
                 {albumsData && albumsData.map((item) => (
@@ -424,7 +430,7 @@ const DisplayHome = () => {
             <div className="relative">
               <div
                 ref={artistsRowRef}
-                className="flex gap-8 overflow-x-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent py-4 px-1"
+                className="flex gap-8 overflow-x-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent py-4 px-1 touch-scroll"
                 style={{ scrollBehavior: 'smooth' }}
               >
                 {artists && artists.map((artist) => (
@@ -474,7 +480,7 @@ const DisplayHome = () => {
             <div className="relative">
               <div
                 ref={movieAlbumRowRef}
-                className="flex gap-5 overflow-x-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent py-3 px-1"
+                className="flex gap-5 overflow-x-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent py-3 px-1 touch-scroll"
                 style={{ scrollBehavior: 'smooth' }}
               >
                 {movieAlbums && movieAlbums.map((item) => (
