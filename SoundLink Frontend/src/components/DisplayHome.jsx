@@ -44,10 +44,7 @@ const DisplayHome = () => {
   const [mainColor, setMainColor] = useState("#8E24AA");
   const [selectedSongId, setSelectedSongId] = useState(null);
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [pullStartY, setPullStartY] = useState(0);
   const [isPwa, setIsPwa] = useState(false);
-  const refreshDistance = 100; // Distance in pixels needed to trigger a refresh
   const contentRef = useRef(null);
 
   useEffect(() => {
@@ -162,82 +159,6 @@ const DisplayHome = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Pull to refresh functionality
-  const handleTouchStart = (e) => {
-    // Only enable pull to refresh when scrolled to the top and not in PWA mode
-    if (document.documentElement.scrollTop === 0 && !isPwa) {
-      setPullStartY(e.touches[0].clientY);
-    }
-  };
-  
-  const handleTouchMove = (e) => {
-    if (!pullStartY || isPwa) return; // Skip in PWA mode
-    
-    const currentY = e.touches[0].clientY;
-    const pullDistance = currentY - pullStartY;
-    
-    // Only allow pulling down when at the top of the content
-    if (pullDistance > 0 && window.scrollY === 0) {
-      // Add a visual indicator that shows the pull progress
-      if (contentRef.current) {
-        contentRef.current.style.transform = `translateY(${Math.min(pullDistance * 0.3, refreshDistance * 0.3)}px)`;
-      }
-      
-      // Prevent default to disable default browser pull-to-refresh behavior
-      // but only if we're at the top of the page
-      if (document.documentElement.scrollTop === 0) {
-        e.preventDefault();
-      }
-    } else {
-      // Allow normal scrolling behavior
-      return true;
-    }
-  };
-  
-  const handleTouchEnd = (e) => {
-    if (!pullStartY || isPwa) return; // Skip in PWA mode
-    
-    const currentY = e.changedTouches[0].clientY;
-    const pullDistance = currentY - pullStartY;
-    
-    // Reset the transform
-    if (contentRef.current) {
-      contentRef.current.style.transform = 'translateY(0)';
-      contentRef.current.style.transition = 'transform 0.3s ease-out';
-      setTimeout(() => {
-        contentRef.current.style.transition = '';
-      }, 300);
-    }
-    
-    // If pulled far enough, trigger a refresh
-    if (pullDistance > refreshDistance && document.documentElement.scrollTop === 0) {
-      handleRefresh();
-    }
-    
-    setPullStartY(0);
-  };
-  
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    
-    try {
-      // Refresh all the data needed by this component
-      await fetchData(); // Use fetchData instead of fetchTrending
-      
-      // Provide haptic feedback on successful refresh (on supported devices)
-      if (navigator.vibrate) {
-        navigator.vibrate(200);
-      }
-      
-      toast.success("Content refreshed!");
-    } catch (error) {
-      toast.error("Failed to refresh content");
-      console.error("Refresh error:", error);
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen flex justify-center items-center bg-black text-white">
@@ -249,25 +170,9 @@ const DisplayHome = () => {
   return (
     <div 
       ref={contentRef}
-      className={`min-h-screen w-full flex flex-col justify-start items-center overflow-y-auto touch-scroll ${isPwa ? 'pwa-content' : ''}`}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
+      className={`min-h-screen w-full flex flex-col justify-start items-center overflow-y-auto ${isPwa ? 'pwa-content' : ''}`}
     >
-      {/* Pull to refresh indicator - don't show in PWA mode */}
-      {isRefreshing && !isPwa && (
-        <div className="fixed top-16 left-0 right-0 flex justify-center z-50">
-          <div className="bg-fuchsia-600 text-white px-4 py-2 rounded-full text-sm font-medium flex items-center">
-            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            Refreshing...
-          </div>
-        </div>
-      )}
-    
-      <div ref={topRef} className={`min-h-screen w-full flex flex-col justify-start items-center bg-gradient-to-b from-black via-black to-neutral-900 pt-0 mt-[-5px] pb-0 px-2 md:px-8 content-container overflow-y-auto touch-scroll ${isPwa ? 'pwa-content' : ''}`}>
+      <div ref={topRef} className={`min-h-screen w-full flex flex-col justify-start items-center bg-gradient-to-b from-black via-black to-neutral-900 pt-0 mt-[-5px] pb-0 px-2 md:px-8 content-container overflow-y-auto ${isPwa ? 'pwa-content' : ''}`}>
         {/* Welcome Section */}
         <motion.div 
           initial={{ opacity: 0, y: -20 }} 
@@ -312,13 +217,12 @@ const DisplayHome = () => {
                 ))}
               </div>
               
-              <div ref={trendingRef} className="flex gap-2 overflow-x-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent py-6 px-4 touch-scroll" style={{ touchAction: 'pan-x' }}>
+              <div ref={trendingRef} className="flex gap-2 overflow-x-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent py-6 px-4">
                 {trendingSongs && trendingSongs.map((song) => (
                   <div 
                     key={song._id}
                     onClick={() => playWithId(song._id)}
-                    className={`flex-shrink-0 w-64 ${track && track._id === song._id ? 'bg-fuchsia-900/30' : 'bg-black/30'} backdrop-blur-md p-4 rounded-lg hover:bg-white/10 transition-all cursor-pointer group song-item`}
-                    style={{ touchAction: 'manipulation' }}
+                    className={`flex-shrink-0 w-64 ${track && track._id === song._id ? 'bg-fuchsia-900/30' : 'bg-black/30'} backdrop-blur-md p-4 rounded-lg hover:bg-white/10 transition-all cursor-pointer group`}
                   >
                     <div className="flex gap-4 items-center">
                       <div className="relative w-16 h-16 rounded-md overflow-hidden">
@@ -406,8 +310,8 @@ const DisplayHome = () => {
             <div className="relative">
               <div
                 ref={albumRowRef}
-                className="flex gap-5 overflow-x-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent py-3 px-1 touch-scroll"
-                style={{ scrollBehavior: 'smooth', touchAction: 'pan-x' }}
+                className="flex gap-5 overflow-x-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent py-3 px-1"
+                style={{ scrollBehavior: 'smooth' }}
               >
                 {albumsData && albumsData.map((item) => (
                   <AlbumItem
@@ -443,8 +347,8 @@ const DisplayHome = () => {
             <div className="relative">
               <div
                 ref={artistsRowRef}
-                className="flex gap-8 overflow-x-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent py-4 px-1 touch-scroll"
-                style={{ scrollBehavior: 'smooth', touchAction: 'pan-x' }}
+                className="flex gap-8 overflow-x-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent py-4 px-1"
+                style={{ scrollBehavior: 'smooth' }}
               >
                 {artists && artists.map((artist) => (
                   <div 
@@ -493,8 +397,8 @@ const DisplayHome = () => {
             <div className="relative">
               <div
                 ref={movieAlbumRowRef}
-                className="flex gap-5 overflow-x-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent py-3 px-1 touch-scroll"
-                style={{ scrollBehavior: 'smooth', touchAction: 'pan-x' }}
+                className="flex gap-5 overflow-x-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent py-3 px-1"
+                style={{ scrollBehavior: 'smooth' }}
               >
                 {movieAlbums && movieAlbums.map((item) => (
                   <MovieAlbumItem
@@ -529,19 +433,19 @@ const DisplayHome = () => {
             {/* Songs Grid */}
             <div className="bg-neutral-900/30 backdrop-blur-md rounded-xl p-6 border border-white/5">
               {currentSongs && currentSongs.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 song-grid touch-scroll">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {currentSongs.map((song) => (
                     <div 
                       key={song._id} 
-                      className={`flex items-center gap-4 ${track && track._id === song._id ? 'bg-fuchsia-900/30' : 'bg-black/20'} p-3 rounded-lg hover:bg-white/10 transition-all cursor-pointer group song-item`}
+                      className={`flex items-center gap-4 ${track && track._id === song._id ? 'bg-fuchsia-900/30' : 'bg-black/20'} p-3 rounded-lg hover:bg-white/10 transition-all cursor-pointer group`}
                       onClick={() => playWithId(song._id)}
                     >
-                      <div className="bg-neutral-800 w-12 h-12 rounded flex items-center justify-center relative touch-action-none">
+                      <div className="bg-neutral-800 w-12 h-12 rounded flex items-center justify-center relative">
                         {song.image ? (
                           <img 
                             src={song.image} 
                             alt={song.name} 
-                            className="w-full h-full object-cover rounded" 
+                            className="w-full h-full object-cover rounded"
                           />
                         ) : (
                           <MdPlayArrow size={24} className="text-fuchsia-500" />
@@ -569,8 +473,7 @@ const DisplayHome = () => {
                       <div className="flex items-center gap-3">
                         <button 
                           onClick={(e) => handleToggleFavorite(e, song._id)}
-                          className="text-white opacity-50 hover:opacity-100 transition-opacity mobile-tap"
-                          style={{ touchAction: 'manipulation' }}
+                          className="text-white opacity-50 hover:opacity-100 transition-opacity"
                         >
                           {isFavorite(song._id) ? 
                             <MdFavorite className="text-fuchsia-500" size={20} /> : 
@@ -579,15 +482,13 @@ const DisplayHome = () => {
                         </button>
                         <button 
                           onClick={(e) => handleAddToPlaylist(e, song._id)}
-                          className="text-white opacity-50 hover:opacity-100 transition-opacity mobile-tap"
-                          style={{ touchAction: 'manipulation' }}
+                          className="text-white opacity-50 hover:opacity-100 transition-opacity"
                         >
                           <MdPlaylistAdd size={22} />
                         </button>
                         <button 
                           onClick={(e) => handleAddToQueue(e, song._id)}
-                          className="text-white opacity-50 hover:opacity-100 transition-opacity mobile-tap"
-                          style={{ touchAction: 'manipulation' }}
+                          className="text-white opacity-50 hover:opacity-100 transition-opacity"
                         >
                           <MdQueueMusic size={20} />
                         </button>
