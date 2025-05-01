@@ -21,7 +21,7 @@ const staticAssetsToCache = [
   '/icons/icon-512x512.svg',
   '/assets/default-album.png',
   '/assets/default-artist.png',
-  '/assets/default-avatar.png'
+  '/assets/default-avatar.svg'
 ];
 
 // Install event - cache static assets
@@ -145,7 +145,7 @@ self.addEventListener('fetch', (event) => {
                 .catch(() => {
                   // Return appropriate fallback image based on URL pattern
                   if (url.pathname.includes('/avatars/')) {
-                    return caches.match('/assets/default-avatar.png');
+                    return caches.match('/assets/default-avatar.svg');
                   } else if (url.pathname.includes('artist')) {
                     return caches.match('/assets/default-artist.png');
                   } else {

@@ -16,7 +16,7 @@ const EditDeleteManager = ({ token, type }) => {
 
   const fetchItems = async () => {
     setLoading(true);
-    const endpoint = type === "album" ? "/api/album/list" : "/api/song/list";
+    const endpoint = type === "album" ? "/api/album/list" : "/api/song/list?all=true";
     const res = await axios.get(`${url}${endpoint}`, {
       headers: { Authorization: `Bearer ${token}` },
     });

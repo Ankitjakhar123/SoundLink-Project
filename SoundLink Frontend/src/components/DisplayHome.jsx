@@ -62,7 +62,7 @@ const DisplayHome = () => {
       }
       
       // Fetch songs
-      const songsRes = await axios.get(`${backendUrl}/api/song/list`);
+      const songsRes = await axios.get(`${backendUrl}/api/song/list?all=true`);
       if (songsRes.data.success) {
         setSongsData(songsRes.data.songs);
         
@@ -72,6 +72,9 @@ const DisplayHome = () => {
           const sorted = [...songsRes.data.songs].sort(() => Math.random() - 0.5).slice(0, 10);
           setTrendingSongs(sorted);
         }
+        
+        // Log the total count of songs for debugging
+        console.log(`Loaded ${songsRes.data.songs.length} total songs`);
       }
       
       // Fetch artists from the new API endpoint

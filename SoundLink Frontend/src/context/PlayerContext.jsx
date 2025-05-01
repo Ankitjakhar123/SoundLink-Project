@@ -559,8 +559,12 @@ export const PlayerContextProvider = ({ children }) => {
     try {
       setLoading(prev => ({...prev, songs: true}));
       setError(prev => ({...prev, songs: null}));
-      const response = await axios.get(`${API_BASE_URL}/api/song/list`);
+      
+      // Use all=true parameter to get all songs without pagination
+      const response = await axios.get(`${API_BASE_URL}/api/song/list?all=true`);
       setSongsData(response.data.songs);
+      console.log(`Loaded ${response.data.songs.length} total songs from global context`);
+      
       if (response.data.songs.length > 0) {
         setTrack(response.data.songs[0]);
       }

@@ -19,9 +19,12 @@ const Profile = () => {
     console.log("User data in profile:", user);
     if (user?.image) console.log("User image URL:", user.image);
     if (user?.avatar) console.log("User avatar URL:", user.avatar);
+    
+    // Log localStorage token for debugging auth issues
+    console.log("Auth token exists:", !!localStorage.getItem('token'));
   }, [user]);
 
-  // Set initial preview from user image/avatar
+  // Set initial preview from user image/avatar with improved logging
   useEffect(() => {
     if (user?.avatar || user?.image) {
       const avatarUrl = user.avatar || user.image;
@@ -29,16 +32,23 @@ const Profile = () => {
       
       // Handle Cloudinary URLs
       if (avatarUrl && avatarUrl.includes('cloudinary.com')) {
-        setPreview(avatarUrl.replace('http://', 'https://'));
+        const fixedUrl = avatarUrl.replace('http://', 'https://');
+        console.log("Using Cloudinary URL:", fixedUrl);
+        setPreview(fixedUrl);
       } 
       // Handle local uploads by prepending backend URL
       else if (avatarUrl && avatarUrl.startsWith('/uploads')) {
         const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
-        setPreview(`${backendUrl}${avatarUrl}`);
+        const fullUrl = `${backendUrl}${avatarUrl}`;
+        console.log("Using local upload URL:", fullUrl);
+        setPreview(fullUrl);
       }
       else {
+        console.log("Using direct URL:", avatarUrl);
         setPreview(avatarUrl);
       }
+    } else {
+      console.log("No avatar URL found in user data");
     }
   }, [user?.image, user?.avatar]);
 
@@ -78,6 +88,13 @@ const Profile = () => {
     }
   };
 
+  // Add cache-busting parameter to URLs
+  const addCacheBuster = (url) => {
+    if (!url) return url;
+    const separator = url.includes('?') ? '&' : '?';
+    return `${url}${separator}t=${new Date().getTime()}`;
+  };
+
   // Real profile update
   const handleSave = async (e) => {
     e.preventDefault();
@@ -91,12 +108,14 @@ const Profile = () => {
       formData.append('email', email);
       if (selectedImage) {
         formData.append('image', selectedImage);
+        console.log('Image added to form data:', selectedImage.name, selectedImage.type, selectedImage.size);
+      } else {
+        console.log('No new image selected for upload');
       }
       
       // Debug - log what we're sending
       console.log('Sending username:', username);
       console.log('Sending email:', email);
-      console.log('Sending image:', selectedImage);
       
       const token = localStorage.getItem('token');
       if (!token) {
@@ -108,6 +127,7 @@ const Profile = () => {
       const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
       console.log('Using backend URL:', backendUrl);
       
+      console.log('Sending profile update request...');
       const res = await axios.post(
         `${backendUrl}/api/user/update`,
         formData,
@@ -121,34 +141,64 @@ const Profile = () => {
       );
       
       console.log('Response received:', res);
+      console.log('User data in response:', res.data.user);
       
       if (res.status === 200 && res.data.success && res.data.user) {
         setSuccess('Profile updated successfully!');
         
         // Update local state
         setUserData(res.data.user);
+        console.log('Updated local userData with:', res.data.user);
         
         // Update the AuthContext with new user data
         updateUserData(res.data.user);
+        console.log('Updated AuthContext with:', res.data.user);
         
         // Update preview with the Cloudinary URL if available
         if (res.data.user.image || res.data.user.avatar) {
           const avatarUrl = res.data.user.image || res.data.user.avatar;
+          console.log('Setting new avatar preview from response:', avatarUrl);
           
           // Handle Cloudinary URLs
           if (avatarUrl && avatarUrl.includes('cloudinary.com')) {
-            setPreview(avatarUrl.replace('http://', 'https://'));
+            const fixedUrl = avatarUrl.replace('http://', 'https://');
+            console.log("Using Cloudinary URL from response:", fixedUrl);
+            // Add cache buster to prevent browser caching
+            setPreview(addCacheBuster(fixedUrl));
           } 
           // Handle local uploads by prepending backend URL
           else if (avatarUrl && avatarUrl.startsWith('/uploads')) {
-            setPreview(`${backendUrl}${avatarUrl}`);
+            const fullUrl = `${backendUrl}${avatarUrl}`;
+            console.log("Using local upload URL from response:", fullUrl);
+            // Add cache buster to prevent browser caching
+            setPreview(addCacheBuster(fullUrl));
           }
           else {
-            setPreview(avatarUrl);
+            console.log("Using direct URL from response:", avatarUrl);
+            // Add cache buster to prevent browser caching
+            setPreview(addCacheBuster(avatarUrl));
           }
+        } else {
+          console.log('No avatar/image found in response data');
+        }
+        
+        // Reload user data from server to ensure everything is in sync
+        try {
+          console.log('Reloading user data after profile update...');
+          const userRes = await axios.get(`${backendUrl}/api/auth/me`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          
+          if (userRes.data.success) {
+            console.log('Reloaded user data:', userRes.data.user);
+            updateUserData(userRes.data.user);
+          }
+        } catch (reloadErr) {
+          console.error('Error reloading user data after profile update:', reloadErr);
         }
       } else {
         setError(res.data.message || 'Update failed');
+        console.error('Update failed, response data:', res.data);
       }
     } catch (err) {
       console.error('Error updating profile:', err);
@@ -180,14 +230,17 @@ const Profile = () => {
         <div className="flex flex-col items-center gap-4">
           <div className="relative">
             <img
-              src={preview || '/default-avatar.png'}
+              src={addCacheBuster(preview) || '/default-avatar.svg'}
               alt="Profile"
               className="w-32 h-32 rounded-full object-cover border-4 border-fuchsia-700 shadow-lg"
               loading="eager"
+              onLoad={(e) => {
+                console.log("Avatar image loaded successfully:", e.target.src);
+              }}
               onError={(e) => {
                 console.error("Failed to load avatar:", e.target.src);
                 e.target.onerror = null;
-                e.target.src = '/default-avatar.png';
+                e.target.src = '/default-avatar.svg';
               }}
             />
             <label htmlFor="profile-image-upload" className="absolute bottom-2 right-2 bg-fuchsia-700 text-white px-3 py-1 rounded-full cursor-pointer text-xs font-semibold hover:bg-fuchsia-800 transition">

@@ -141,7 +141,7 @@ const ArtistDetail = () => {
           setArtist(artistRes.data.artist);
           
           // Fetch all songs
-          const songsRes = await axios.get(`${backendUrl}/api/song/list`);
+          const songsRes = await axios.get(`${backendUrl}/api/song/list?all=true`);
           if (songsRes.data.success) {
             // Filter songs by artist ID or by matching artist name in descriptions
             const artistName = artistRes.data.artist.name.toLowerCase();

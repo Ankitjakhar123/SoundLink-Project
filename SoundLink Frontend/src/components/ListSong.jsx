@@ -13,9 +13,10 @@ const ListSong = () => {
   // Fetch all songs
   const fetchSongs = async () => {
     try {
-      const response = await axios.get(`${url}/api/song/list`);
+      const response = await axios.get(`${url}/api/song/list?all=true`);
       if (response.data.success) {
         setData(response.data.songs);
+        console.log(`Loaded ${response.data.songs.length} songs in admin panel`);
       } else {
         toast.error("Failed to load songs.");
       }

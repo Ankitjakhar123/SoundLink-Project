@@ -134,16 +134,23 @@ exports.updateProfile = async (req, res) => {
     // Save user
     await user.save();
     
+    // Create a complete user response with all necessary fields
+    const userResponse = {
+      _id: user._id,
+      username: user.username,
+      email: user.email,
+      image: user.image,
+      avatar: user.avatar,
+      role: user.role,
+      cloudinaryId: user.cloudinaryId
+    };
+    
+    console.log('Profile update complete, returning user data:', userResponse);
+    
     return res.status(200).json({
       success: true,
       message: 'Profile updated successfully',
-      user: {
-        _id: user._id,
-        username: user.username,
-        email: user.email,
-        image: user.image,
-        role: user.role
-      }
+      user: userResponse
     });
   } catch (error) {
     console.error('Error updating profile:', error);

@@ -400,12 +400,33 @@ export const AuthProvider = ({ children }) => {
   const updateUserData = (userData) => {
     if (!userData) return;
     
-    setUser(prevUser => ({
-      ...prevUser,
-      ...userData
-    }));
+    // Log the incoming user data
+    console.log("Updating user data in context:", userData);
     
-    console.log("User context updated with new data:", userData);
+    // Check if we need to update image URL format
+    let updatedData = { ...userData };
+    
+    // If there's an image URL, ensure it's properly formatted
+    if (updatedData.image) {
+      // For Cloudinary URLs, ensure using HTTPS
+      if (updatedData.image.includes('cloudinary.com')) {
+        updatedData.image = updatedData.image.replace('http://', 'https://');
+        console.log("Fixed Cloudinary URL in user data:", updatedData.image);
+      }
+      
+      // For relative upload paths, ensure they'll be processed correctly later
+      console.log("Image URL in updated user data:", updatedData.image);
+    }
+    
+    // Update the user state with merged data
+    setUser(prevUser => {
+      const newUserData = {
+        ...prevUser,
+        ...updatedData
+      };
+      console.log("New merged user data:", newUserData);
+      return newUserData;
+    });
   };
 
   return (

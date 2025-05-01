@@ -23,7 +23,7 @@ const EditSong = () => {
   useEffect(() => {
     const fetchSong = async () => {
       try {
-        const res = await axios.get(`${url}/api/song/list`);
+        const res = await axios.get(`${url}/api/song/list?all=true`);
         if (res.data.success && res.data.songs) {
           const found = res.data.songs.find(s => s._id === id);
           if (found) {

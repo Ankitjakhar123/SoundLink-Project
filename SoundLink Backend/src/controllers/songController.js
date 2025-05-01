@@ -3,7 +3,7 @@ import songModel from "../models/songModel.js";
 
 const addSong = async (req, res) => {
   try {
-    const name = req.body.name; // ✅ fixed typo: bodey → body
+    const name = req.body.name;
     const desc = req.body.desc;
     const album = req.body.album;
     const artist = req.body.artist; // Add artist field
@@ -11,43 +11,97 @@ const addSong = async (req, res) => {
     const audioFile = req.files.audio[0];
     const imageFile = req.files.image[0];
 
-    const audioUpload = await cloudinary.uploader.upload(audioFile.path, {
-      resource_type: "video",
-    });
-    const imageUpload = await cloudinary.uploader.upload(imageFile.path, {
-      resource_type: "image",
-    });
-
-    // ❌ Incorrect quotes in duration string interpolation
-    const duration = `${Math.floor(audioUpload.duration / 60)}:${Math.floor(audioUpload.duration % 60)}`;
-
-    const songData = {
-      name,
-      desc,
-      album,
-      image: imageUpload.secure_url,
-      file: audioUpload.secure_url,
-      duration,
-      createdBy: req.user.id,
-    };
+    // Check for Cloudinary configuration
+    const isCloudinaryConfigured = process.env.CLOUDINARY_CLOUD_NAME && 
+                                  process.env.CLOUDINARY_API_KEY && 
+                                  process.env.CLOUDINARY_API_SECRET;
     
-    // Add artist to songData if provided
-    if (artist) {
-      songData.artist = artist;
+    if (!isCloudinaryConfigured) {
+      console.warn("Cloudinary is not configured properly. Please check environment variables.");
+      console.log("CLOUDINARY_CLOUD_NAME:", process.env.CLOUDINARY_CLOUD_NAME ? "Set" : "Not set");
+      console.log("CLOUDINARY_API_KEY:", process.env.CLOUDINARY_API_KEY ? "Set" : "Not set");
+      console.log("CLOUDINARY_API_SECRET:", process.env.CLOUDINARY_API_SECRET ? "Set" : "Not set");
+      
+      // Configure cloudinary with environment variables if they exist
+      cloudinary.config({
+        cloud_name: process.env.CLOUDINARY_CLOUD_NAME || process.env.CLOUDINARY_NAME,
+        api_key: process.env.CLOUDINARY_API_KEY,
+        api_secret: process.env.CLOUDINARY_API_SECRET || process.env.CLOUDINARY_SECRET_KEY,
+      });
     }
 
-    const song = songModel(songData);
-    await song.save();
+    console.log("Uploading song:", name);
+    console.log("Album:", album);
+    
+    try {
+      // Try to upload audio to Cloudinary
+      console.log("Uploading audio file to Cloudinary...");
+      const audioUpload = await cloudinary.uploader.upload(audioFile.path, {
+        resource_type: "video",
+        folder: "soundlink/audio",
+      });
+      console.log("Audio uploaded successfully:", audioUpload.secure_url);
+      
+      // Try to upload image to Cloudinary
+      console.log("Uploading image file to Cloudinary...");
+      const imageUpload = await cloudinary.uploader.upload(imageFile.path, {
+        resource_type: "image",
+        folder: "soundlink/images",
+      });
+      console.log("Image uploaded successfully:", imageUpload.secure_url);
 
-    res.json({ success: true, message: "Song Added" });
+      const duration = `${Math.floor(audioUpload.duration / 60)}:${Math.floor(audioUpload.duration % 60).toString().padStart(2, '0')}`;
+
+      const songData = {
+        name,
+        desc,
+        album,
+        image: imageUpload.secure_url,
+        file: audioUpload.secure_url,
+        duration,
+        createdBy: req.user.id,
+      };
+      
+      // Add artist to songData if provided
+      if (artist) {
+        songData.artist = artist;
+      }
+
+      const song = songModel(songData);
+      await song.save();
+      console.log("Song saved to database:", name);
+
+      res.json({ success: true, message: "Song Added", song });
+    } catch (cloudinaryError) {
+      console.error("Cloudinary upload error:", cloudinaryError);
+      
+      // Return detailed error to client
+      return res.status(500).json({ 
+        success: false, 
+        error: "Cloudinary upload failed",
+        details: cloudinaryError.message 
+      });
+    }
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Something went wrong" });
+    console.error("Song upload error:", error);
+    res.status(500).json({ 
+      success: false, 
+      error: "Something went wrong",
+      details: error.message 
+    });
   }
 };
 
 const listSong = async (req, res) => {
   try {
+    // Check if 'all' parameter is set to true to skip pagination
+    if (req.query.all === 'true') {
+      // Return all songs without pagination
+      const songs = await songModel.find({}).populate('artist');
+      return res.json({ success: true, songs, total: songs.length });
+    }
+    
+    // Otherwise, use pagination as before
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
     const skip = (page - 1) * limit;
@@ -57,7 +111,8 @@ const listSong = async (req, res) => {
     ]);
     res.json({ success: true, songs, total, page, pages: Math.ceil(total / limit) });
   } catch (error) {
-    res.json({ success: false });
+    console.error('Error listing songs:', error);
+    res.json({ success: false, message: error.message });
   }
 };
 

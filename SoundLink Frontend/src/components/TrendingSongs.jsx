@@ -22,7 +22,7 @@ const TrendingSongs = () => {
       try {
         setLoading(true);
         const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
-        const response = await fetch(`${backendUrl}/api/song/list`);
+        const response = await fetch(`${backendUrl}/api/song/list?all=true`);
         const data = await response.json();
         
         if (data.success) {

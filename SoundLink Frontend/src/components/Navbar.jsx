@@ -188,50 +188,60 @@ const Navbar = (props) => {
         const avatarUrl = user.avatar || user.image;
         
         // Log the avatar URL for debugging
-        console.log("Original Avatar URL:", avatarUrl);
+        console.log("Original Avatar URL in Navbar:", avatarUrl);
+        console.log("User object in Navbar:", user);
         
         // No avatar URL available
         if (!avatarUrl) {
             console.log("No avatar URL found, using default");
-            return '/default-avatar.png';
+            return '/default-avatar.svg';
         }
+        
+        // Add cache-busting parameter to prevent browser caching
+        const addCacheBuster = (url) => {
+            if (!url) return url;
+            const separator = url.includes('?') ? '&' : '?';
+            return `${url}${separator}t=${new Date().getTime()}`;
+        };
         
         // Check if it's a Cloudinary URL and ensure it's using HTTPS
         if (avatarUrl.includes('cloudinary.com')) {
             const fixedUrl = avatarUrl.replace('http://', 'https://');
             console.log("Cloudinary URL fixed:", fixedUrl);
-            return fixedUrl;
+            return addCacheBuster(fixedUrl);
         }
         
         // If it's a data URL or base64 image, return it directly
         if (avatarUrl.startsWith('data:') || avatarUrl.startsWith('blob:')) {
             console.log("Data/Blob URL detected");
-            return avatarUrl;
+            return avatarUrl; // No need for cache buster on blob URLs
         }
         
         // If it's a local path starting with /uploads, prepend the backend URL
         if (avatarUrl.startsWith('/uploads')) {
-            const fullUrl = `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000'}${avatarUrl}`;
+            const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
+            const fullUrl = `${backendUrl}${avatarUrl}`;
             console.log("Local upload URL constructed:", fullUrl);
-            return fullUrl;
+            return addCacheBuster(fullUrl);
         }
         
         // Handle full URLs
         if (avatarUrl.startsWith('http://') || avatarUrl.startsWith('https://')) {
             console.log("Full URL detected");
-            return avatarUrl;
+            return addCacheBuster(avatarUrl);
         }
         
         // For other relative paths, also prepend backend URL
         if (!avatarUrl.startsWith('/')) {
-            const fullUrl = `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000'}/${avatarUrl}`;
+            const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
+            const fullUrl = `${backendUrl}/${avatarUrl}`;
             console.log("Relative path converted:", fullUrl);
-            return fullUrl;
+            return addCacheBuster(fullUrl);
         }
         
         // For any other case, just return the URL as is
         console.log("Using URL as is");
-        return avatarUrl;
+        return addCacheBuster(avatarUrl);
     };
 
     return (
@@ -375,11 +385,15 @@ const Navbar = (props) => {
                                         <img 
                                             src={getUserAvatar()} 
                                             alt={user.username || 'User'} 
-                                            className="w-full h-full object-cover opacity-100"
+                                            className="w-full h-full object-cover"
                                             loading="eager"
+                                            onLoad={(e) => {
+                                                console.log("Avatar loaded successfully in Navbar:", e.target.src);
+                                            }}
                                             onError={(e) => {
+                                                console.error("Failed to load avatar in Navbar:", e.target.src);
                                                 e.target.onerror = null;
-                                                e.target.src = '/default-avatar.png';
+                                                e.target.src = '/default-avatar.svg';
                                             }}
                                         />
                                     ) : (
@@ -398,11 +412,15 @@ const Navbar = (props) => {
                                                 <img 
                                                     src={getUserAvatar()} 
                                                     alt={user.username || 'User'} 
-                                                    className="w-full h-full object-cover opacity-100"
+                                                    className="w-full h-full object-cover"
                                                     loading="eager"
+                                                    onLoad={(e) => {
+                                                        console.log("Dropdown avatar loaded successfully:", e.target.src);
+                                                    }}
                                                     onError={(e) => {
+                                                        console.error("Failed to load avatar in dropdown:", e.target.src);
                                                         e.target.onerror = null;
-                                                        e.target.src = '/default-avatar.png';
+                                                        e.target.src = '/default-avatar.svg';
                                                     }}
                                                 />
                                             </div>
