@@ -35,9 +35,9 @@ export const register = async (req, res) => {
     
     // Add avatar path if file was uploaded
     if (req.file) {
-      // Get the relative path to the avatar file
-      const avatarPath = `/uploads/profiles/${req.file.filename}`;
-      userData.avatar = avatarPath;
+      // For Cloudinary 2.x with multer-storage-cloudinary
+      userData.avatar = req.file.path || req.file.secure_url;
+      console.log("Avatar uploaded to Cloudinary:", userData.avatar);
     }
     
     // Create and save new user

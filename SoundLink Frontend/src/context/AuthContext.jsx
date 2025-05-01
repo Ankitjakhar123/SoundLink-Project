@@ -396,6 +396,18 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Update the user profile data in context
+  const updateUserData = (userData) => {
+    if (!userData) return;
+    
+    setUser(prevUser => ({
+      ...prevUser,
+      ...userData
+    }));
+    
+    console.log("User context updated with new data:", userData);
+  };
+
   return (
     <AuthContext.Provider value={{ 
       user, 
@@ -408,7 +420,8 @@ export const AuthProvider = ({ children }) => {
       verificationEmailSent,
       sendVerificationEmail,
       verifyEmail,
-      loading
+      loading,
+      updateUserData
     }}>
       {children}
     </AuthContext.Provider>

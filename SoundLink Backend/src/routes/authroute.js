@@ -2,30 +2,23 @@ import express from "express";
 import { register, login, getCurrentUser } from "../controllers/authController.js";
 import { authenticate } from "../middleware/auth.js";
 import multer from "multer";
-import path from "path";
-import fs from "fs";
-import { fileURLToPath } from 'url';
+import { v2 as cloudinary } from 'cloudinary';
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
 
-// Get current directory
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const uploadsDir = path.join(__dirname, '../../../uploads/profiles');
+const router = express.Router();
 
-// Ensure uploads directory exists
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-  console.log(`Created profiles upload directory: ${uploadsDir}`);
-}
-
-// Configure multer storage for avatar uploads
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, uploadsDir);
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
-  },
+// Configure Cloudinary storage for version 2.x
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: 'soundlink/profiles',
+    format: async (req, file) => {
+      if (file.mimetype === 'image/jpeg') return 'jpg';
+      if (file.mimetype === 'image/png') return 'png';
+      return 'png'; // default format
+    },
+    public_id: (req, file) => `user_${Date.now()}`
+  }
 });
 
 // Filter for image files only
@@ -66,8 +59,6 @@ const handleMulterError = (err, req, res, next) => {
   // If no error, continue
   next();
 };
-
-const router = express.Router();
 
 router.post("/register", upload.single('avatar'), handleMulterError, register);
 router.post("/login", login);

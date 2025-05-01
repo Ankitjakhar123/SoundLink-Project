@@ -290,7 +290,19 @@ const Navbar = (props) => {
         if (!user) return null;
         
         // Try both avatar and image properties since either might be used in the API
-        return user.avatar || user.image || '/default-avatar.png';
+        const avatarUrl = user.avatar || user.image;
+        
+        // Check if it's a Cloudinary URL and ensure it's using HTTPS
+        if (avatarUrl && avatarUrl.includes('cloudinary.com')) {
+            return avatarUrl.replace('http://', 'https://');
+        }
+        
+        // If it's a local path starting with /uploads, prepend the backend URL
+        if (avatarUrl && avatarUrl.startsWith('/uploads')) {
+            return `${import.meta.env.VITE_BACKEND_URL}${avatarUrl}`;
+        }
+        
+        return avatarUrl || '/default-avatar.png';
     };
 
     return (
@@ -433,11 +445,15 @@ const Navbar = (props) => {
                                     {getUserAvatar() ? (
                                         <img 
                                             src={getUserAvatar()} 
-                                            alt={user.username} 
+                                            alt={user.username || 'User'} 
                                             className="w-full h-full object-cover"
+                                            loading="eager"
+                                            onLoad={(e) => e.target.classList.add('opacity-100')}
+                                            style={{ opacity: 0, transition: 'opacity 0.3s ease' }}
                                             onError={(e) => {
                                                 e.target.onerror = null;
                                                 e.target.src = '/default-avatar.png';
+                                                e.target.classList.add('opacity-100');
                                             }}
                                         />
                                     ) : (
@@ -457,9 +473,13 @@ const Navbar = (props) => {
                                                     src={getUserAvatar()} 
                                                     alt={user.username || 'User'} 
                                                     className="w-full h-full object-cover"
+                                                    loading="eager"
+                                                    onLoad={(e) => e.target.classList.add('opacity-100')}
+                                                    style={{ opacity: 0, transition: 'opacity 0.3s ease' }}
                                                     onError={(e) => {
                                                         e.target.onerror = null;
                                                         e.target.src = '/default-avatar.png';
+                                                        e.target.classList.add('opacity-100');
                                                     }}
                                                 />
                                             </div>

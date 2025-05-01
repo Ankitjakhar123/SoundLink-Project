@@ -4,7 +4,7 @@ import AdminDashboard from './AdminDashboard';
 import axios from 'axios';
 
 const Profile = () => {
-  const { user } = useContext(AuthContext);
+  const { user, updateUserData } = useContext(AuthContext);
   const [preview, setPreview] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
   const [username, setUsername] = useState(user?.username || '');
@@ -14,18 +14,50 @@ const Profile = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [userData, setUserData] = useState(user || {});
 
-  // Set initial preview from user image
+  // Display any loaded image immediately for debugging
   useEffect(() => {
-    if (user?.image) {
-      setPreview(user.image);
+    console.log("User data in profile:", user);
+    if (user?.image) console.log("User image URL:", user.image);
+    if (user?.avatar) console.log("User avatar URL:", user.avatar);
+  }, [user]);
+
+  // Set initial preview from user image/avatar
+  useEffect(() => {
+    if (user?.avatar || user?.image) {
+      const avatarUrl = user.avatar || user.image;
+      console.log("Setting preview from:", avatarUrl);
+      
+      // Handle Cloudinary URLs
+      if (avatarUrl && avatarUrl.includes('cloudinary.com')) {
+        setPreview(avatarUrl.replace('http://', 'https://'));
+      } 
+      // Handle local uploads by prepending backend URL
+      else if (avatarUrl && avatarUrl.startsWith('/uploads')) {
+        const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
+        setPreview(`${backendUrl}${avatarUrl}`);
+      }
+      else {
+        setPreview(avatarUrl);
+      }
     }
-  }, [user?.image]);
+  }, [user?.image, user?.avatar]);
+
+  // Update local state when user context changes
+  useEffect(() => {
+    if (user) {
+      setUsername(user.username || '');
+      setEmail(user.email || '');
+      setUserData(user);
+    }
+  }, [user]);
 
   // Handle image selection
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setPreview(URL.createObjectURL(file));
+      const objectUrl = URL.createObjectURL(file);
+      console.log("Created object URL for preview:", objectUrl);
+      setPreview(objectUrl);
       setSelectedImage(file);
     }
   };
@@ -76,16 +108,29 @@ const Profile = () => {
       
       if (res.status === 200 && res.data.success && res.data.user) {
         setSuccess('Profile updated successfully!');
-        setUserData(res.data.user); // Update local state
+        
+        // Update local state
+        setUserData(res.data.user);
+        
+        // Update the AuthContext with new user data
+        updateUserData(res.data.user);
         
         // Update preview with the Cloudinary URL if available
-        if (res.data.user.image) {
-          setPreview(res.data.user.image);
+        if (res.data.user.image || res.data.user.avatar) {
+          const avatarUrl = res.data.user.image || res.data.user.avatar;
+          
+          // Handle Cloudinary URLs
+          if (avatarUrl && avatarUrl.includes('cloudinary.com')) {
+            setPreview(avatarUrl.replace('http://', 'https://'));
+          } 
+          // Handle local uploads by prepending backend URL
+          else if (avatarUrl && avatarUrl.startsWith('/uploads')) {
+            setPreview(`${backendUrl}${avatarUrl}`);
+          }
+          else {
+            setPreview(avatarUrl);
+          }
         }
-        
-        // Since we can't directly update the AuthContext, we can force a re-login
-        // by logging out and re-logging in, or force a refresh to reload the context
-        // window.location.reload(); // Uncomment this if you want to refresh the page
       } else {
         setError(res.data.message || 'Update failed');
       }
@@ -122,9 +167,13 @@ const Profile = () => {
               src={preview || '/default-avatar.png'}
               alt="Profile"
               className="w-32 h-32 rounded-full object-cover border-4 border-fuchsia-700 shadow-lg"
+              loading="eager"
+              onLoad={(e) => e.target.classList.add('opacity-100')}
+              style={{ opacity: 0, transition: 'opacity 0.3s ease' }}
               onError={(e) => {
                 e.target.onerror = null;
                 e.target.src = '/default-avatar.png';
+                e.target.classList.add('opacity-100');
               }}
             />
             <label htmlFor="profile-image-upload" className="absolute bottom-2 right-2 bg-fuchsia-700 text-white px-3 py-1 rounded-full cursor-pointer text-xs font-semibold hover:bg-fuchsia-800 transition">
