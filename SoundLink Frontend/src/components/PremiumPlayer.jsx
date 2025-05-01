@@ -113,7 +113,8 @@ const PremiumPlayer = () => {
     // If track exists, add a class and style to the body
     if (track) {
       // Add a style tag for the padding
-      const playerHeight = isSmallScreen ? '50px' : '60px'; // Reduced height values
+      // For large screens without a player visible, set padding to 0
+      const playerHeight = isSmallScreen ? '50px' : hidePlayer ? '0' : '60px';
       const navHeight = isSmallScreen ? '50px' : '0'; // Navigation bar height on mobile
       const totalPadding = isSmallScreen 
         ? (hidePlayer ? navHeight : `calc(${playerHeight} + ${navHeight})`) 
@@ -444,13 +445,14 @@ const PremiumPlayer = () => {
     };
   }, []);
 
+  // If there's no track to play, don't render anything
   if (!track) return null;
 
   return (
     <AnimatePresence>
       <div 
-        className="fixed left-0 w-full z-50 player-container" 
-        style={{ bottom: '50px' }}
+        className="fixed left-0 w-full z-50 player-container"
+        style={{ bottom: isSmallScreen ? '50px' : '0' }}
         ref={playerRef}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
@@ -599,179 +601,177 @@ const PremiumPlayer = () => {
           </div>
         )}
 
-        {/* Main player bar */}
-        {!hidePlayer && (
-          <div className="flex items-center justify-between px-4 py-2 bg-black/95 border-t border-neutral-800 backdrop-blur-xl gap-4">
-            {/* Song Info - clickable on mobile to show full player */}
-            <div 
-              className={`flex items-center gap-3 min-w-[80px] ${isSmallScreen ? "flex-1" : "w-[25%]"}`}
-              onClick={() => isSmallScreen && setShowExtraControls(true)}
-            >
-              <img
-                src={track.image}
-                alt={track.name}
-                className="w-10 h-10 rounded object-cover border border-neutral-800"
-              />
-              <div className="flex flex-col min-w-0">
-                <span className="text-sm font-bold text-white truncate max-w-[120px]">{track.name}</span>
-                <span className="text-xs text-neutral-400 truncate max-w-[120px]">{track.artist || track.album}</span>
-              </div>
-              {isSmallScreen && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleFavorite(track._id);
-                  }}
-                  className={`ml-auto ${isFavorite(track._id) ? "text-fuchsia-500" : "text-neutral-400"}`}
-                >
-                  <FaHeart />
-                </button>
-              )}
+        {/* Main player bar - always visible when track is playing */}
+        <div className={`flex items-center justify-between px-4 py-2 bg-black/95 border-t border-neutral-800 backdrop-blur-xl gap-4 ${hidePlayer ? 'compact-player' : ''}`}>
+          {/* Song Info - clickable on mobile to show full player */}
+          <div 
+            className={`flex items-center gap-3 min-w-[80px] ${isSmallScreen ? "flex-1" : "w-[25%]"}`}
+            onClick={() => isSmallScreen && setShowExtraControls(true)}
+          >
+            <img
+              src={track.image}
+              alt={track.name}
+              className="w-10 h-10 rounded object-cover border border-neutral-800"
+            />
+            <div className="flex flex-col min-w-0">
+              <span className="text-sm font-bold text-white truncate max-w-[120px]">{track.name}</span>
+              <span className="text-xs text-neutral-400 truncate max-w-[120px]">{track.artist || track.album}</span>
             </div>
-
-            {/* Controls + Progress - hidden on small screens when extended view is not shown */}
-            {(!isSmallScreen || !showExtraControls) && (
-              <div className={`flex flex-col items-center ${isSmallScreen ? "hidden" : "w-[50%] max-w-md"}`}>
-              <div className="flex items-center gap-3 mb-0.5">
-                <button
-                  onClick={() => { shuffle(); handleShuffle(); }}
-                  className={`text-base transition ${shuffleActive ? "text-fuchsia-500" : "text-neutral-400 hover:text-fuchsia-500"}`}
-                  title="Shuffle"
-                >
-                  <FaRandom />
-                </button>
-                <button onClick={Previous} className="text-base text-neutral-400 hover:text-fuchsia-500 transition" title="Previous">
-                  <FaStepBackward />
-                </button>
-                <button
-                    onClick={handlePlayPause}
-                  className="bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white rounded-full p-2 shadow-lg hover:scale-110 transition-transform border-2 border-fuchsia-800 text-lg"
-                  title={playStatus ? "Pause" : "Play"}
-                >
-                    {playStatus ? <FaPause /> : <FaPlay className="relative ml-0.5" />}
-                </button>
-                <button onClick={Next} className="text-base text-neutral-400 hover:text-fuchsia-500 transition" title="Next">
-                  <FaStepForward />
-                </button>
-                <button
-                    onClick={toggleLoop}
-                  className={`text-base transition ${loop ? "text-fuchsia-500" : "text-neutral-400 hover:text-fuchsia-500"}`}
-                  title="Repeat"
-                >
-                  <FaRedo />
-                </button>
-              </div>
-              {/* Progress Bar */}
-              <div className="flex items-center gap-1 w-full">
-                <span className="text-[10px] text-neutral-400 min-w-[28px]">{formatTime(time.currentTime.minute, time.currentTime.second)}</span>
-                <input
-                  type="range"
-                  min={0}
-                  max={durationSec || 1}
-                  step={0.1}
-                  value={currentSec}
-                  onChange={handleSeek}
-                  onTouchStart={handleProgressTouchStart}
-                  onTouchEnd={handleProgressTouchEnd}
-                  className="w-full accent-fuchsia-600 h-1 cursor-pointer"
-                />
-                <span className="text-[10px] text-neutral-400 min-w-[28px]">{formatTime(time.totalTime.minute, time.totalTime.second)}</span>
-              </div>
-            </div>
-            )}
-
-            {/* Mobile controls - when not in expanded view */}
-            {isSmallScreen && !showExtraControls && (
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handlePlayPause();
-                  }}
-                  className="bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white rounded-full p-2 shadow-md flex items-center justify-center w-8 h-8"
-                >
-                  {playStatus ? <FaPause className="text-sm" /> : <FaPlay className="text-sm ml-0.5" />}
-                </button>
-                <button 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    Next();
-                  }}
-                  className="text-sm text-neutral-400 flex items-center justify-center w-6 h-6"
-                >
-                  <FaStepForward />
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleMute();
-                  }}
-                  className="text-sm text-neutral-400 flex items-center justify-center w-6 h-6"
-                >
-                  {isMuted || volume === 0 ? <FaVolumeMute /> : <FaVolumeUp />}
-                </button>
-              </div>
-            )}
-
-            {/* Volume + Extras - hidden on mobile */}
-            {!isSmallScreen && (
-              <div className="flex items-center gap-4 min-w-[90px] w-[25%] justify-end">
-                <button 
-                  onClick={() => toggleFavorite(track._id)}
-                  className={`text-base transition ${isFavorite(track._id) ? "text-fuchsia-500" : "text-neutral-400 hover:text-fuchsia-500"}`}
-                  title="Like"
-                >
-                  <FaHeart />
-                </button>
-                <button 
-                  onClick={toggleQueue}
-                  className={`text-base transition ${showQueue ? "text-fuchsia-500" : "text-neutral-400 hover:text-fuchsia-500"}`}
-                  title="Queue"
-                >
-                  <MdQueueMusic />
-                </button>
-                <button
-                  onClick={handleMute}
-                  className="text-base text-neutral-400 hover:text-fuchsia-500 transition"
-                  title={isMuted ? "Unmute" : "Mute"}
-                >
-                {isMuted || volume === 0 ? <FaVolumeMute /> : <FaVolumeUp />}
+            {isSmallScreen && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleFavorite(track._id);
+                }}
+                className={`ml-auto ${isFavorite(track._id) ? "text-fuchsia-500" : "text-neutral-400"}`}
+              >
+                <FaHeart />
               </button>
+            )}
+          </div>
+
+          {/* Controls + Progress - hidden on small screens when extended view is not shown */}
+          {(!isSmallScreen || !showExtraControls) && (
+            <div className={`flex flex-col items-center ${isSmallScreen ? "hidden" : "w-[50%] max-w-md"}`}>
+            <div className="flex items-center gap-3 mb-0.5">
+              <button
+                onClick={() => { shuffle(); handleShuffle(); }}
+                className={`text-base transition ${shuffleActive ? "text-fuchsia-500" : "text-neutral-400 hover:text-fuchsia-500"}`}
+                title="Shuffle"
+              >
+                <FaRandom />
+              </button>
+              <button onClick={Previous} className="text-base text-neutral-400 hover:text-fuchsia-500 transition" title="Previous">
+                <FaStepBackward />
+              </button>
+              <button
+                  onClick={handlePlayPause}
+                className="bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white rounded-full p-2 shadow-lg hover:scale-110 transition-transform border-2 border-fuchsia-800 text-lg"
+                title={playStatus ? "Pause" : "Play"}
+              >
+                  {playStatus ? <FaPause /> : <FaPlay className="relative ml-0.5" />}
+              </button>
+              <button onClick={Next} className="text-base text-neutral-400 hover:text-fuchsia-500 transition" title="Next">
+                <FaStepForward />
+              </button>
+              <button
+                  onClick={toggleLoop}
+                className={`text-base transition ${loop ? "text-fuchsia-500" : "text-neutral-400 hover:text-fuchsia-500"}`}
+                title="Repeat"
+              >
+                <FaRedo />
+              </button>
+            </div>
+            {/* Progress Bar */}
+            <div className="flex items-center gap-1 w-full">
+              <span className="text-[10px] text-neutral-400 min-w-[28px]">{formatTime(time.currentTime.minute, time.currentTime.second)}</span>
               <input
                 type="range"
                 min={0}
-                max={1}
-                step={0.01}
-                value={isMuted ? 0 : volume}
-                onChange={(e) => setVolume(Number(e.target.value))}
-                onTouchStart={handleVolumeTouchStart}
-                onTouchEnd={handleVolumeTouchEnd}
-                className="w-16 accent-fuchsia-600 cursor-pointer h-1 volume-slider"
-                disabled={isMuted}
+                max={durationSec || 1}
+                step={0.1}
+                value={currentSec}
+                onChange={handleSeek}
+                onTouchStart={handleProgressTouchStart}
+                onTouchEnd={handleProgressTouchEnd}
+                className="w-full accent-fuchsia-600 h-1 cursor-pointer"
               />
-                <button 
-                  className="text-base text-neutral-400 hover:text-fuchsia-500 transition"
-                  title="Devices"
-                >
-                  <MdDevices />
-                </button>
-                <div className="flex items-center gap-1 ml-2 text-neutral-400">
-                  <span className="text-[10px]">Autoplay</span>
-                  <div
-                    onClick={handleAutoplayToggle}
-                    className={`w-8 h-4 rounded-full relative cursor-pointer transition-colors ${autoplayEnabled ? "bg-fuchsia-600" : "bg-neutral-600"}`}
-                  >
-                    <div
-                      className={`absolute w-3 h-3 bg-white rounded-full top-0.5 transition-transform ${
-                        autoplayEnabled ? "translate-x-[18px]" : "translate-x-0.5"
-                      }`}
-                    ></div>
-                  </div>
-                </div>
+              <span className="text-[10px] text-neutral-400 min-w-[28px]">{formatTime(time.totalTime.minute, time.totalTime.second)}</span>
             </div>
-            )}
           </div>
-        )}
+          )}
+
+          {/* Mobile controls - when not in expanded view */}
+          {isSmallScreen && !showExtraControls && (
+            <div className="flex items-center gap-3">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handlePlayPause();
+                }}
+                className="bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white rounded-full p-2 shadow-md flex items-center justify-center w-8 h-8"
+              >
+                {playStatus ? <FaPause className="text-sm" /> : <FaPlay className="text-sm ml-0.5" />}
+              </button>
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  Next();
+                }}
+                className="text-sm text-neutral-400 flex items-center justify-center w-6 h-6"
+              >
+                <FaStepForward />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleMute();
+                }}
+                className="text-sm text-neutral-400 flex items-center justify-center w-6 h-6"
+              >
+                {isMuted || volume === 0 ? <FaVolumeMute /> : <FaVolumeUp />}
+              </button>
+            </div>
+          )}
+
+          {/* Volume + Extras - hidden on mobile */}
+          {!isSmallScreen && (
+            <div className="flex items-center gap-4 min-w-[90px] w-[25%] justify-end">
+              <button 
+                onClick={() => toggleFavorite(track._id)}
+                className={`text-base transition ${isFavorite(track._id) ? "text-fuchsia-500" : "text-neutral-400 hover:text-fuchsia-500"}`}
+                title="Like"
+              >
+                <FaHeart />
+              </button>
+              <button 
+                onClick={toggleQueue}
+                className={`text-base transition ${showQueue ? "text-fuchsia-500" : "text-neutral-400 hover:text-fuchsia-500"}`}
+                title="Queue"
+              >
+                <MdQueueMusic />
+              </button>
+              <button
+                onClick={handleMute}
+                className="text-base text-neutral-400 hover:text-fuchsia-500 transition"
+                title={isMuted ? "Unmute" : "Mute"}
+              >
+              {isMuted || volume === 0 ? <FaVolumeMute /> : <FaVolumeUp />}
+            </button>
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.01}
+              value={isMuted ? 0 : volume}
+              onChange={(e) => setVolume(Number(e.target.value))}
+              onTouchStart={handleVolumeTouchStart}
+              onTouchEnd={handleVolumeTouchEnd}
+              className="w-16 accent-fuchsia-600 cursor-pointer h-1 volume-slider"
+              disabled={isMuted}
+            />
+              <button 
+                className="text-base text-neutral-400 hover:text-fuchsia-500 transition"
+                title="Devices"
+              >
+                <MdDevices />
+              </button>
+              <div className="flex items-center gap-1 ml-2 text-neutral-400">
+                <span className="text-[10px]">Autoplay</span>
+                <div
+                  onClick={handleAutoplayToggle}
+                  className={`w-8 h-4 rounded-full relative cursor-pointer transition-colors ${autoplayEnabled ? "bg-fuchsia-600" : "bg-neutral-600"}`}
+                >
+                  <div
+                    className={`absolute w-3 h-3 bg-white rounded-full top-0.5 transition-transform ${
+                      autoplayEnabled ? "translate-x-[18px]" : "translate-x-0.5"
+                    }`}
+                  ></div>
+                </div>
+              </div>
+          </div>
+          )}
+        </div>
         
         {/* Queue panel */}
         <QueueComponent isOpen={showQueue && !hidePlayer} onClose={() => setShowQueue(false)} />

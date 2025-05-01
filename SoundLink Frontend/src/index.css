@@ -136,6 +136,13 @@ textarea:focus-visible {
   user-select: none;
 }
 
+/* Hide player on large screens when no track is playing */
+@media (min-width: 768px) {
+  .hide-on-large {
+    display: none !important;
+  }
+}
+
 /* Battery-aware animations */
 @media (prefers-reduced-motion) {
   .battery-aware {
