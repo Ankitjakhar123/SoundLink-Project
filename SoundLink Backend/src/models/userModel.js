@@ -7,7 +7,8 @@ const userSchema = new mongoose.Schema({
   avatar: { type: String, default: "/default-avatar.png" },
   role: { type: String, enum: ["admin", "user"], default: "user" },
   createdAt: { type: Date, default: Date.now },
-  isEmailVerified: { type: Boolean, default: false }
+  isEmailVerified: { type: Boolean, default: false },
+  clerkId: { type: String, sparse: true, unique: true }
 });
 
 const userModel = mongoose.models.user || mongoose.model("user", userSchema);

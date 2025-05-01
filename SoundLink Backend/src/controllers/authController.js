@@ -28,7 +28,9 @@ export const register = async (req, res) => {
       username, 
       email, 
       password: hashedPassword,
-      role: role || "user"
+      role: role || "user",
+      // Generate a unique ID for clerkId to avoid null collision
+      clerkId: `manual_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`
     };
     
     // Add avatar path if file was uploaded
