@@ -44,22 +44,10 @@ const DisplayHome = () => {
   const [mainColor, setMainColor] = useState("#8E24AA");
   const [selectedSongId, setSelectedSongId] = useState(null);
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
-  const [isPwa, setIsPwa] = useState(false);
   const contentRef = useRef(null);
 
   useEffect(() => {
     fetchData();
-    
-    // Check if the app is running in PWA mode
-    if (window.matchMedia('(display-mode: standalone)').matches || 
-        window.matchMedia('(display-mode: fullscreen)').matches || 
-        window.navigator.standalone === true) {
-      setIsPwa(true);
-      
-      // Apply PWA specific fixes
-      document.documentElement.classList.add('pwa-mode');
-      document.body.classList.add('pwa-mode');
-    }
   }, []);
 
   const fetchData = async () => {
@@ -170,9 +158,9 @@ const DisplayHome = () => {
   return (
     <div 
       ref={contentRef}
-      className={`min-h-screen w-full flex flex-col justify-start items-center overflow-y-auto ${isPwa ? 'pwa-content' : ''}`}
+      className="min-h-screen w-full flex flex-col justify-start items-center overflow-y-auto"
     >
-      <div ref={topRef} className={`min-h-screen w-full flex flex-col justify-start items-center bg-gradient-to-b from-black via-black to-neutral-900 pt-0 mt-[-5px] pb-0 px-2 md:px-8 content-container overflow-y-auto ${isPwa ? 'pwa-content' : ''}`}>
+      <div ref={topRef} className="min-h-screen w-full flex flex-col justify-start items-center bg-gradient-to-b from-black via-black to-neutral-900 pt-0 mt-[-5px] pb-0 px-2 md:px-8 content-container overflow-y-auto">
         {/* Welcome Section */}
         <motion.div 
           initial={{ opacity: 0, y: -20 }} 
