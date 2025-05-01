@@ -312,12 +312,13 @@ const DisplayHome = () => {
                 ))}
               </div>
               
-              <div ref={trendingRef} className="flex gap-2 overflow-x-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent py-6 px-4 touch-scroll">
+              <div ref={trendingRef} className="flex gap-2 overflow-x-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent py-6 px-4 touch-scroll" style={{ touchAction: 'pan-x' }}>
                 {trendingSongs && trendingSongs.map((song) => (
                   <div 
                     key={song._id}
                     onClick={() => playWithId(song._id)}
-                    className={`flex-shrink-0 w-64 ${track && track._id === song._id ? 'bg-fuchsia-900/30' : 'bg-black/30'} backdrop-blur-md p-4 rounded-lg hover:bg-white/10 transition-all cursor-pointer group`}
+                    className={`flex-shrink-0 w-64 ${track && track._id === song._id ? 'bg-fuchsia-900/30' : 'bg-black/30'} backdrop-blur-md p-4 rounded-lg hover:bg-white/10 transition-all cursor-pointer group song-item`}
+                    style={{ touchAction: 'manipulation' }}
                   >
                     <div className="flex gap-4 items-center">
                       <div className="relative w-16 h-16 rounded-md overflow-hidden">
@@ -406,7 +407,7 @@ const DisplayHome = () => {
               <div
                 ref={albumRowRef}
                 className="flex gap-5 overflow-x-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent py-3 px-1 touch-scroll"
-                style={{ scrollBehavior: 'smooth' }}
+                style={{ scrollBehavior: 'smooth', touchAction: 'pan-x' }}
               >
                 {albumsData && albumsData.map((item) => (
                   <AlbumItem
@@ -443,7 +444,7 @@ const DisplayHome = () => {
               <div
                 ref={artistsRowRef}
                 className="flex gap-8 overflow-x-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent py-4 px-1 touch-scroll"
-                style={{ scrollBehavior: 'smooth' }}
+                style={{ scrollBehavior: 'smooth', touchAction: 'pan-x' }}
               >
                 {artists && artists.map((artist) => (
                   <div 
@@ -493,7 +494,7 @@ const DisplayHome = () => {
               <div
                 ref={movieAlbumRowRef}
                 className="flex gap-5 overflow-x-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent py-3 px-1 touch-scroll"
-                style={{ scrollBehavior: 'smooth' }}
+                style={{ scrollBehavior: 'smooth', touchAction: 'pan-x' }}
               >
                 {movieAlbums && movieAlbums.map((item) => (
                   <MovieAlbumItem
@@ -528,19 +529,19 @@ const DisplayHome = () => {
             {/* Songs Grid */}
             <div className="bg-neutral-900/30 backdrop-blur-md rounded-xl p-6 border border-white/5">
               {currentSongs && currentSongs.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 song-grid touch-scroll">
                   {currentSongs.map((song) => (
                     <div 
                       key={song._id} 
-                      className={`flex items-center gap-4 ${track && track._id === song._id ? 'bg-fuchsia-900/30' : 'bg-black/20'} p-3 rounded-lg hover:bg-white/10 transition-all cursor-pointer group`}
+                      className={`flex items-center gap-4 ${track && track._id === song._id ? 'bg-fuchsia-900/30' : 'bg-black/20'} p-3 rounded-lg hover:bg-white/10 transition-all cursor-pointer group song-item`}
                       onClick={() => playWithId(song._id)}
                     >
-                      <div className="bg-neutral-800 w-12 h-12 rounded flex items-center justify-center relative">
+                      <div className="bg-neutral-800 w-12 h-12 rounded flex items-center justify-center relative touch-action-none">
                         {song.image ? (
                           <img 
                             src={song.image} 
                             alt={song.name} 
-                            className="w-full h-full object-cover rounded"
+                            className="w-full h-full object-cover rounded" 
                           />
                         ) : (
                           <MdPlayArrow size={24} className="text-fuchsia-500" />
@@ -568,7 +569,8 @@ const DisplayHome = () => {
                       <div className="flex items-center gap-3">
                         <button 
                           onClick={(e) => handleToggleFavorite(e, song._id)}
-                          className="text-white opacity-50 hover:opacity-100 transition-opacity"
+                          className="text-white opacity-50 hover:opacity-100 transition-opacity mobile-tap"
+                          style={{ touchAction: 'manipulation' }}
                         >
                           {isFavorite(song._id) ? 
                             <MdFavorite className="text-fuchsia-500" size={20} /> : 
@@ -577,13 +579,15 @@ const DisplayHome = () => {
                         </button>
                         <button 
                           onClick={(e) => handleAddToPlaylist(e, song._id)}
-                          className="text-white opacity-50 hover:opacity-100 transition-opacity"
+                          className="text-white opacity-50 hover:opacity-100 transition-opacity mobile-tap"
+                          style={{ touchAction: 'manipulation' }}
                         >
                           <MdPlaylistAdd size={22} />
                         </button>
                         <button 
                           onClick={(e) => handleAddToQueue(e, song._id)}
-                          className="text-white opacity-50 hover:opacity-100 transition-opacity"
+                          className="text-white opacity-50 hover:opacity-100 transition-opacity mobile-tap"
+                          style={{ touchAction: 'manipulation' }}
                         >
                           <MdQueueMusic size={20} />
                         </button>
