@@ -43,7 +43,7 @@ const QueueComponent = ({ isOpen, onClose }) => {
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 20 }}
         transition={{ duration: 0.2 }}
-        className="fixed bottom-16 right-0 w-full md:w-[400px] max-h-[70vh] overflow-y-auto bg-black/95 border border-neutral-800 backdrop-blur-xl rounded-t-xl md:rounded-tr-none shadow-xl z-40"
+        className="fixed bottom-16 right-0 w-full md:w-[400px] max-h-[70vh] overflow-y-auto bg-black/95 border border-neutral-800 backdrop-blur-xl rounded-t-xl md:rounded-tr-none shadow-xl z-[70]"
       >
         <div className="sticky top-0 flex items-center justify-between p-4 bg-neutral-900 border-b border-neutral-800">
           <div className="flex items-center gap-2">

@@ -70,6 +70,7 @@ footer {
   padding-bottom: var(--player-bottom-padding, 0);
   overflow-y: auto !important;
   -webkit-overflow-scrolling: touch !important;
+  position: relative;
 }
 
 /* Responsive adjustments for small screens */
@@ -87,9 +88,24 @@ footer {
   }
   
   .content-container {
-    padding-bottom: 20px;
+    padding-bottom: 70px !important;
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
+  }
+  
+  /* Playlists should appear above player */
+  .playlist-container, 
+  .queue-container,
+  .modal-container {
+    z-index: 50 !important;
+    position: relative !important;
+  }
+  
+  /* Ensure proper layering of mobile elements */
+  .bottom-nav-dropdown,
+  .mobile-dropdown-menu,
+  .more-button > div {
+    z-index: 100 !important;
   }
   
   /* Increase tap target sizes */

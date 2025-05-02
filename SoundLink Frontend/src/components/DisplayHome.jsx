@@ -3,7 +3,7 @@ import React, { useContext, useRef, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
-import { MdTrendingUp, MdAlbum, MdPerson, MdMovie, MdPlayArrow, MdFavorite, MdFavoriteBorder, MdPlaylistAdd, MdQueueMusic, MdPause } from "react-icons/md";
+import { MdTrendingUp, MdAlbum, MdPerson, MdMovie, MdPlayArrow, MdFavorite, MdFavoriteBorder, MdPlaylistAdd, MdQueueMusic, MdPause, MdMoreVert } from "react-icons/md";
 import AlbumItem from "./AlbumItem";
 import SongItem from "./SongItem";
 import MovieAlbumItem from "./MovieAlbumItem";
@@ -11,6 +11,7 @@ import { PlayerContext } from "../context/PlayerContext";
 import { AuthContext } from "../context/AuthContext";
 import AddToPlaylistModal from "./AddToPlaylistModal";
 import { toast } from "react-toastify";
+import "./MobileStyles.css"; // Import mobile-specific styles
 
 const DisplayHome = () => {
   const navigate = useNavigate();
@@ -45,6 +46,11 @@ const DisplayHome = () => {
   const [selectedSongId, setSelectedSongId] = useState(null);
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const contentRef = useRef(null);
+  const [touchStartX, setTouchStartX] = useState(null);
+  const [touchedSongId, setTouchedSongId] = useState(null);
+  const [swipingRight, setSwipingRight] = useState(false);
+  const [swipingLeft, setSwipingLeft] = useState(false);
+  const [activeOptionsMenu, setActiveOptionsMenu] = useState(null);
 
   useEffect(() => {
     fetchData();
@@ -149,6 +155,103 @@ const DisplayHome = () => {
     // Fallback if ref doesn't work
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  // Touch gesture handlers for mobile song items
+  const handleTouchStart = (e, songId) => {
+    setTouchStartX(e.touches[0].clientX);
+    setTouchedSongId(songId);
+    setSwipingRight(false);
+    setSwipingLeft(false);
+  };
+  
+  const handleTouchMove = (e) => {
+    if (!touchStartX) return;
+    
+    const currentX = e.touches[0].clientX;
+    const diff = currentX - touchStartX;
+    
+    // Threshold for considering it a swipe (50px)
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) {
+        setSwipingRight(true);
+        setSwipingLeft(false);
+      } else {
+        setSwipingLeft(true);
+        setSwipingRight(false);
+      }
+    } else {
+      setSwipingRight(false);
+      setSwipingLeft(false);
+    }
+  };
+  
+  const handleTouchEnd = (e, songId) => {
+    if (!touchStartX) return;
+    
+    // Handle swipe actions
+    if (swipingRight) {
+      // Swipe right action: add to playlist
+      handleAddToPlaylist(e, songId);
+    } else if (swipingLeft) {
+      // Swipe left action: add to queue
+      handleAddToQueue(e, songId);
+    }
+    
+    // Reset touch state
+    setTouchStartX(null);
+    setTouchedSongId(null);
+    setSwipingRight(false);
+    setSwipingLeft(false);
+  };
+  
+  // Add active class for visual feedback
+  const getSongItemClass = (songId) => {
+    let baseClass = `flex items-center gap-3 mobile-song-item ${track && track._id === songId ? 'bg-fuchsia-900/30' : 'bg-black/20'} p-3 mb-3 rounded-xl hover:bg-white/5 transition-all cursor-pointer relative overflow-hidden touch-ripple`;
+    
+    if (touchedSongId === songId) {
+      if (swipingRight) {
+        baseClass += ' swiping-right';
+      } else if (swipingLeft) {
+        baseClass += ' swiping-left';
+      }
+    }
+    
+    return baseClass;
+  };
+
+  // Enhance the options menu to position properly
+  const handleOptionsClick = (e, songId) => {
+    e.stopPropagation();
+    setActiveOptionsMenu(activeOptionsMenu === songId ? null : songId);
+    
+    // Add animation class to the button when clicked
+    if (e.currentTarget) {
+      e.currentTarget.classList.add('options-menu-active');
+      setTimeout(() => e.currentTarget.classList.remove('options-menu-active'), 500);
+    }
+  };
+
+  // Close options menu when clicking outside or scrolling
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (activeOptionsMenu && !e.target.closest('.options-menu')) {
+        setActiveOptionsMenu(null);
+      }
+    };
+    
+    const handleScroll = () => {
+      if (activeOptionsMenu) {
+        setActiveOptionsMenu(null);
+      }
+    };
+    
+    document.addEventListener('click', handleClickOutside);
+    document.addEventListener('scroll', handleScroll, true);
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+      document.removeEventListener('scroll', handleScroll, true);
+    };
+  }, [activeOptionsMenu]);
 
   if (loading) {
     return (
@@ -427,13 +530,135 @@ const DisplayHome = () => {
             </h2>
             
             {/* Songs Grid */}
-            <div className="bg-neutral-900/30 backdrop-blur-md rounded-xl p-6 border border-white/5">
+            <div className="bg-neutral-900/30 backdrop-blur-md rounded-xl p-4 md:p-6 border border-white/5">
               {currentSongs && currentSongs.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Mobile Song List - only shown on small screens */}
+                  <div className="md:hidden w-full mobile-song-list">
+                    {currentSongs.map((song) => (
+                      <div 
+                        key={song._id} 
+                        className={getSongItemClass(song._id)}
+                        onClick={() => playWithId(song._id)}
+                        onTouchStart={(e) => handleTouchStart(e, song._id)}
+                        onTouchMove={handleTouchMove}
+                        onTouchEnd={(e) => handleTouchEnd(e, song._id)}
+                      >
+                        {track && track._id === song._id && (
+                          <div className="now-playing-indicator"></div>
+                        )}
+                        <div className="bg-neutral-800 w-14 h-14 flex-shrink-0 rounded-lg overflow-hidden flex items-center justify-center relative shadow-lg border border-white/5">
+                          {song.image ? (
+                            <img 
+                              src={song.image} 
+                              alt={song.name} 
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                            />
+                          ) : (
+                            <MdPlayArrow size={28} className="text-fuchsia-500" />
+                          )}
+                          <div className="absolute inset-0 bg-black/60 opacity-0 flex items-center justify-center transition-opacity duration-200">
+                            {track && track._id === song._id ? (
+                              playStatus ? (
+                                <div className="bg-fuchsia-500 rounded-full p-1">
+                                  <MdPause size={22} className="text-white" />
+                                </div>
+                              ) : (
+                                <div className="bg-fuchsia-500 rounded-full p-1">
+                                  <MdPlayArrow size={22} className="text-white" />
+                                </div>
+                              )
+                            ) : (
+                              <MdPlayArrow size={24} className="text-white" />
+                            )}
+                          </div>
+                        </div>
+                        
+                        <div className="flex-1 min-w-0 pr-2">
+                          <h3 className="font-semibold truncate text-white text-sm">{song.name}</h3>
+                          <p className="text-xs text-neutral-400 truncate">{song.desc}</p>
+                        </div>
+                        
+                        {/* Mobile action buttons with heart and three dots side by side */}
+                        <div className="flex items-center gap-1 relative">
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const btn = e.currentTarget;
+                              btn.classList.add('favorite-animation');
+                              setTimeout(() => btn.classList.remove('favorite-animation'), 1000);
+                              handleToggleFavorite(e, song._id);
+                            }}
+                            className="text-lg"
+                          >
+                            {isFavorite(song._id) ? 
+                              <MdFavorite className="text-fuchsia-500" size={20} /> : 
+                              <MdFavoriteBorder size={20} className="text-neutral-400" />
+                            }
+                          </button>
+                          
+                          <button 
+                            onClick={(e) => handleOptionsClick(e, song._id)}
+                            className={`text-lg options-menu ${activeOptionsMenu === song._id ? 'text-fuchsia-500' : ''}`}
+                          >
+                            <MdMoreVert className={activeOptionsMenu === song._id ? "text-fuchsia-500" : "text-neutral-400"} size={20} />
+                          </button>
+                          
+                          <span className="text-xs text-neutral-400 song-duration ml-1">{song.duration || "--:--"}</span>
+                        </div>
+                        
+                        {/* Floating menu that won't be hidden by other songs */}
+                        {activeOptionsMenu === song._id && (
+                          <div className="fixed z-[100] bg-neutral-800 rounded-lg shadow-xl border border-neutral-700 menu-options" 
+                               style={{
+                                 bottom: '80px', 
+                                 right: '24px', 
+                                 width: '150px'
+                               }}>
+                            <div className="py-1">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleAddToQueue(e, song._id);
+                                  setActiveOptionsMenu(null);
+                                }}
+                                className="flex items-center gap-2 w-full px-4 py-3 text-left text-sm text-white hover:bg-neutral-700 transition-colors"
+                              >
+                                <MdQueueMusic className="text-fuchsia-400" size={16} />
+                                <span>Add to Queue</span>
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleAddToPlaylist(e, song._id);
+                                  setActiveOptionsMenu(null);
+                                }}
+                                className="flex items-center gap-2 w-full px-4 py-3 text-left text-sm text-white hover:bg-neutral-700 transition-colors"
+                              >
+                                <MdPlaylistAdd className="text-fuchsia-400" size={16} />
+                                <span>Add to Playlist</span>
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Swipe action indicators */}
+                        <div className="absolute -right-14 inset-y-0 flex items-center justify-center w-14 bg-gradient-to-l from-fuchsia-500 to-fuchsia-600 opacity-80">
+                          <MdQueueMusic size={22} className="text-white" />
+                        </div>
+                        <div className="absolute -left-14 inset-y-0 flex items-center justify-center w-14 bg-gradient-to-r from-fuchsia-500 to-fuchsia-600 opacity-80">
+                          <MdPlaylistAdd size={22} className="text-white" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {/* Desktop Song Grid - only shown on medium screens and up */}
                   {currentSongs.map((song) => (
                     <div 
                       key={song._id} 
-                      className={`flex items-center gap-4 ${track && track._id === song._id ? 'bg-fuchsia-900/30' : 'bg-black/20'} p-3 rounded-lg hover:bg-white/10 transition-all cursor-pointer group`}
+                      className={`hidden md:flex items-center gap-4 ${track && track._id === song._id ? 'bg-fuchsia-900/30' : 'bg-black/20'} p-3 rounded-lg hover:bg-white/10 transition-all cursor-pointer group`}
                       onClick={() => playWithId(song._id)}
                     >
                       <div className="bg-neutral-800 w-12 h-12 rounded flex items-center justify-center relative">
@@ -499,9 +724,33 @@ const DisplayHome = () => {
                 </div>
               )}
               
-              {/* Pagination */}
+              {/* Mobile Pagination - simplified for touch */}
               {totalPages > 1 && (
-                <div className="flex justify-center mt-8">
+                <div className="md:hidden mobile-pagination flex justify-center mt-6 gap-1">
+                  <button
+                    onClick={() => currentPage > 1 && paginate(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className={`px-4 py-2 rounded-lg ${currentPage === 1 ? 'bg-neutral-800/30 text-neutral-500' : 'bg-fuchsia-600 text-white'}`}
+                  >
+                    Prev
+                  </button>
+                  <div className="px-4 py-2 bg-neutral-800/50 rounded-lg">
+                    <span className="text-white">{currentPage}</span>
+                    <span className="text-neutral-400"> / {totalPages}</span>
+                  </div>
+                  <button
+                    onClick={() => currentPage < totalPages && paginate(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className={`px-4 py-2 rounded-lg ${currentPage === totalPages ? 'bg-neutral-800/30 text-neutral-500' : 'bg-fuchsia-600 text-white'}`}
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
+              
+              {/* Desktop Pagination - only shown on medium screens and up */}
+              {totalPages > 1 && (
+                <div className="hidden md:flex justify-center mt-8">
                   <div className="flex gap-2">
                     {[...Array(totalPages)].map((_, i) => (
                       <button

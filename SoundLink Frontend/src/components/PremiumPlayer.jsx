@@ -334,8 +334,8 @@ const PremiumPlayer = () => {
   return (
     <AnimatePresence>
       <div 
-        className="fixed left-0 w-full z-50 player-container"
-        style={{ bottom: isSmallScreen ? '50px' : '0' }}
+        className="fixed left-0 w-full z-40 player-container"
+        style={{ bottom: isSmallScreen ? '50px' : '0', display: isSmallScreen && hidePlayer ? 'none' : 'block' }}
         ref={playerRef}
       >
         {/* Mobile Player (full controls) */}

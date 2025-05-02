@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { MdPerson, MdPlayArrow, MdPause, MdFavorite, MdFavoriteBorder, MdPlaylistAdd, MdArrowBack, MdQueueMusic, MdMoreVert } from "react-icons/md";
 import { PlayerContext } from "../context/PlayerContext";
 import AddToPlaylistModal from "./AddToPlaylistModal";
+import "../components/MobileStyles.css"; // Import mobile-specific styles
 
 const ArtistDetail = () => {
   const { id } = useParams();
@@ -168,17 +169,37 @@ const ArtistDetail = () => {
     }
   }, [id]);
 
-  // Close dropdown menu when clicking outside
+  // Handle menu click
+  const handleToggleOptions = (e, songId) => {
+    e.stopPropagation();
+    setShowOptions(showOptions === songId ? null : songId);
+    
+    // Add animation class to the button when clicked
+    if (e.currentTarget) {
+      e.currentTarget.classList.add('options-menu-active');
+      setTimeout(() => e.currentTarget.classList.remove('options-menu-active'), 500);
+    }
+  };
+
+  // Close options menu when clicking outside or scrolling
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (showOptions && !event.target.closest('.song-options')) {
         setShowOptions(null);
       }
     };
-
+    
+    const handleScroll = () => {
+      if (showOptions) {
+        setShowOptions(null);
+      }
+    };
+    
     document.addEventListener('click', handleClickOutside);
+    document.addEventListener('scroll', handleScroll, true);
     return () => {
       document.removeEventListener('click', handleClickOutside);
+      document.removeEventListener('scroll', handleScroll, true);
     };
   }, [showOptions]);
 
@@ -197,11 +218,6 @@ const ArtistDetail = () => {
   const handleAddToQueue = (e, songId) => {
     e.stopPropagation();
     addToQueue && addToQueue(songId);
-  };
-
-  const handleToggleOptions = (e, songId) => {
-    e.stopPropagation();
-    setShowOptions(showOptions === songId ? null : songId);
   };
 
   const isPlaying = (songId) => {
@@ -321,7 +337,8 @@ const ArtistDetail = () => {
 
           {artistSongs.length > 0 ? (
             <div className="bg-neutral-900/50 backdrop-blur-md rounded-xl overflow-hidden">
-              <div className="grid grid-cols-4 p-4 border-b border-neutral-800 text-neutral-400 text-sm">
+              {/* Desktop header - hidden on mobile */}
+              <div className="hidden md:grid grid-cols-4 p-4 border-b border-neutral-800 text-neutral-400 text-sm">
                 <div className="flex items-center"># TITLE</div>
                 <div className="hidden md:block">ALBUM</div>
                 <div className="hidden md:block">DURATION</div>
@@ -335,7 +352,8 @@ const ArtistDetail = () => {
                     className={`grid grid-cols-12 p-4 hover:bg-white/10 transition-all cursor-pointer group ${isPlaying(song._id) ? 'bg-white/10' : ''}`}
                     onClick={() => playWithId(song._id)}
                   >
-                    <div className="col-span-9 sm:col-span-10 md:col-span-3 flex items-center gap-3">
+                    {/* Desktop View - Hidden on mobile */}
+                    <div className="hidden md:flex md:col-span-3 items-center gap-3">
                       <div className="w-6 min-w-[24px] text-neutral-400 flex items-center justify-center">
                         <span className={isPlaying(song._id) ? 'hidden' : 'group-hover:hidden'}>{index + 1}</span>
                         <button 
@@ -366,6 +384,70 @@ const ArtistDetail = () => {
                       </div>
                     </div>
                     
+                    {/* Mobile View - Only shown on small screens */}
+                    <div className="col-span-12 md:hidden flex items-center gap-3">
+                      <div className="w-6 min-w-[24px] text-neutral-400 flex items-center justify-center">
+                        <span className={isPlaying(song._id) ? 'hidden' : 'group-hover:hidden'}>{index + 1}</span>
+                        <button 
+                          className={isPlaying(song._id) ? 'block' : 'hidden group-hover:block'}
+                          onClick={(e) => handlePlayPause(e, song._id)}
+                        >
+                          {isPlaying(song._id) ? <MdPause className="text-fuchsia-500" /> : <MdPlayArrow />}
+                        </button>
+                      </div>
+                      
+                      <div className="bg-neutral-800 w-14 h-14 min-w-[56px] rounded-lg flex-shrink-0 overflow-hidden relative">
+                        {song.image ? (
+                          <img 
+                            src={song.image} 
+                            alt={song.name} 
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <MdPlayArrow size={24} className="text-fuchsia-500" />
+                          </div>
+                        )}
+                        {isPlaying(song._id) && (
+                          <div className="absolute bottom-0 left-0 right-0 h-1 bg-fuchsia-500"></div>
+                        )}
+                      </div>
+                      
+                      <div className="flex-1 min-w-0 pr-2">
+                        <div className={`font-medium truncate ${isPlaying(song._id) ? 'text-fuchsia-500' : 'text-white'} text-sm`}>{song.name}</div>
+                        <div className="text-xs text-neutral-400 truncate">{song.desc || song.album || "Single"}</div>
+                      </div>
+                      
+                      {/* Mobile action buttons with heart and three dots side by side */}
+                      <div className="flex items-center gap-1 relative">
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const btn = e.currentTarget;
+                            btn.classList.add('favorite-animation');
+                            setTimeout(() => btn.classList.remove('favorite-animation'), 1000);
+                            handleToggleFavorite(e, song._id);
+                          }}
+                          className="text-lg"
+                        >
+                          {isFavorite(song._id) ? 
+                            <MdFavorite className="text-fuchsia-500" size={20} /> : 
+                            <MdFavoriteBorder size={20} className="text-neutral-400" />
+                          }
+                        </button>
+                        
+                        <button 
+                          onClick={(e) => handleToggleOptions(e, song._id)}
+                          className={`text-lg song-options ${showOptions === song._id ? 'text-fuchsia-500' : ''}`}
+                        >
+                          <MdMoreVert className={showOptions === song._id ? "text-fuchsia-500" : "text-neutral-400"} size={20} />
+                        </button>
+                        
+                        <span className="text-xs text-neutral-400 song-duration ml-1">{song.duration || "--:--"}</span>
+                      </div>
+                    </div>
+                    
                     <div className="hidden md:block md:col-span-3 text-neutral-400 truncate">
                       {song.album || "Single"}
                     </div>
@@ -374,7 +456,7 @@ const ArtistDetail = () => {
                       {song.duration || "--:--"}
                     </div>
                     
-                    <div className="col-span-3 sm:col-span-2 md:col-span-3 flex items-center justify-end gap-1 sm:gap-3">
+                    <div className="hidden md:flex md:col-span-3 items-center justify-end gap-3">
                       <button 
                         onClick={(e) => handleToggleFavorite(e, song._id)}
                         className="opacity-70 group-hover:opacity-100 transition-opacity text-neutral-400 hover:text-white"
@@ -386,10 +468,6 @@ const ArtistDetail = () => {
                         }
                       </button>
                       
-                      <div className="text-neutral-400 md:hidden text-[14px] sm:text-[15px]">
-                        {song.duration || "--:--"}
-                      </div>
-                      
                       <div className="relative song-options">
                         <button 
                           onClick={(e) => handleToggleOptions(e, song._id)}
@@ -398,25 +476,6 @@ const ArtistDetail = () => {
                         >
                           <MdMoreVert size={18} />
                         </button>
-                        
-                        {showOptions === song._id && (
-                          <div className="absolute right-0 top-full mt-2 w-48 bg-neutral-800 rounded-md shadow-lg py-1 z-50 border border-neutral-700">
-                            <button 
-                              onClick={(e) => {e.stopPropagation(); handleAddToQueue(e, song._id)}}
-                              className="w-full text-left px-4 py-2 text-white hover:bg-neutral-700 flex items-center gap-2"
-                            >
-                              <MdQueueMusic size={18} />
-                              Add to Queue
-                            </button>
-                            <button 
-                              onClick={(e) => {e.stopPropagation(); handleAddToPlaylist(e, song._id)}}
-                              className="w-full text-left px-4 py-2 text-white hover:bg-neutral-700 flex items-center gap-2"
-                            >
-                              <MdPlaylistAdd size={18} />
-                              Add to Playlist
-                            </button>
-                          </div>
-                        )}
                       </div>
                     </div>
                   </div>
@@ -430,6 +489,41 @@ const ArtistDetail = () => {
           )}
         </motion.div>
       </div>
+      
+      {/* Floating menu that won't be hidden by other songs */}
+      {showOptions && (
+        <div className="fixed z-[100] bg-neutral-800 rounded-lg shadow-xl border border-neutral-700 menu-options" 
+             style={{
+               bottom: '80px', 
+               right: '24px', 
+               width: '150px'
+             }}>
+          <div className="py-1">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleAddToQueue(e, showOptions);
+                setShowOptions(null);
+              }}
+              className="flex items-center gap-2 w-full px-4 py-3 text-left text-sm text-white hover:bg-neutral-700 transition-colors"
+            >
+              <MdQueueMusic className="text-fuchsia-400" size={16} />
+              <span>Add to Queue</span>
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleAddToPlaylist(e, showOptions);
+                setShowOptions(null);
+              }}
+              className="flex items-center gap-2 w-full px-4 py-3 text-left text-sm text-white hover:bg-neutral-700 transition-colors"
+            >
+              <MdPlaylistAdd className="text-fuchsia-400" size={16} />
+              <span>Add to Playlist</span>
+            </button>
+          </div>
+        </div>
+      )}
       
       {showPlaylistModal && (
         <AddToPlaylistModal 

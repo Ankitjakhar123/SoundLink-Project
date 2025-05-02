@@ -769,6 +769,16 @@ export const PlayerContextProvider = ({ children }) => {
     setHidePlayer(newState);
     localStorage.setItem('hidePlayer', String(newState));
     
+    // Update CSS variable immediately for responsive layout
+    const isSmallScreen = window.innerWidth < 768;
+    const playerHeight = isSmallScreen ? '50px' : newState ? '0' : '60px';
+    const navHeight = isSmallScreen ? '50px' : '0'; 
+    const totalPadding = isSmallScreen 
+      ? (newState ? navHeight : `calc(${playerHeight} + ${navHeight})`) 
+      : playerHeight;
+    
+    document.documentElement.style.setProperty('--player-bottom-padding', totalPadding);
+    
     // Dispatch a custom event for any components that need to react
     window.dispatchEvent(new CustomEvent('player-visibility-change', { 
       detail: { isHidden: newState }

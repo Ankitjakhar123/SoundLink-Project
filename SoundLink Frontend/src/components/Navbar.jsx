@@ -484,7 +484,7 @@ const Navbar = (props) => {
 
             {/* Mobile Bottom Navigation Bar - Only visible on small screens when preferred and no keyboard */}
             <div 
-                className={`md:hidden fixed bottom-0 left-0 right-0 bg-black border-t border-neutral-800 py-1 px-3 z-[30] backdrop-blur-xl ${isKeyboardVisible || !showBottomNav ? 'hidden' : 'block'}`} 
+                className={`md:hidden fixed bottom-0 left-0 right-0 bg-black border-t border-neutral-800 py-1 px-3 z-[60] backdrop-blur-xl ${isKeyboardVisible || !showBottomNav ? 'hidden' : 'block'}`} 
             >
                 <div className="flex items-center justify-between">
                     {/* Home */}
@@ -545,7 +545,7 @@ const Navbar = (props) => {
                     {/* More (Three dots) */}
                     <button 
                         onClick={() => setShowMobileDropdown(!showMobileDropdown)}
-                        className="flex flex-col items-center more-button"
+                        className="flex flex-col items-center more-button relative"
                     >
                         <FaEllipsisH className="w-5 h-5 text-[#a855f7]" />
                         <span className="text-xs text-white">More</span>
@@ -554,7 +554,8 @@ const Navbar = (props) => {
                         {showMobileDropdown && (
                             <div 
                                 ref={mobileDropdownRef}
-                                className="absolute bottom-full mb-2 right-0 w-40 rounded-lg overflow-hidden bg-neutral-800 shadow-lg border border-neutral-700 z-50"
+                                className="absolute bottom-full mb-2 right-0 w-40 rounded-lg overflow-hidden bg-neutral-800 shadow-lg border border-neutral-700 z-[100]"
+                                style={{transform: 'translateY(-50px)'}}
                             >
                                 {/* Only show Playlists option for small screens */}
                                 <button 
