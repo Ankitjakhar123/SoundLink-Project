@@ -25,6 +25,10 @@ const PremiumPlayer = () => {
     autoplayEnabled,
     setAutoplayEnabled,
     hidePlayer,
+    buffering,
+    loadingProgress,
+    setBufferingStrategy,
+    bufferingStrategy,
   } = useContext(PlayerContext);
   
   const [volume, setVolume] = useState(0.7);
@@ -328,6 +332,21 @@ const PremiumPlayer = () => {
     };
   }, []);
 
+  // Handle buffering strategy change
+  const handleBufferingChange = (strategy) => {
+    setBufferingStrategy(strategy);
+    // Save preference to localStorage
+    localStorage.setItem('bufferingStrategy', strategy);
+  };
+
+  // Load saved buffering strategy preference
+  useEffect(() => {
+    const savedStrategy = localStorage.getItem('bufferingStrategy');
+    if (savedStrategy) {
+      setBufferingStrategy(savedStrategy);
+    }
+  }, [setBufferingStrategy]);
+
   // If there's no track to play, don't render anything
   if (!track) return null;
 
@@ -355,12 +374,17 @@ const PremiumPlayer = () => {
             
             {/* Album art & song info */}
             <div className="flex-1 flex flex-col items-center justify-center gap-6">
-              <div className="w-64 h-64 rounded-lg overflow-hidden shadow-2xl border border-neutral-800">
+              <div className="relative w-64 h-64 rounded-lg overflow-hidden shadow-2xl border border-neutral-800">
                 <img 
                   src={track.image} 
                   alt={track.name} 
                   className="w-full h-full object-cover"
                 />
+                {buffering && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                    <div className="w-10 h-10 border-4 border-fuchsia-600 border-t-transparent rounded-full animate-spin"></div>
+                  </div>
+                )}
               </div>
               
               <div className="text-center">
@@ -375,18 +399,26 @@ const PremiumPlayer = () => {
                 <span>{formatTime(time.currentTime.minute, time.currentTime.second)}</span>
                 <span>{formatTime(time.totalTime.minute, time.totalTime.second)}</span>
               </div>
-              <input
-                ref={progressBarRef}
-                type="range"
-                min={0}
-                max={durationSec || 1}
-                step={0.1}
-                value={currentSec}
-                onChange={handleSeek}
-                onTouchStart={handleProgressTouchStart}
-                onTouchEnd={handleProgressTouchEnd}
-                className="w-full accent-fuchsia-600 h-1 cursor-pointer"
-              />
+              <div className="relative w-full h-2 bg-neutral-800 rounded-full overflow-hidden">
+                {/* Buffering Progress Indicator */}
+                <div 
+                  className="absolute top-0 left-0 h-full bg-neutral-600 rounded-full"
+                  style={{ width: `${loadingProgress}%` }}
+                ></div>
+                {/* Playback Progress */}
+                <input
+                  ref={progressBarRef}
+                  type="range"
+                  min={0}
+                  max={durationSec || 1}
+                  step={0.1}
+                  value={currentSec}
+                  onChange={handleSeek}
+                  onTouchStart={handleProgressTouchStart}
+                  onTouchEnd={handleProgressTouchEnd}
+                  className="w-full absolute top-0 left-0 h-2 accent-fuchsia-600 cursor-pointer opacity-70 z-10"
+                />
+              </div>
             </div>
             
             {/* Controls */}
@@ -478,6 +510,31 @@ const PremiumPlayer = () => {
                   </div>
                 </div>
               </div>
+              
+              {/* Add buffering strategy selector */}
+              <div className="flex items-center justify-center gap-4 mt-2 text-neutral-400 text-xs">
+                <span>Buffer Mode:</span>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => handleBufferingChange('auto')}
+                    className={`px-2 py-1 rounded ${bufferingStrategy === 'auto' ? 'bg-fuchsia-600 text-white' : 'bg-neutral-800'}`}
+                  >
+                    Auto
+                  </button>
+                  <button 
+                    onClick={() => handleBufferingChange('aggressive')}
+                    className={`px-2 py-1 rounded ${bufferingStrategy === 'aggressive' ? 'bg-fuchsia-600 text-white' : 'bg-neutral-800'}`}
+                  >
+                    High Quality
+                  </button>
+                  <button 
+                    onClick={() => handleBufferingChange('conservative')}
+                    className={`px-2 py-1 rounded ${bufferingStrategy === 'conservative' ? 'bg-fuchsia-600 text-white' : 'bg-neutral-800'}`}
+                  >
+                    Data Saver
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -489,11 +546,18 @@ const PremiumPlayer = () => {
             className={`flex items-center gap-3 min-w-[80px] ${isSmallScreen ? "flex-1" : "w-[25%]"}`}
             onClick={() => isSmallScreen && setShowExtraControls(true)}
           >
-            <img
-              src={track.image}
-              alt={track.name}
-              className="w-10 h-10 rounded object-cover border border-neutral-800"
-            />
+            <div className="relative">
+              <img
+                src={track.image}
+                alt={track.name}
+                className="w-10 h-10 rounded object-cover border border-neutral-800"
+              />
+              {buffering && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded">
+                  <div className="w-4 h-4 border-2 border-fuchsia-600 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              )}
+            </div>
             <div className="flex flex-col min-w-0">
               <span className="text-sm font-bold text-white truncate max-w-[120px]">{track.name}</span>
               <span className="text-xs text-neutral-400 truncate max-w-[120px]">{track.artist || track.album}</span>
@@ -546,17 +610,31 @@ const PremiumPlayer = () => {
             {/* Progress Bar */}
             <div className="flex items-center gap-1 w-full">
               <span className="text-[10px] text-neutral-400 min-w-[28px]">{formatTime(time.currentTime.minute, time.currentTime.second)}</span>
-              <input
-                type="range"
-                min={0}
-                max={durationSec || 1}
-                step={0.1}
-                value={currentSec}
-                onChange={handleSeek}
-                onTouchStart={handleProgressTouchStart}
-                onTouchEnd={handleProgressTouchEnd}
-                className="w-full accent-fuchsia-600 h-1 cursor-pointer"
-              />
+              <div className="relative w-full h-1 bg-neutral-800 rounded-full overflow-hidden">
+                {/* Buffering Progress Indicator */}
+                <div 
+                  className="absolute top-0 left-0 h-full bg-neutral-600 rounded-full"
+                  style={{ width: `${loadingProgress}%` }}
+                  title="Buffered amount"
+                ></div>
+                {/* Playback Progress */}
+                <input
+                  type="range"
+                  min={0}
+                  max={durationSec || 1}
+                  step={0.1}
+                  value={currentSec}
+                  onChange={handleSeek}
+                  onTouchStart={handleProgressTouchStart}
+                  onTouchEnd={handleProgressTouchEnd}
+                  className="w-full absolute top-0 left-0 h-1 accent-fuchsia-600 cursor-pointer opacity-70 z-10"
+                />
+                {buffering && (
+                  <div className="absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center">
+                    <div className="w-4 h-4 rounded-full bg-fuchsia-600 animate-pulse"></div>
+                  </div>
+                )}
+              </div>
               <span className="text-[10px] text-neutral-400 min-w-[28px]">{formatTime(time.totalTime.minute, time.totalTime.second)}</span>
             </div>
           </div>
@@ -597,60 +675,78 @@ const PremiumPlayer = () => {
 
           {/* Volume + Extras - hidden on mobile */}
           {!isSmallScreen && (
-            <div className="flex items-center gap-4 min-w-[90px] w-[25%] justify-end">
-              <button 
-                onClick={() => toggleFavorite(track._id)}
-                className={`text-base transition ${isFavorite(track._id) ? "text-fuchsia-500" : "text-neutral-400 hover:text-fuchsia-500"}`}
-                title="Like"
-              >
-                <FaHeart />
-              </button>
-              <button 
-                onClick={toggleQueue}
-                className={`text-base transition ${showQueue ? "text-fuchsia-500" : "text-neutral-400 hover:text-fuchsia-500"}`}
-                title="Queue"
-              >
-                <MdQueueMusic />
-              </button>
-              <button
-                onClick={handleMute}
-                className="text-base text-neutral-400 hover:text-fuchsia-500 transition"
-                title={isMuted ? "Unmute" : "Mute"}
-              >
-              {isMuted || volume === 0 ? <FaVolumeMute /> : <FaVolumeUp />}
-            </button>
-            <input
-              type="range"
-              min={0}
-              max={1}
-              step={0.01}
-              value={isMuted ? 0 : volume}
-              onChange={(e) => setVolume(Number(e.target.value))}
-              onTouchStart={handleVolumeTouchStart}
-              onTouchEnd={handleVolumeTouchEnd}
-              className="w-16 accent-fuchsia-600 cursor-pointer h-1 volume-slider"
-              disabled={isMuted}
-            />
-              <button 
-                className="text-base text-neutral-400 hover:text-fuchsia-500 transition"
-                title="Devices"
-              >
-                <MdDevices />
-              </button>
-              <div className="flex items-center gap-1 ml-2 text-neutral-400">
-                <span className="text-[10px]">Autoplay</span>
-                <div
-                  onClick={handleAutoplayToggle}
-                  className={`w-8 h-4 rounded-full relative cursor-pointer transition-colors ${autoplayEnabled ? "bg-fuchsia-600" : "bg-neutral-600"}`}
+            <div className="flex flex-col">
+              <div className="flex items-center gap-4 min-w-[90px] w-[25%] justify-end">
+                <button 
+                  onClick={() => toggleFavorite(track._id)}
+                  className={`text-base transition ${isFavorite(track._id) ? "text-fuchsia-500" : "text-neutral-400 hover:text-fuchsia-500"}`}
+                  title="Like"
                 >
+                  <FaHeart />
+                </button>
+                <button 
+                  onClick={toggleQueue}
+                  className={`text-base transition ${showQueue ? "text-fuchsia-500" : "text-neutral-400 hover:text-fuchsia-500"}`}
+                  title="Queue"
+                >
+                  <MdQueueMusic />
+                </button>
+                <button
+                  onClick={handleMute}
+                  className="text-base text-neutral-400 hover:text-fuchsia-500 transition"
+                  title={isMuted ? "Unmute" : "Mute"}
+                >
+                  {isMuted || volume === 0 ? <FaVolumeMute /> : <FaVolumeUp />}
+                </button>
+                <input
+                  type="range"
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  value={isMuted ? 0 : volume}
+                  onChange={(e) => setVolume(Number(e.target.value))}
+                  onTouchStart={handleVolumeTouchStart}
+                  onTouchEnd={handleVolumeTouchEnd}
+                  className="w-16 accent-fuchsia-600 cursor-pointer h-1 volume-slider"
+                  disabled={isMuted}
+                />
+                <button 
+                  className="text-base text-neutral-400 hover:text-fuchsia-500 transition"
+                  title="Devices"
+                >
+                  <MdDevices />
+                </button>
+                <div className="flex items-center gap-1 ml-2 text-neutral-400">
+                  <span className="text-[10px]">Autoplay</span>
                   <div
-                    className={`absolute w-3 h-3 bg-white rounded-full top-0.5 transition-transform ${
-                      autoplayEnabled ? "translate-x-[18px]" : "translate-x-0.5"
-                    }`}
-                  ></div>
+                    onClick={handleAutoplayToggle}
+                    className={`w-8 h-4 rounded-full relative cursor-pointer transition-colors ${autoplayEnabled ? "bg-fuchsia-600" : "bg-neutral-600"}`}
+                  >
+                    <div
+                      className={`absolute w-3 h-3 bg-white rounded-full top-0.5 transition-transform ${
+                        autoplayEnabled ? "translate-x-[18px]" : "translate-x-0.5"
+                      }`}
+                    ></div>
+                  </div>
                 </div>
               </div>
-          </div>
+              
+              {/* Add buffering strategy selector for desktop */}
+              <div className="flex items-center justify-end gap-2 mt-1">
+                <div className="text-[10px] text-neutral-400 flex items-center">
+                  <span className="mr-1">Buffer:</span>
+                  <select 
+                    value={bufferingStrategy}
+                    onChange={(e) => handleBufferingChange(e.target.value)}
+                    className="bg-neutral-800 text-white text-[10px] px-1 py-0.5 rounded border-none outline-none"
+                  >
+                    <option value="auto">Auto</option>
+                    <option value="aggressive">High Quality</option>
+                    <option value="conservative">Data Saver</option>
+                  </select>
+                </div>
+              </div>
+            </div>
           )}
         </div>
         

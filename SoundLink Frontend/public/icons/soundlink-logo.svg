@@ -1,26 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="400" height="400">
-  <!-- Optional background for visibility -->
-  <rect width="100%" height="100%" fill="#121212"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 128" width="512" height="128">
+  <!-- Dark background -->
+  <rect width="100%" height="100%" fill="#1A1A1A"/>
 
-  <!-- Headphone arc -->
-  <path d="M160 200C160 130 352 130 352 200" fill="none" stroke="#a855f7" stroke-width="20" stroke-linecap="round"/>
+  <!-- Sound wave bars -->
+  <rect x="30" y="44" width="14" height="40" rx="2" fill="#F8B500"/>
+  <rect x="55" y="24" width="14" height="80" rx="2" fill="#FF4E33"/>
+  <rect x="80" y="34" width="14" height="60" rx="2" fill="#FF2C77"/>
+  <rect x="105" y="14" width="14" height="100" rx="2" fill="#B02EE9"/>
+  <rect x="130" y="44" width="14" height="40" rx="2" fill="#7627EB"/>
 
-  <!-- Left ear cup -->
-  <rect x="120" y="200" width="40" height="80" rx="10" fill="#a855f7"/>
-
-  <!-- Right ear cup -->
-  <rect x="352" y="200" width="40" height="80" rx="10" fill="#a855f7"/>
-
-  <!-- Centered vertical sound bars inside headphones -->
-  <rect x="236" y="180" width="8" height="80" fill="#a855f7"/>
-  <rect x="256" y="160" width="8" height="120" fill="#a855f7"/>
-  <rect x="276" y="180" width="8" height="80" fill="#a855f7"/>
-  <rect x="216" y="200" width="8" height="40" fill="#a855f7"/>
-  <rect x="296" y="200" width="8" height="40" fill="#a855f7"/>
-
-  <!-- SOUND -->
-  <text x="420" y="230" font-family="Arial, sans-serif" font-size="42" font-weight="900" fill="#a855f7" text-anchor="start">SOUND</text>
-
-  <!-- LINK -->
-  <text x="420" y="275" font-family="Arial, sans-serif" font-size="42" font-weight="900" fill="#a855f7" text-anchor="start">LINK</text>
+  <!-- Sound Link text -->
+  <text x="170" y="75" font-family="Arial, sans-serif" font-size="42" font-weight="700" fill="#FFFFFF" text-anchor="start">Sound Link</text>
 </svg> 

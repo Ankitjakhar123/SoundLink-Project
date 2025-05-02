@@ -4,8 +4,8 @@
   "description": "A music streaming platform",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#121212",
-  "theme_color": "#a855f7",
+  "background_color": "#1A1A1A",
+  "theme_color": "#FF2C77",
   "orientation": "portrait-primary",
   "icons": [
     {

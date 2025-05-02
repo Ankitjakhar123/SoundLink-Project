@@ -25,6 +25,11 @@ export const PlayerContextProvider = ({ children }) => {
   const [autoplayEnabled, setAutoplayEnabled] = useState(false);
   const [firstLoad, setFirstLoad] = useState(true);
   const [hidePlayer, setHidePlayer] = useState(false);
+  // Buffering and lazy loading states
+  const [buffering, setBuffering] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [prefetchedTracks, setPrefetchedTracks] = useState({});
+  const [bufferingStrategy, setBufferingStrategy] = useState('auto'); // 'auto', 'aggressive', 'conservative'
   const [loading, setLoading] = useState({
     songs: true,
     albums: true,
@@ -109,7 +114,75 @@ export const PlayerContextProvider = ({ children }) => {
     }
   };
 
-  // Modified play function with audio context initialization
+  // Prefetch a track's audio data
+  const prefetchTrack = async (trackId) => {
+    // Skip if already prefetched
+    if (prefetchedTracks[trackId]) {
+      console.log(`Track ${trackId} already prefetched`);
+      return;
+    }
+    
+    const trackToPrefetch = songsData.find(song => song._id === trackId);
+    if (!trackToPrefetch) {
+      console.error(`Cannot prefetch track ${trackId}: not found in songData`);
+      return;
+    }
+    
+    console.log(`Prefetching track: ${trackToPrefetch.name}`);
+    
+    try {
+      // Create an audio element for prefetching
+      const prefetchAudio = new Audio();
+      prefetchAudio.preload = 'metadata';
+      
+      // Set up progress tracking
+      prefetchAudio.addEventListener('progress', () => {
+        if (prefetchAudio.buffered.length > 0) {
+          const bufferedEnd = prefetchAudio.buffered.end(prefetchAudio.buffered.length - 1);
+          const duration = prefetchAudio.duration;
+          if (duration > 0) {
+            const progress = (bufferedEnd / duration) * 100;
+            console.log(`Prefetching ${trackToPrefetch.name}: ${Math.round(progress)}% complete`);
+            
+            // When prefetch is complete enough, mark as prefetched
+            if (progress > 15) {
+              setPrefetchedTracks(prev => ({
+                ...prev,
+                [trackId]: {
+                  timestamp: Date.now(),
+                  progress
+                }
+              }));
+            }
+          }
+        }
+      });
+      
+      // Handle successful prefetch
+      prefetchAudio.addEventListener('canplaythrough', () => {
+        console.log(`Prefetch complete for track: ${trackToPrefetch.name}`);
+        setPrefetchedTracks(prev => ({
+          ...prev,
+          [trackId]: {
+            timestamp: Date.now(),
+            progress: 100
+          }
+        }));
+        
+        // Remove the temporary audio element
+        prefetchAudio.src = '';
+        prefetchAudio.remove();
+      });
+      
+      // Start the prefetch
+      prefetchAudio.src = trackToPrefetch.file;
+      
+    } catch (error) {
+      console.error(`Error prefetching track ${trackToPrefetch.name}:`, error);
+    }
+  };
+
+  // Modified play function with audio context initialization and buffering control
   const play = () => {
     initAudioContext(); // Initialize audio context
 
@@ -133,6 +206,7 @@ export const PlayerContextProvider = ({ children }) => {
         // Force load if not loaded
         if (audioRef.current.readyState < 2) {
           console.log('Audio not fully loaded, loading...');
+          setBuffering(true);
           audioRef.current.load();
           
           // Set a timeout to wait for loading
@@ -142,10 +216,12 @@ export const PlayerContextProvider = ({ children }) => {
               .then(() => {
                 console.log('Delayed playback successful');
                 setPlayStatus(true);
+                setBuffering(false);
               })
               .catch(err => {
                 console.error('Delayed playback failed:', err);
                 setPlayStatus(false);
+                setBuffering(false);
               });
           }, 500);
           
@@ -167,6 +243,7 @@ export const PlayerContextProvider = ({ children }) => {
             .then(() => {
               console.log('Audio playing successfully');
               setPlayStatus(true);
+              setBuffering(false);
             })
             .catch(error => {
               console.error('Error playing audio:', error);
@@ -178,10 +255,12 @@ export const PlayerContextProvider = ({ children }) => {
                   .then(() => {
                     console.log('Retry successful');
                     setPlayStatus(true);
+                    setBuffering(false);
                   })
                   .catch(retryError => {
                     console.error('Retry failed:', retryError);
                     setPlayStatus(false);
+                    setBuffering(false);
                     
                     // If autoplay is blocked, we need to manually set autoplay to false
                     if (retryError.name === 'NotAllowedError') {
@@ -199,6 +278,7 @@ export const PlayerContextProvider = ({ children }) => {
       } catch (error) {
         console.error('Error playing audio:', error);
         setPlayStatus(false);
+        setBuffering(false);
       }
     } else {
       console.error('Audio reference is not available');
@@ -214,6 +294,45 @@ export const PlayerContextProvider = ({ children }) => {
         console.error('Error pausing audio:', error);
       }
     }
+  };
+
+  // Determine next tracks to prefetch based on current track and buffering strategy
+  const prefetchNextTracks = () => {
+    if (!track || !bufferingStrategy || songsData.length === 0) return;
+    
+    const currentIndex = songsData.findIndex(song => song._id === track._id);
+    if (currentIndex === -1) return;
+    
+    let tracksToPreload = [];
+    
+    // First check queue
+    if (queueSongs.length > 0) {
+      tracksToPreload.push(queueSongs[0]._id);
+      
+      // For aggressive strategy, prefetch more from queue
+      if (bufferingStrategy === 'aggressive' && queueSongs.length > 1) {
+        tracksToPreload.push(queueSongs[1]._id);
+      }
+    }
+    
+    // Then add from sequential tracks if queue doesn't have enough
+    const remainingSlots = bufferingStrategy === 'conservative' ? 1 : 
+                           bufferingStrategy === 'aggressive' ? 3 :
+                           2; // default for 'auto'
+    
+    if (tracksToPreload.length < remainingSlots) {
+      // Add next tracks in sequence
+      for (let i = 1; i <= remainingSlots - tracksToPreload.length; i++) {
+        if (currentIndex + i < songsData.length) {
+          tracksToPreload.push(songsData[currentIndex + i]._id);
+        }
+      }
+    }
+    
+    // Now prefetch the identified tracks
+    tracksToPreload.forEach(trackId => {
+      prefetchTrack(trackId);
+    });
   };
 
   const playWithId = async (id) => {
@@ -235,6 +354,16 @@ export const PlayerContextProvider = ({ children }) => {
         // This is a new track
         console.log('New track selected:', selectedTrack.name);
         console.log('Track audio file URL:', selectedTrack.file);
+        
+        // Begin buffering indication
+        setBuffering(true);
+        setLoadingProgress(0);
+        
+        // Check if we've already prefetched this track
+        if (prefetchedTracks[id]) {
+          console.log('Using prefetched track data');
+        }
+        
         setTrack(selectedTrack);
         setPlayStatus(true); // Set playStatus to true immediately for UI feedback
         setAutoplayEnabled(true);
@@ -647,17 +776,52 @@ export const PlayerContextProvider = ({ children }) => {
         Next();
       }
     };
+    
+    // Monitor buffering progress
+    const handleProgress = () => {
+      if (audio.buffered.length > 0) {
+        const bufferedEnd = audio.buffered.end(audio.buffered.length - 1);
+        const duration = audio.duration;
+        if (duration > 0) {
+          const bufferedPercent = (bufferedEnd / duration) * 100;
+          setLoadingProgress(bufferedPercent);
+          
+          // Consider no longer buffering once we have enough data
+          if (bufferedPercent > 15 && buffering) {
+            setBuffering(false);
+          }
+        }
+      }
+    };
+    
+    // Handle waiting/buffering events
+    const handleWaiting = () => {
+      console.log('Audio is waiting for more data...');
+      setBuffering(true);
+    };
+    
+    // Handle when enough data is available
+    const handleCanPlay = () => {
+      console.log('Audio can play now');
+      setBuffering(false);
+    };
 
     audio.addEventListener("timeupdate", handleTimeUpdate);
     audio.addEventListener("ended", handleEnded);
+    audio.addEventListener("progress", handleProgress);
+    audio.addEventListener("waiting", handleWaiting);
+    audio.addEventListener("canplay", handleCanPlay);
 
     return () => {
       audio.removeEventListener("timeupdate", handleTimeUpdate);
       audio.removeEventListener("ended", handleEnded);
+      audio.removeEventListener("progress", handleProgress);
+      audio.removeEventListener("waiting", handleWaiting);
+      audio.removeEventListener("canplay", handleCanPlay);
     };
   }, [track]);
 
-  // Modified useEffect to prevent infinite track loading
+  // Modified useEffect to implement lazy loading with prefetching
   useEffect(() => {
     // Add a reference to track the last loaded track to prevent reloading the same track
     if (!window._lastLoadedTrack) {
@@ -683,8 +847,21 @@ export const PlayerContextProvider = ({ children }) => {
       // Reset time information
       audioRef.current.currentTime = 0;
       
+      // Set appropriate preload attribute based on buffering strategy
+      if (bufferingStrategy === 'conservative') {
+        audioRef.current.preload = 'metadata'; // Minimal preloading
+      } else if (bufferingStrategy === 'aggressive') {
+        audioRef.current.preload = 'auto'; // Full preloading
+      } else {
+        // Auto strategy - balance between performance and data usage
+        audioRef.current.preload = 'auto';
+      }
+      
       // Force clear the src attribute first to ensure browser recognizes change
       audioRef.current.removeAttribute('src');
+      
+      // Set the new source
+      audioRef.current.src = track.file;
       
       // Need to call load() to refresh the audio element with the new source
       audioRef.current.load();
@@ -714,12 +891,16 @@ export const PlayerContextProvider = ({ children }) => {
         } else {
           console.log('Autoplay disabled or first load, not auto-playing');
         }
+        
+        // Once current track is playing, prefetch next tracks
+        prefetchNextTracks();
       };
       
       // Add event listeners for audio readiness
       const canPlayHandler = () => {
         console.log('Audio canplay event fired - audio is ready to play');
         audioReady = true;
+        setBuffering(false);
         // Remove this event listener to avoid multiple plays
         audioRef.current.removeEventListener('canplay', canPlayHandler);
         // Play with a slight delay to ensure readiness
@@ -746,8 +927,67 @@ export const PlayerContextProvider = ({ children }) => {
         }
       };
     }
-  }, [track, autoplayEnabled, firstLoad, play]);
+  }, [track, autoplayEnabled, firstLoad, bufferingStrategy]);
   
+  // Effect for automatically adjusting buffering strategy based on network conditions
+  useEffect(() => {
+    // Only run this if bufferingStrategy is set to 'auto'
+    if (bufferingStrategy !== 'auto') return;
+    
+    // Function to detect network connection quality
+    const detectNetworkQuality = () => {
+      // Use the Network Information API if available
+      const connection = navigator.connection || 
+                         navigator.mozConnection || 
+                         navigator.webkitConnection;
+      
+      if (connection) {
+        console.log('Network information:', {
+          effectiveType: connection.effectiveType,
+          downlink: connection.downlink,
+          rtt: connection.rtt,
+          saveData: connection.saveData
+        });
+        
+        // Adjust strategy based on network type
+        if (connection.saveData) {
+          // User has requested to save data
+          console.log('Data saver is enabled, using conservative buffering');
+          setBufferingStrategy('conservative');
+        } else if (connection.effectiveType === '4g' && connection.downlink > 5) {
+          // Fast connection
+          console.log('Fast connection detected, using aggressive buffering');
+          setBufferingStrategy('aggressive');
+        } else if (connection.effectiveType === '2g' || connection.downlink < 1) {
+          // Slow connection
+          console.log('Slow connection detected, using conservative buffering');
+          setBufferingStrategy('conservative');
+        }
+      } else {
+        // Fallback if Network Information API is not available
+        // We could add more sophisticated detection here if needed
+        console.log('Network Information API not available, using default buffering');
+      }
+    };
+    
+    // Run detection immediately
+    detectNetworkQuality();
+    
+    // Set up event listener for connection changes
+    const connection = navigator.connection || 
+                      navigator.mozConnection || 
+                      navigator.webkitConnection;
+    
+    if (connection) {
+      connection.addEventListener('change', detectNetworkQuality);
+      
+      // Cleanup
+      return () => {
+        connection.removeEventListener('change', detectNetworkQuality);
+      };
+    }
+  }, [bufferingStrategy]);
+
   // Prevent autoplay on initial load
   useEffect(() => {
     if (firstLoad && track) {
@@ -785,6 +1025,7 @@ export const PlayerContextProvider = ({ children }) => {
     }));
   };
 
+  // Add the new buffering states and functions to the context
   const contextValue = {
     audioRef,
     seekBar,
@@ -809,6 +1050,11 @@ export const PlayerContextProvider = ({ children }) => {
     loop,
     loading,
     error,
+    // Buffering and lazy loading related
+    buffering,
+    loadingProgress,
+    bufferingStrategy,
+    setBufferingStrategy,
     // Favorites related
     favorites,
     toggleFavorite,
@@ -841,7 +1087,7 @@ export const PlayerContextProvider = ({ children }) => {
         <audio 
           key={track._id}
           ref={audioRef} 
-          preload="auto"
+          preload={bufferingStrategy === 'conservative' ? 'metadata' : 'auto'}
           autoPlay={false}
           crossOrigin="anonymous"
           onCanPlay={() => console.log("Audio can play now")}
