@@ -55,7 +55,7 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
           onClick={() => handleNavigate('/')}
         >
           <img 
-            src="/icons/soundlink-icon.svg" 
+            src="/icons/soundlink-icon.svg?v=2" 
             alt="SoundLink Logo" 
             className="h-10 w-10 mr-3" 
           />

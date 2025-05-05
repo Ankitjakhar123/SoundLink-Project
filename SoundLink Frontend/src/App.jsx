@@ -32,6 +32,7 @@ import DisclaimerPopup from "./components/DisclaimerPopup";
 import SearchPage from "./components/SearchPage";
 import Library from "./components/Library";
 import InstallPwaPrompt from "./components/InstallPwaPrompt";
+import InstallPWAButton from "./components/InstallPWAButton";
 
 // Protected route component that requires authentication
 const ProtectedRoute = ({ children }) => {
@@ -74,7 +75,7 @@ const App = () => {
         artist: track.artist || 'Unknown Artist',
         album: track.album || 'Unknown Album',
         artwork: [
-          { src: track.image || '/icons/soundlink-icon.svg', sizes: '512x512', type: 'image/png' }
+          { src: track.image || '/icons/soundlink-icon.svg?v=2', sizes: '512x512', type: 'image/png' }
         ]
       });
       
@@ -130,6 +131,7 @@ const App = () => {
     <div className="flex min-h-screen bg-gradient-to-br from-black via-neutral-900 to-black">
       <DisclaimerPopup />
       <InstallPwaPrompt />
+      <InstallPWAButton />
       
       {/* Offline indicator */}
       {!isOnline && (

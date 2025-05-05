@@ -116,7 +116,7 @@ const InstallPwaPrompt = () => {
     <div className="fixed bottom-16 left-0 right-0 mx-4 mb-4 z-50 bg-black rounded-xl overflow-hidden shadow-xl border border-neutral-800 backdrop-blur-lg">
       <div className="p-4 flex items-start gap-4">
         <div className="flex-shrink-0 mt-1">
-          <img src="/icons/soundlink-icon.svg" alt="SoundLink" className="w-12 h-12" />
+          <img src="/icons/soundlink-icon.svg?v=2" alt="SoundLink" className="w-12 h-12" />
         </div>
         
         <div className="flex-1">

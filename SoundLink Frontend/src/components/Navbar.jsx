@@ -528,7 +528,7 @@ const Navbar = (props) => {
                             onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})}
                             className="flex flex-col items-center cursor-pointer"
                         >
-                            <img src="/icons/soundlink-icon.svg" alt="SoundLink" className="h-7 w-7" />
+                            <img src="/icons/soundlink-icon.svg?v=2" alt="SoundLink" className="h-7 w-7" />
                             <span className="text-xs text-white">SoundLink</span>
                         </div>
                     )}

@@ -1,7 +1,7 @@
 // This is the service worker file for SoundLink PWA
 
 // Cache names
-const STATIC_CACHE_NAME = 'soundlink-static-v1';
+const STATIC_CACHE_NAME = 'soundlink-static-v2';
 const MUSIC_CACHE_NAME = 'soundlink-music-v1';
 const IMAGES_CACHE_NAME = 'soundlink-images-v1';
 
@@ -9,16 +9,16 @@ const IMAGES_CACHE_NAME = 'soundlink-images-v1';
 const staticAssetsToCache = [
   '/',
   '/index.html',
-  '/manifest.json',
-  '/icons/soundlink-icon.svg',
-  '/icons/icon-72x72.svg',
-  '/icons/icon-96x96.svg',
-  '/icons/icon-128x128.svg',
-  '/icons/icon-144x144.svg',
-  '/icons/icon-152x152.svg',
-  '/icons/icon-192x192.svg',
-  '/icons/icon-384x384.svg',
-  '/icons/icon-512x512.svg',
+  '/manifest.json?v=2',
+  '/icons/soundlink-icon.svg?v=2',
+  '/icons/icon-72x72.svg?v=2',
+  '/icons/icon-96x96.svg?v=2',
+  '/icons/icon-128x128.svg?v=2',
+  '/icons/icon-144x144.svg?v=2',
+  '/icons/icon-152x152.svg?v=2',
+  '/icons/icon-192x192.svg?v=2',
+  '/icons/icon-384x384.svg?v=2',
+  '/icons/icon-512x512.svg?v=2',
   '/assets/default-album.png',
   '/assets/default-artist.png',
   '/assets/default-avatar.svg'
@@ -27,6 +27,9 @@ const staticAssetsToCache = [
 // Install event - cache static assets
 self.addEventListener('install', (event) => {
   console.log('[Service Worker] Installing Service Worker...');
+  // Force activation of new service worker
+  self.skipWaiting();
+  
   event.waitUntil(
     caches.open(STATIC_CACHE_NAME)
       .then((cache) => {
