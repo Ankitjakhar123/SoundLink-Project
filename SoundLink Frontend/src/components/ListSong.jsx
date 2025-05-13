@@ -2,8 +2,56 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { MdFileUpload, MdDownload } from "react-icons/md";
 
 const url = import.meta.env.VITE_BACKEND_URL;
+
+// Component to handle LRC file export
+const ExportLrcFile = ({ lyrics, songName }) => {
+  const handleExport = () => {
+    if (!lyrics) {
+      toast.warning("No lyrics to export");
+      return;
+    }
+    
+    // Create file content
+    const content = lyrics;
+    
+    // Create a blob from the content
+    const blob = new Blob([content], { type: 'text/plain' });
+    
+    // Create a URL for the blob
+    const url = URL.createObjectURL(blob);
+    
+    // Create an anchor element for downloading
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${songName || 'lyrics'}.lrc`;
+    
+    // Trigger a click on the anchor element
+    document.body.appendChild(a);
+    a.click();
+    
+    // Cleanup
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 100);
+    
+    toast.success("Lyrics exported as .lrc file");
+  };
+  
+  return (
+    <button
+      type="button"
+      onClick={handleExport}
+      className="text-green-500 bg-green-100 hover:bg-green-200 px-3 py-1.5 rounded font-semibold transition text-sm flex items-center gap-1"
+    >
+      <MdDownload size={16} />
+      Export .lrc
+    </button>
+  );
+};
 
 const ListSong = () => {
   const [data, setData] = useState([]);
@@ -239,12 +287,64 @@ const ListSong = () => {
             
             {editId === item._id ? (
               <div className="flex flex-col gap-4">
-                <textarea
-                  className="p-2 bg-gray-900 border border-gray-700 rounded h-24"
-                  placeholder="Enter song lyrics"
-                  value={editData.lyrics}
-                  onChange={(e) => setEditData({ ...editData, lyrics: e.target.value })}
-                />
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <label className="text-sm text-gray-400">Lyrics:</label>
+                    <div className="flex gap-2">
+                      {/* Import LRC file button */}
+                      <input
+                        type="file"
+                        id={`lrc-file-${item._id}`}
+                        accept=".lrc"
+                        hidden
+                        onChange={(e) => {
+                          if (e.target.files && e.target.files[0]) {
+                            const file = e.target.files[0];
+                            const reader = new FileReader();
+                            reader.onload = (event) => {
+                              if (event.target && event.target.result) {
+                                setEditData({
+                                  ...editData,
+                                  lyrics: event.target.result.toString()
+                                });
+                                toast.success(`Imported lyrics from ${file.name}`);
+                              }
+                            };
+                            reader.onerror = () => {
+                              toast.error("Failed to read LRC file");
+                            };
+                            reader.readAsText(file);
+                          }
+                        }}
+                      />
+                      <label
+                        htmlFor={`lrc-file-${item._id}`}
+                        className="text-indigo-500 bg-indigo-100 hover:bg-indigo-200 px-3 py-1.5 rounded font-semibold transition text-sm flex items-center gap-1 cursor-pointer"
+                      >
+                        <MdFileUpload size={16} />
+                        Import .lrc
+                      </label>
+                      
+                      {/* Export LRC button */}
+                      {editData.lyrics && (
+                        <ExportLrcFile 
+                          lyrics={editData.lyrics} 
+                          songName={editData.name} 
+                        />
+                      )}
+                    </div>
+                  </div>
+                  <textarea
+                    className="p-2 bg-gray-900 border border-gray-700 rounded h-24 w-full"
+                    placeholder="Enter song lyrics"
+                    value={editData.lyrics}
+                    onChange={(e) => setEditData({ ...editData, lyrics: e.target.value })}
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    For time-synced lyrics, use format: [mm:ss.xx]Lyrics text<br/>
+                    You can also import/export .lrc files with timestamps.
+                  </p>
+                </div>
                 <div className="flex gap-2 justify-end">
                   <button
                     className="text-green-400 bg-black border border-green-400 hover:bg-green-900 px-4 py-2 rounded font-semibold transition"
@@ -323,32 +423,102 @@ const ListSong = () => {
               </button>
             </div>
             <div className="mb-4">
-              <button
-                className="text-blue-400 bg-blue-900/40 hover:bg-blue-800/60 px-4 py-2 rounded font-semibold transition mb-4"
-                onClick={() => { 
-                  // Determine if we should use custom artist or dropdown
-                  const hasArtistId = selectedSong.artist && (typeof selectedSong.artist === 'object' || 
-                      artists.some(a => a._id === selectedSong.artist));
-                  const artistDesc = selectedSong.desc || '';
+              <div className="flex items-center justify-between">
+                <button
+                  className="text-blue-400 bg-blue-900/40 hover:bg-blue-800/60 px-4 py-2 rounded font-semibold transition"
+                  onClick={() => { 
+                    // Determine if we should use custom artist or dropdown
+                    const hasArtistId = selectedSong.artist && (typeof selectedSong.artist === 'object' || 
+                        artists.some(a => a._id === selectedSong.artist));
+                    const artistDesc = selectedSong.desc || '';
+                    
+                    setUseCustomArtist(!hasArtistId);
+                    setCustomArtistName(hasArtistId ? '' : artistDesc);
+                    
+                    setEditId(selectedSong._id); 
+                    setEditData({ 
+                      name: selectedSong.name, 
+                      album: selectedSong.album,
+                      lyrics: selectedSong.lyrics || "",
+                      // For artist field, prioritize using the actual artist ID if available
+                      artist: selectedSong.artist && typeof selectedSong.artist === 'object' 
+                        ? selectedSong.artist._id 
+                        : (selectedSong.artist || "")
+                    });
+                    closeLyricsModal();
+                  }}
+                >
+                  Edit Lyrics
+                </button>
+                
+                <div className="flex gap-2">
+                  {/* Import LRC in modal view */}
+                  <input
+                    type="file"
+                    id="modal-lrc-import"
+                    accept=".lrc"
+                    hidden
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files[0]) {
+                        const file = e.target.files[0];
+                        const reader = new FileReader();
+                        reader.onload = async (event) => {
+                          if (event.target && event.target.result) {
+                            try {
+                              // Update lyrics directly in the database
+                              const response = await axios.post(`${url}/api/song/edit`, {
+                                id: selectedSong._id,
+                                lyrics: event.target.result.toString()
+                              });
+                              
+                              if (response.data.success) {
+                                // Update local state
+                                setSelectedSong({
+                                  ...selectedSong,
+                                  lyrics: event.target.result.toString()
+                                });
+                                
+                                // Update the song in the main list
+                                setData(prevData => prevData.map(song => 
+                                  song._id === selectedSong._id 
+                                    ? {...song, lyrics: event.target.result.toString()} 
+                                    : song
+                                ));
+                                
+                                toast.success(`Imported lyrics from ${file.name}`);
+                              } else {
+                                toast.error("Failed to update lyrics");
+                              }
+                            } catch (error) {
+                              toast.error("Error saving lyrics");
+                              console.error(error);
+                            }
+                          }
+                        };
+                        reader.onerror = () => {
+                          toast.error("Failed to read LRC file");
+                        };
+                        reader.readAsText(file);
+                      }
+                    }}
+                  />
+                  <label
+                    htmlFor="modal-lrc-import"
+                    className="text-indigo-500 bg-indigo-100 hover:bg-indigo-200 px-3 py-1.5 rounded font-semibold transition text-sm flex items-center gap-1 cursor-pointer"
+                  >
+                    <MdFileUpload size={16} />
+                    Import .lrc
+                  </label>
                   
-                  setUseCustomArtist(!hasArtistId);
-                  setCustomArtistName(hasArtistId ? '' : artistDesc);
-                  
-                  setEditId(selectedSong._id); 
-                  setEditData({ 
-                    name: selectedSong.name, 
-                    album: selectedSong.album,
-                    lyrics: selectedSong.lyrics || "",
-                    // For artist field, prioritize using the actual artist ID if available
-                    artist: selectedSong.artist && typeof selectedSong.artist === 'object' 
-                      ? selectedSong.artist._id 
-                      : (selectedSong.artist || "")
-                  });
-                  closeLyricsModal();
-                }}
-              >
-                Edit Lyrics
-              </button>
+                  {/* Export LRC from modal view */}
+                  {selectedSong?.lyrics && (
+                    <ExportLrcFile 
+                      lyrics={selectedSong.lyrics} 
+                      songName={selectedSong.name} 
+                    />
+                  )}
+                </div>
+              </div>
             </div>
             <div className="bg-gray-800 rounded-lg p-4 whitespace-pre-line text-white">
               {selectedSong.lyrics ? selectedSong.lyrics : "No lyrics available for this song."}

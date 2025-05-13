@@ -19,11 +19,19 @@ const LyricsPanel = ({ isOpen, onClose }) => {
     }
     
     const lines = track.lyrics.split('\n');
-    const hasTimestamps = lines.some(line => /^\[\d{2}:\d{2}\.\d{2}\]/.test(line));
+    
+    // Filter out LRC metadata headers
+    const filteredLines = lines.filter(line => {
+      // Skip LRC metadata headers like [id:], [ar:], [al:], [ti:], [length:], etc.
+      const isMetadataHeader = /^\[(id|ar|al|ti|length|by|offset|re|ve):/i.test(line);
+      return !isMetadataHeader;
+    });
+    
+    const hasTimestamps = filteredLines.some(line => /^\[\d{2}:\d{2}\.\d{2}\]/.test(line));
     
     if (hasTimestamps) {
       // Parse lyrics with timestamps [mm:ss.xx]
-      const formattedLyrics = lines.map((line, index) => {
+      const formattedLyrics = filteredLines.map((line, index) => {
         const timeMatch = line.match(/^\[(\d{2}):(\d{2})\.(\d{2})\](.*)/);
         if (timeMatch) {
           const minutes = parseInt(timeMatch[1], 10);
@@ -45,7 +53,7 @@ const LyricsPanel = ({ isOpen, onClose }) => {
       setParsedLyrics(formattedLyrics);
     } else {
       // For lyrics without timestamps, just show them normally
-      const formattedLyrics = lines.map((line, index) => {
+      const formattedLyrics = filteredLines.map((line, index) => {
         const isSectionHeader = /^\[(.*?)\]/.test(line);
         return { 
           timeInSeconds: -1,
@@ -123,8 +131,8 @@ const LyricsPanel = ({ isOpen, onClose }) => {
           </div>
           
           {/* Lyrics content */}
-          <div className="flex-1 overflow-y-auto p-4" ref={lyricsContainerRef}>
-            <div className="max-w-2xl mx-auto space-y-2 py-8">
+          <div className="flex-1 overflow-y-auto py-4 px-2 sm:px-4" ref={lyricsContainerRef}>
+            <div className="max-w-2xl mx-auto space-y-1 py-4">
               {track && track.lyrics ? (
                 // Display synchronized lyrics
                 parsedLyrics.map((line) => {
@@ -133,7 +141,7 @@ const LyricsPanel = ({ isOpen, onClose }) => {
                     return (
                       <p 
                         key={line.index} 
-                        className={`text-sm mt-6 mb-4 font-bold line-${line.index}`} 
+                        className={`text-sm mt-6 mb-2 font-bold text-center line-${line.index}`} 
                         style={{ color: `${themeColors.text}70` }}
                       >
                         {line.text}
@@ -145,19 +153,22 @@ const LyricsPanel = ({ isOpen, onClose }) => {
                   const isActive = line.index === currentLineIndex;
                   
                   return (
-                    <p 
-                      key={line.index} 
-                      className={`text-lg mb-2 transition-all duration-300 line-${line.index}`}
-                      style={{ 
-                        color: isActive ? themeColors.primary : themeColors.text,
-                        fontSize: isActive ? '1.25rem' : '1rem',
-                        fontWeight: isActive ? 'bold' : 'normal',
-                        transform: isActive ? 'scale(1.05)' : 'scale(1)',
-                        transformOrigin: 'left center'
-                      }}
-                    >
-                      {line.text || ' '} {/* Empty lines render as space */}
-                    </p>
+                    <div className="flex justify-center">
+                      <p 
+                        key={line.index} 
+                        className={`text-lg mb-1.5 transition-all duration-300 will-change-transform line-${line.index} px-4 py-1.5`}
+                        style={{ 
+                          color: isActive ? themeColors.primary : themeColors.text,
+                          fontSize: isActive ? '1.25rem' : '1rem',
+                          fontWeight: isActive ? '700' : '400',
+                          transform: isActive ? 'scale(1.05)' : 'scale(1)',
+                          transformOrigin: 'center center',
+                          textShadow: isActive ? `0 0 10px ${themeColors.primary}40` : 'none',
+                        }}
+                      >
+                        {line.text || ' '} {/* Empty lines render as space */}
+                      </p>
+                    </div>
                   );
                 })
               ) : (
