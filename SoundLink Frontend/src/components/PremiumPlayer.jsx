@@ -190,7 +190,7 @@ const PremiumPlayer = () => {
     time,
     toggleFavorite,
     isFavorite,
-    autoplayEnabled,
+    // eslint-disable-next-line no-unused-vars
     setAutoplayEnabled,
     hidePlayer,
     buffering,
@@ -210,8 +210,10 @@ const PremiumPlayer = () => {
   const [showQueue, setShowQueue] = useState(false);
   const [showLyrics, setShowLyrics] = useState(false);
   const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth < 768);
-  const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [showOptionsMenu, setShowOptionsMenu] = useState(false);
+  const [showBufferingMenu, setShowBufferingMenu] = useState(false);
   const [showInlineLyrics, setShowInlineLyrics] = useState(false);
+  const [selectedTrackId, setSelectedTrackId] = useState(null);
   
   const playerRef = useRef(null);
   const progressBarRef = useRef(null);
@@ -304,10 +306,11 @@ const PremiumPlayer = () => {
     if (audioRef.current) audioRef.current.currentTime = val;
   };
 
-  // Toggle autoplay
-  const handleAutoplayToggle = () => {
+  // Toggle autoplay - commented out to fix linter errors
+  // eslint-disable-next-line no-unused-vars
+  /* const handleAutoplayToggle = () => {
     setAutoplayEnabled(prev => !prev);
-  };
+  }; */
 
   // Add a useEffect to ensure player starts in a paused state on page load
   useEffect(() => {
@@ -517,11 +520,61 @@ const PremiumPlayer = () => {
     };
   }, []);
 
-  // Close more menu when clicking outside
+  // Toggle more menu with specific track ID (for song options)
+  const toggleOptionsMenu = (e, id = null) => {
+    if (e) e.stopPropagation();
+    
+    // Find the track object for the given ID or use current track
+    if (id) {
+      const targetTrack = songsData.find(song => song._id === id);
+      if (targetTrack) {
+        setSelectedTrackId(id);
+      } else {
+        setSelectedTrackId(track?._id);
+      }
+    } else {
+      setSelectedTrackId(track?._id);
+    }
+    
+    // Close buffering menu if open
+    if (showBufferingMenu) {
+      setShowBufferingMenu(false);
+    }
+    
+    // Toggle options menu
+    setShowOptionsMenu(prev => !prev);
+  };
+
+  // Toggle buffering menu (separate from options menu)
+  const toggleBufferingMenu = (e) => {
+    if (e) e.stopPropagation();
+    
+    // Close options menu if open
+    if (showOptionsMenu) {
+      setShowOptionsMenu(false);
+    }
+    
+    // Toggle buffering menu
+    setShowBufferingMenu(prev => !prev);
+  };
+
+  // Handle buffering strategy change
+  const handleBufferingChange = (strategy) => {
+    setBufferingStrategy(strategy);
+    setShowBufferingMenu(false); // Close menu after selection
+    // Save preference to localStorage
+    localStorage.setItem('bufferingStrategy', strategy);
+  };
+
+  // Update Close more menu when clicking outside for both menus
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (moreMenuRef.current && !moreMenuRef.current.contains(event.target)) {
-        setShowMoreMenu(false);
+        setShowBufferingMenu(false);
+        // Only close options menu if clicking outside both menus
+        if (!event.target.closest('.options-sheet')) {
+          setShowOptionsMenu(false);
+        }
       }
     };
     
@@ -530,28 +583,6 @@ const PremiumPlayer = () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
-
-  // Handle buffering strategy change
-  const handleBufferingChange = (strategy) => {
-    setBufferingStrategy(strategy);
-    setShowMoreMenu(false); // Close menu after selection
-    // Save preference to localStorage
-    localStorage.setItem('bufferingStrategy', strategy);
-  };
-
-  // Load saved buffering strategy preference
-  useEffect(() => {
-    const savedStrategy = localStorage.getItem('bufferingStrategy');
-    if (savedStrategy) {
-      setBufferingStrategy(savedStrategy);
-    }
-  }, [setBufferingStrategy]);
-
-  // Toggle more menu
-  const toggleMoreMenu = (e) => {
-    if (e) e.stopPropagation();
-    setShowMoreMenu(prev => !prev);
-  };
 
   // Generate gradient style based on theme colors
   // eslint-disable-next-line no-unused-vars
@@ -567,6 +598,14 @@ const PremiumPlayer = () => {
     if (showQueue) setShowQueue(false);
     if (showLyrics) setShowLyrics(false);
   };
+
+  // Add this useEffect in the correct position near other useEffects
+  useEffect(() => {
+    const savedStrategy = localStorage.getItem('bufferingStrategy');
+    if (savedStrategy) {
+      setBufferingStrategy(savedStrategy);
+    }
+  }, [setBufferingStrategy]);
 
   // If there's no track to play, don't render anything
   if (!track) return null;
@@ -647,7 +686,7 @@ const PremiumPlayer = () => {
                   <button 
                     className="w-8 h-8 flex items-center justify-center"
                     style={{ color: themeColors.text }}
-                    onClick={toggleMoreMenu}
+                    onClick={(e) => toggleOptionsMenu(e)}
                     title="More Options"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1030,7 +1069,13 @@ const PremiumPlayer = () => {
                             {getArtistName(song)} • {getAlbumName(song)}
                           </p>
                         </div>
-                        <button className="w-8 h-8 flex items-center justify-center">
+                        <button 
+                          className="w-8 h-8 flex items-center justify-center"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleOptionsMenu(e, song._id);
+                          }}
+                        >
                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: `${themeColors.text}70` }}>
                             <circle cx="12" cy="12" r="1" />
                             <circle cx="19" cy="12" r="1" />
@@ -1094,7 +1139,7 @@ const PremiumPlayer = () => {
                           className="w-8 h-8 flex items-center justify-center"
                           onClick={(e) => {
                             e.stopPropagation();
-                            console.log('More options for', song.name);
+                            toggleOptionsMenu(e, song._id);
                           }}
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: `${themeColors.text}70` }}>
@@ -1120,7 +1165,7 @@ const PremiumPlayer = () => {
                     .map((song, index) => (
                       <div 
                         key={song._id} 
-                        className="min-w-[120px] cursor-pointer"
+                        className="min-w-[120px] cursor-pointer relative group"
                         onClick={() => {
                           // Play the selected song
                           const newTrack = songsData.find(s => s._id === song._id);
@@ -1130,7 +1175,7 @@ const PremiumPlayer = () => {
                           }
                         }}
                       >
-                        <div className="w-[120px] h-[120px] rounded-md overflow-hidden mb-2 border" 
+                        <div className="w-[120px] h-[120px] rounded-md overflow-hidden mb-2 border relative" 
                           style={{ borderColor: index === 0 ? themeColors.primary : 'transparent' }}
                         >
                           <img 
@@ -1138,6 +1183,20 @@ const PremiumPlayer = () => {
                             alt={song.name} 
                             className="w-full h-full object-cover"
                           />
+                          {/* Options button overlay */}
+                          <button 
+                            className="absolute top-1 right-1 w-8 h-8 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleOptionsMenu(e, song._id);
+                            }}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: themeColors.text }}>
+                              <circle cx="12" cy="12" r="1" />
+                              <circle cx="19" cy="12" r="1" />
+                              <circle cx="5" cy="12" r="1" />
+                            </svg>
+                          </button>
                         </div>
                         <p className="text-xs font-medium truncate" style={{ color: index === 0 ? themeColors.primary : themeColors.text }}>
                           {song.name}
@@ -1264,7 +1323,7 @@ const PremiumPlayer = () => {
                     }}
                     title={playStatus ? "Pause" : "Play"}
                   >
-                    {playStatus ? <FaPause size={20} /> : <FaPlay className="relative ml-0.5" size={20} />}
+                    {playStatus ? <FaPause className="text-xl" /> : <FaPlay className="relative ml-0.5" size={20} />}
                   </button>
                   <button 
                     onClick={Next} 
@@ -1423,72 +1482,26 @@ const PremiumPlayer = () => {
                 
                 {/* More options button */}
                 <button 
-                  onClick={toggleMoreMenu}
-                  className="text-base transition ml-1"
+                  onClick={(e) => toggleOptionsMenu(e)}
+                  className="text-base transition mr-3"
                   style={{ color: `${themeColors.text}99` }}
                   title="More options"
                 >
                   <MdMoreVert size={20} />
                 </button>
                 
-                {/* More menu dropdown */}
-                {showMoreMenu && (
-                  <div 
-                    className="absolute bottom-full right-0 mb-2 rounded-xl shadow-xl p-3 w-48 z-50"
-                    style={{ 
-                      backgroundColor: themeColors.secondary, 
-                      borderColor: `${themeColors.primary}40`,
-                      borderWidth: '1px'
-                    }}
-                    ref={moreMenuRef}
-                  >
-                    <h4 className="text-xs font-bold mb-2 pb-1" 
-                      style={{ 
-                        color: themeColors.text,
-                        borderBottom: `1px solid ${themeColors.text}30`
-                      }}>
-                      Buffer Mode
-                    </h4>
-                    <div className="flex flex-col gap-1">
-                      <button 
-                        onClick={() => handleBufferingChange('auto')}
-                        className="flex items-center justify-between px-3 py-1.5 rounded-lg text-sm"
-                        style={bufferingStrategy === 'auto' 
-                          ? { backgroundColor: themeColors.primary, color: themeColors.text } 
-                          : { color: themeColors.text, backgroundColor: `${themeColors.text}15` }}
-                      >
-                        <span>Auto</span>
-                        {bufferingStrategy === 'auto' && (
-                          <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
-                        )}
-                      </button>
-                      <button 
-                        onClick={() => handleBufferingChange('aggressive')}
-                        className="flex items-center justify-between px-3 py-1.5 rounded-lg text-sm"
-                        style={bufferingStrategy === 'aggressive' 
-                          ? { backgroundColor: themeColors.primary, color: themeColors.text } 
-                          : { color: themeColors.text, backgroundColor: `${themeColors.text}15` }}
-                      >
-                        <span>High Quality</span>
-                        {bufferingStrategy === 'aggressive' && (
-                          <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
-                        )}
-                      </button>
-                      <button 
-                        onClick={() => handleBufferingChange('conservative')}
-                        className="flex items-center justify-between px-3 py-1.5 rounded-lg text-sm"
-                        style={bufferingStrategy === 'conservative' 
-                          ? { backgroundColor: themeColors.primary, color: themeColors.text } 
-                          : { color: themeColors.text, backgroundColor: `${themeColors.text}15` }}
-                      >
-                        <span>Data Saver</span>
-                        {bufferingStrategy === 'conservative' && (
-                          <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                )}
+                {/* Buffering settings button - separate from song options */}
+                <button 
+                  onClick={(e) => toggleBufferingMenu(e)}
+                  className="text-base transition ml-1"
+                  style={{ color: `${themeColors.text}99` }}
+                  title="Buffering settings"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                  </svg>
+                </button>
               </div>
             )}
           </div>
@@ -1500,11 +1513,11 @@ const PremiumPlayer = () => {
         {/* Lyrics panel */}
         <LyricsPanel isOpen={showLyrics && !hidePlayer} onClose={() => setShowLyrics(false)} />
 
-        {/* More options sheet */}
+        {/* More options sheet - now with selected track ID */}
         <MoreOptionsSheet 
-          isOpen={showMoreMenu} 
-          onClose={() => setShowMoreMenu(false)} 
-          trackId={track?._id}
+          isOpen={showOptionsMenu} 
+          onClose={() => setShowOptionsMenu(false)} 
+          trackId={selectedTrackId}
         />
 
         {/* Full screen player content - Artist Explorer and Credits when expanded on mobile */}
@@ -1522,6 +1535,65 @@ const PremiumPlayer = () => {
               <CreditsSection 
                 track={track}
               />
+            </div>
+          </div>
+        )}
+
+        {/* Buffering menu dropdown */}
+        {showBufferingMenu && (
+          <div 
+            className="absolute bottom-full right-0 mb-2 rounded-xl shadow-xl p-3 w-48 z-50"
+            style={{ 
+              backgroundColor: themeColors.secondary, 
+              borderColor: `${themeColors.primary}40`,
+              borderWidth: '1px'
+            }}
+            ref={moreMenuRef}
+          >
+            <h4 className="text-xs font-bold mb-2 pb-1" 
+              style={{ 
+                color: themeColors.text,
+                borderBottom: `1px solid ${themeColors.text}30`
+              }}>
+              Buffer Mode
+            </h4>
+            <div className="flex flex-col gap-1">
+              <button 
+                onClick={() => handleBufferingChange('auto')}
+                className="flex items-center justify-between px-3 py-1.5 rounded-lg text-sm"
+                style={bufferingStrategy === 'auto' 
+                  ? { backgroundColor: themeColors.primary, color: themeColors.text } 
+                  : { color: themeColors.text, backgroundColor: `${themeColors.text}15` }}
+              >
+                <span>Auto</span>
+                {bufferingStrategy === 'auto' && (
+                  <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
+                )}
+              </button>
+              <button 
+                onClick={() => handleBufferingChange('aggressive')}
+                className="flex items-center justify-between px-3 py-1.5 rounded-lg text-sm"
+                style={bufferingStrategy === 'aggressive' 
+                  ? { backgroundColor: themeColors.primary, color: themeColors.text } 
+                  : { color: themeColors.text, backgroundColor: `${themeColors.text}15` }}
+              >
+                <span>High Quality</span>
+                {bufferingStrategy === 'aggressive' && (
+                  <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
+                )}
+              </button>
+              <button 
+                onClick={() => handleBufferingChange('conservative')}
+                className="flex items-center justify-between px-3 py-1.5 rounded-lg text-sm"
+                style={bufferingStrategy === 'conservative' 
+                  ? { backgroundColor: themeColors.primary, color: themeColors.text } 
+                  : { color: themeColors.text, backgroundColor: `${themeColors.text}15` }}
+              >
+                <span>Data Saver</span>
+                {bufferingStrategy === 'conservative' && (
+                  <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
+                )}
+              </button>
             </div>
           </div>
         )}
