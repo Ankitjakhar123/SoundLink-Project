@@ -18,109 +18,81 @@ export const PlayerContextProvider = ({ children }) => {
   // Helper function to extract the artist name from any possible field
   const getArtistName = (trackObj) => {
     if (!trackObj) {
-      console.log('getArtistName called with null/undefined track');
       return 'Unknown Artist';
     }
     
-    // For debugging - log all possible artist fields
-    console.log('getArtistName - checking fields for track:', trackObj.name);
-    console.log('- singer:', trackObj.singer);
-    console.log('- artist:', trackObj.artist);
-    console.log('- artistName:', trackObj.artistName);
-    console.log('- desc:', trackObj.desc);
-    console.log('- metadata.artist:', trackObj.metadata && trackObj.metadata.artist);
-    console.log('- meta.artist:', trackObj.meta && trackObj.meta.artist);
-    console.log('- tags.artist:', trackObj.tags && trackObj.tags.artist);
-    console.log('- createdBy.name:', trackObj.createdBy && trackObj.createdBy.name);
-    
     // Check each field in priority order
+    if (trackObj.artist && typeof trackObj.artist === 'object' && trackObj.artist.name) {
+      return trackObj.artist.name;
+    }
+    
     if (trackObj.singer) {
-      console.log('Using singer field:', trackObj.singer);
       return trackObj.singer;
     }
     
-    if (trackObj.artist) {
-      console.log('Using artist field:', trackObj.artist);
+    if (trackObj.artist && typeof trackObj.artist === 'string') {
       return trackObj.artist;
     }
     
     if (trackObj.artistName) {
-      console.log('Using artistName field:', trackObj.artistName);
       return trackObj.artistName;
     }
     
     if (trackObj.metadata && trackObj.metadata.artist) {
-      console.log('Using metadata.artist field:', trackObj.metadata.artist);
       return trackObj.metadata.artist;
     }
     
     if (trackObj.meta && trackObj.meta.artist) {
-      console.log('Using meta.artist field:', trackObj.meta.artist);
       return trackObj.meta.artist;
     }
     
     if (trackObj.tags && trackObj.tags.artist) {
-      console.log('Using tags.artist field:', trackObj.tags.artist);
       return trackObj.tags.artist;
     }
     
     if (trackObj.createdBy && trackObj.createdBy.name) {
-      console.log('Using createdBy.name field:', trackObj.createdBy.name);
       return trackObj.createdBy.name;
     }
     
-    // Check if desc might contain artist info
-    if (trackObj.desc) {
-      console.log('Using desc field as fallback:', trackObj.desc);
-      return trackObj.desc;
+    // If we have a desc field that may contain artist info, try to extract it
+    if (trackObj.desc && typeof trackObj.desc === 'string') {
+      // Check if description contains "by [artist]" pattern
+      const byMatch = trackObj.desc.match(/by\s+([^,.]+)/i);
+      if (byMatch && byMatch[1]) {
+        return byMatch[1].trim();
+      }
     }
     
-    console.log('No artist information found, returning Unknown Artist');
     return 'Unknown Artist';
   };
   
   // Helper function to extract the album name from any possible field
   const getAlbumName = (trackObj) => {
     if (!trackObj) {
-      console.log('getAlbumName called with null/undefined track');
       return 'Unknown Album';
     }
     
-    // For debugging - log all possible album fields
-    console.log('getAlbumName - checking fields for track:', trackObj.name);
-    console.log('- albumName:', trackObj.albumName);
-    console.log('- album:', trackObj.album);
-    console.log('- metadata.album:', trackObj.metadata && trackObj.metadata.album);
-    console.log('- meta.album:', trackObj.meta && trackObj.meta.album);
-    console.log('- tags.album:', trackObj.tags && trackObj.tags.album);
-    
     // Check each field in priority order
     if (trackObj.albumName) {
-      console.log('Using albumName field:', trackObj.albumName);
       return trackObj.albumName;
     }
     
     if (trackObj.album) {
-      console.log('Using album field:', trackObj.album);
       return trackObj.album;
     }
     
     if (trackObj.metadata && trackObj.metadata.album) {
-      console.log('Using metadata.album field:', trackObj.metadata.album);
       return trackObj.metadata.album;
     }
     
     if (trackObj.meta && trackObj.meta.album) {
-      console.log('Using meta.album field:', trackObj.meta.album);
       return trackObj.meta.album;
     }
     
     if (trackObj.tags && trackObj.tags.album) {
-      console.log('Using tags.album field:', trackObj.tags.album);
       return trackObj.tags.album;
     }
     
-    console.log('No album information found, returning Unknown Album');
     return 'Unknown Album';
   };
 
@@ -165,29 +137,27 @@ export const PlayerContextProvider = ({ children }) => {
     accent: '#ec4899'
   });
 
-  // Initialize the audio context on user interaction
+  // Initialize audio context
   const initAudioContext = () => {
-    // Fix for browsers that require user interaction before audio can play
-    if (typeof window !== "undefined") {
+    // Only create once
+    if (!window._audioContext) {
       try {
-        // Create AudioContext if it doesn't exist
-        if (!window._audioContext && 'AudioContext' in window) {
+        // Create the audio context
           const AudioContext = window.AudioContext || window.webkitAudioContext;
           window._audioContext = new AudioContext();
-          console.log('New AudioContext created');
+      } catch {
+        // Error handled silently - audio might still work
         }
         
         // Resume the AudioContext if it's suspended
         if (window._audioContext && window._audioContext.state === 'suspended') {
           window._audioContext.resume()
-            .then(() => console.log('AudioContext resumed successfully'))
-            .catch(error => console.error('Failed to resume AudioContext:', error));
+          .then(() => {/* Audio context resumed */})
+          .catch(() => {/* Failed to resume, but continue anyway */});
         }
         
         // iOS Safari specific unlock
         if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-          console.log('iOS device detected, using special audio unlock');
-          
           // Create and play a silent buffer for iOS
           const unlockIOSAudio = () => {
             if (window._audioContext) {
@@ -197,37 +167,44 @@ export const PlayerContextProvider = ({ children }) => {
               source.connect(window._audioContext.destination);
               source.start(0);
               source.stop(0.001); // Very short play
-              console.log('iOS audio unlock attempted');
             }
           };
           
+        // Try to unlock on first user interaction
+        const unlockOnFirstTouch = () => {
           unlockIOSAudio();
-          
-          // Create a silent <audio> element as another method for iOS
+          document.body.removeEventListener('touchstart', unlockOnFirstTouch);
+          document.body.removeEventListener('touchend', unlockOnFirstTouch);
+          document.body.removeEventListener('mousedown', unlockOnFirstTouch);
+          document.body.removeEventListener('mouseup', unlockOnFirstTouch);
+          document.body.removeEventListener('click', unlockOnFirstTouch);
+        };
+        
+        document.body.addEventListener('touchstart', unlockOnFirstTouch, false);
+        document.body.addEventListener('touchend', unlockOnFirstTouch, false);
+        document.body.addEventListener('mousedown', unlockOnFirstTouch, false);
+        document.body.addEventListener('mouseup', unlockOnFirstTouch, false);
+        document.body.addEventListener('click', unlockOnFirstTouch, false);
+        
+        // Also try with a silent sound element
           const silentSound = document.createElement('audio');
           silentSound.controls = false;
           silentSound.preload = 'auto';
           silentSound.loop = false;
-          silentSound.volume = 0.001;
-          silentSound.src = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjMyLjEwNAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAACWQBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGD/////////////////////////////////////////AAAAAExhdmM1OC41OQAAAAAAAAAAAAAAACQCRgAAAAAAAAJZFiHN3gAAAAAAAAAAAAAAAAAAAAAA';
+        silentSound.src = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RSU0UAAAAPAAADTGF2ZjU4LjQ1LjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAAwAAAbAAkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQ19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX1/////////////////////////////////8AAAA5TEFNRTMuMTAwAQAAADkAAABRiCJGmDgAAgAAABYAYOoA/////////////////////////////////8wAAAAATEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV'; // empty mp3 file
+        silentSound.setAttribute('style', 'display: none;');
+        document.body.appendChild(silentSound);
           
-          // Attempt to play the silent sound
           silentSound.play()
             .then(() => {
-              console.log('Silent sound played on iOS');
               setTimeout(() => {
                 silentSound.pause();
                 silentSound.remove();
-              }, 100);
+            }, 1000);
             })
-            .catch(e => {
-              console.log('Silent sound play failed on iOS:', e);
+          .catch(() => {
               silentSound.remove();
             });
-        }
-        
-      } catch (error) {
-        console.error('Error initializing audio context:', error);
       }
     }
   };
@@ -236,7 +213,6 @@ export const PlayerContextProvider = ({ children }) => {
   const prefetchTrack = async (trackId) => {
     // Skip if already prefetched
     if (prefetchedTracks[trackId]) {
-      console.log(`Track ${trackId} already prefetched`);
       return;
     }
     
@@ -245,8 +221,6 @@ export const PlayerContextProvider = ({ children }) => {
       console.error(`Cannot prefetch track ${trackId}: not found in songData`);
       return;
     }
-    
-    console.log(`Prefetching track: ${trackToPrefetch.name}`);
     
     try {
       // Create an audio element for prefetching
@@ -260,7 +234,6 @@ export const PlayerContextProvider = ({ children }) => {
           const duration = prefetchAudio.duration;
           if (duration > 0) {
             const progress = (bufferedEnd / duration) * 100;
-            console.log(`Prefetching ${trackToPrefetch.name}: ${Math.round(progress)}% complete`);
             
             // When prefetch is complete enough, mark as prefetched
             if (progress > 15) {
@@ -278,7 +251,6 @@ export const PlayerContextProvider = ({ children }) => {
       
       // Handle successful prefetch
       prefetchAudio.addEventListener('canplaythrough', () => {
-        console.log(`Prefetch complete for track: ${trackToPrefetch.name}`);
         setPrefetchedTracks(prev => ({
           ...prev,
           [trackId]: {
@@ -306,38 +278,10 @@ export const PlayerContextProvider = ({ children }) => {
 
     if (audioRef.current) {
       try {
-        console.log('Beginning play attempt...');
-        // Debug track object structure
-        if (track) {
-          console.log('Track structure debugging:');
-          console.log('Track ID:', track._id);
-          console.log('Track Name:', track.name);
-          console.log('Artist fields:', {
-            artist: track.artist,
-            artistName: track.artistName,
-            singer: track.singer,
-            createdBy: track.createdBy,
-            metadata_artist: track.metadata?.artist,
-            meta_artist: track.meta?.artist,
-            tags_artist: track.tags?.artist
-          });
-          console.log('Artist name from helper:', getArtistName(track));
-          
-          // Also show album fields for completeness
-          console.log('Album fields:', {
-            album: track.album,
-            albumName: track.albumName,
-            metadata_album: track.metadata?.album,
-            meta_album: track.meta?.album,
-            tags_album: track.tags?.album
-          });
-        }
-        
         // Fix for cross-origin issues and potential src problems
         if (!audioRef.current.src || audioRef.current.src === '') {
           console.error('No audio source URL set!');
           if (track && track.file) {
-            console.log('Resetting audio source from track:', track.file);
             audioRef.current.src = track.file;
             audioRef.current.load();
           } else {
@@ -346,85 +290,41 @@ export const PlayerContextProvider = ({ children }) => {
           }
         }
         
-        // Force load if not loaded
-        if (audioRef.current.readyState < 2) {
-          console.log('Audio not fully loaded, loading...');
-          setBuffering(true);
-          audioRef.current.load();
-          
-          // Set a timeout to wait for loading
-          setTimeout(() => {
-            console.log('Attempting playback after delay');
-            audioRef.current.play()
-              .then(() => {
-                console.log('Delayed playback successful');
+        // Set the playing state to true before starting playback
                 setPlayStatus(true);
-                setBuffering(false);
-              })
-              .catch(err => {
-                console.error('Delayed playback failed:', err);
-                setPlayStatus(false);
-                setBuffering(false);
-              });
-          }, 500);
-          
-          // Set playStatus to true immediately for UI feedback
-          setPlayStatus(true);
-          return;
-        }
         
-        // Set playStatus to true immediately for UI feedback
-        setPlayStatus(true);
+        // Set buffering to true - will be set to false when playback starts
+        setBuffering(true);
         
-        console.log('Playing audio source:', audioRef.current.src);
-        
-        // Try different methods to force play (for different browsers)
+        // The actual play call
         const playPromise = audioRef.current.play();
         
+        // Modern browsers return a promise
         if (playPromise !== undefined) {
           playPromise
             .then(() => {
-              console.log('Audio playing successfully');
-              setPlayStatus(true);
+              // Playback started successfully
               setBuffering(false);
             })
-            .catch(error => {
-              console.error('Error playing audio:', error);
-              
-              // Try once more with a delay in case of browser quirks
-              setTimeout(() => {
-                console.log('Retrying play after error');
-                audioRef.current.play()
-                  .then(() => {
-                    console.log('Retry successful');
-                    setPlayStatus(true);
-                    setBuffering(false);
-                  })
-                  .catch(retryError => {
-                    console.error('Retry failed:', retryError);
+            .catch(err => {
+              console.error('Play promise error:', err);
+              // Set playStatus to false if autoplay was prevented
                     setPlayStatus(false);
                     setBuffering(false);
                     
-                    // If autoplay is blocked, we need to manually set autoplay to false
-                    if (retryError.name === 'NotAllowedError') {
-                      setAutoplayEnabled(false);
-                      console.log('Autoplay blocked by browser, try interacting with the page first');
-                      toast.info("Click the play button to start playing");
-                    }
-                  });
-              }, 200);
+              // Autoplay may have been prevented by browser policy
+              // Could show a UI indicator that user needs to interact
             });
         } else {
-          // For browsers that don't return a promise
-          console.log('Browser did not return play promise, assuming audio is playing');
+          // Old browsers might not return a promise
+          // Assume playback was successful
+          setBuffering(false);
         }
       } catch (error) {
-        console.error('Error playing audio:', error);
+        console.error('Error in play function:', error);
         setPlayStatus(false);
         setBuffering(false);
       }
-    } else {
-      console.error('Audio reference is not available');
     }
   };
 
@@ -439,139 +339,6 @@ export const PlayerContextProvider = ({ children }) => {
     }
   };
 
-  // Determine next tracks to prefetch based on current track and buffering strategy
-  const prefetchNextTracks = () => {
-    if (!track || !bufferingStrategy || songsData.length === 0) return;
-    
-    const currentIndex = songsData.findIndex(song => song._id === track._id);
-    if (currentIndex === -1) return;
-    
-    let tracksToPreload = [];
-    
-    // First check queue
-    if (queueSongs.length > 0) {
-      tracksToPreload.push(queueSongs[0]._id);
-      
-      // For aggressive strategy, prefetch more from queue
-      if (bufferingStrategy === 'aggressive' && queueSongs.length > 1) {
-        tracksToPreload.push(queueSongs[1]._id);
-      }
-    }
-    
-    // Then add from sequential tracks if queue doesn't have enough
-    const remainingSlots = bufferingStrategy === 'conservative' ? 1 : 
-                           bufferingStrategy === 'aggressive' ? 3 :
-                           2; // default for 'auto'
-    
-    if (tracksToPreload.length < remainingSlots) {
-      // Add next tracks in sequence
-      for (let i = 1; i <= remainingSlots - tracksToPreload.length; i++) {
-        if (currentIndex + i < songsData.length) {
-          tracksToPreload.push(songsData[currentIndex + i]._id);
-        }
-      }
-    }
-    
-    // Now prefetch the identified tracks
-    tracksToPreload.forEach(trackId => {
-      prefetchTrack(trackId);
-    });
-  };
-
-  // Extract colors from album art
-  const extractThemeColors = async (imageUrl) => {
-    if (!imageUrl) return;
-    
-    try {
-      console.log('Extracting colors from:', imageUrl);
-      
-      // Use react-extract-colors to get palette
-      const colors = await extractColors(imageUrl, {
-        crossOrigin: 'Anonymous',
-        pixels: 40000, // Process more pixels for better results
-        distance: 0.12, // Lower = more colors
-        saturationDistance: 0.2,
-        lightnessDistance: 0.2,
-        hueDistance: 0.083333333,
-      });
-      
-      if (colors && colors.length > 0) {
-        console.log('Extracted colors:', colors);
-        
-        // Get the most vibrant color for primary
-        const sortedByVibrance = [...colors].sort((a, b) => {
-          // Calculate color vibrance (simple approximation)
-          const getVibrance = (color) => {
-            const r = parseInt(color.hex.slice(1, 3), 16);
-            const g = parseInt(color.hex.slice(3, 5), 16);
-            const b = parseInt(color.hex.slice(5, 7), 16);
-            
-            // Standard deviation of RGB as a simple vibrance measure
-            const mean = (r + g + b) / 3;
-            const variance = ((r - mean) ** 2 + (g - mean) ** 2 + (b - mean) ** 2) / 3;
-            return Math.sqrt(variance);
-          };
-          
-          return getVibrance(b) - getVibrance(a);
-        });
-        
-        // Get the darkest color for secondary/background
-        const sortedByDarkness = [...colors].sort((a, b) => {
-          // Calculate brightness (lower = darker)
-          const getBrightness = (color) => {
-            const r = parseInt(color.hex.slice(1, 3), 16);
-            const g = parseInt(color.hex.slice(3, 5), 16);
-            const b = parseInt(color.hex.slice(5, 7), 16);
-            return (r * 299 + g * 587 + b * 114) / 1000;
-          };
-          
-          return getBrightness(a) - getBrightness(b);
-        });
-        
-        // Get a bright color for accent
-        const sortedByBrightness = [...colors].sort((a, b) => {
-          // Calculate brightness (higher = brighter)
-          const getBrightness = (color) => {
-            const r = parseInt(color.hex.slice(1, 3), 16);
-            const g = parseInt(color.hex.slice(3, 5), 16);
-            const b = parseInt(color.hex.slice(5, 7), 16);
-            return (r * 299 + g * 587 + b * 114) / 1000;
-          };
-          
-          return getBrightness(b) - getBrightness(a);
-        });
-        
-        // Determine text color based on background brightness
-        const darkBackground = sortedByDarkness[0]?.hex || '#121212';
-        const backgroundBrightness = getBrightness(darkBackground);
-        const textColor = backgroundBrightness < 128 ? '#ffffff' : '#000000';
-        
-        // Update theme colors
-        setThemeColors({
-          primary: sortedByVibrance[0]?.hex || '#a855f7',
-          secondary: darkBackground,
-          text: textColor,
-          accent: sortedByBrightness[0]?.hex || '#ec4899'
-        });
-        
-        // Apply CSS variables for global theming
-        document.documentElement.style.setProperty('--theme-primary', sortedByVibrance[0]?.hex || '#a855f7');
-        document.documentElement.style.setProperty('--theme-secondary', darkBackground);
-        document.documentElement.style.setProperty('--theme-text', textColor);
-        document.documentElement.style.setProperty('--theme-accent', sortedByBrightness[0]?.hex || '#ec4899');
-      }
-    } catch (error) {
-      console.error('Error extracting colors:', error);
-      // Fallback to default theme
-      setThemeColors({
-        primary: '#a855f7',
-        secondary: '#121212',
-        text: '#ffffff',
-        accent: '#ec4899'
-      });
-    }
-  };
-  
   // Helper function to calculate brightness
   const getBrightness = (hexColor) => {
     const r = parseInt(hexColor.slice(1, 3), 16);
@@ -580,11 +347,70 @@ export const PlayerContextProvider = ({ children }) => {
     return (r * 299 + g * 587 + b * 114) / 1000;
   };
 
+  // Extract color theme from track for UI theming
+  const extractColorsFromTrack = async (trackObj) => {
+    if (!trackObj || !trackObj.image) {
+      return {
+        primary: '#8b5cf6',   // Default purple
+        secondary: '#0f172a', // Default dark blue/black
+        text: '#ffffff'       // Default white
+      };
+    }
+    
+    try {
+      // Use react-extract-colors to get palette
+      const colors = await extractColors(trackObj.image, {
+        crossOrigin: 'anonymous',
+        pixels: 10000,
+        distance: 0.2,
+        saturationDistance: 0.2,
+        lightnessDistance: 0.2,
+        hueDistance: 0.1
+      });
+      
+      if (colors && colors.length > 0) {
+        // Get the most vibrant color for primary
+        const sortedByVibrance = [...colors].sort((a, b) => {
+          // Calculate color vibrance (saturation × brightness)
+          const aVibrance = a.saturation * a.lightness;
+          const bVibrance = b.saturation * b.lightness;
+          return bVibrance - aVibrance;
+        });
+        
+        const primary = sortedByVibrance[0].hex;
+        
+        // Get a darker color for background/secondary
+        const sortedByDarkness = [...colors].sort((a, b) => {
+          return a.lightness - b.lightness;
+        });
+        
+        const secondary = sortedByDarkness[0].hex;
+        
+        // Determine text color based on background
+        const textColor = getBrightness(primary) > 170 ? '#000000' : '#ffffff';
+        
+        return {
+          primary,
+          secondary,
+          text: textColor
+        };
+      }
+    } catch (error) {
+      console.error('Error extracting colors:', error);
+    }
+    
+    // Fallback if extraction fails
+    return {
+      primary: '#8b5cf6',
+      secondary: '#0f172a',
+      text: '#ffffff'
+    };
+  };
+
   // Modified playWithId to extract colors from album art
   const playWithId = async (id) => {
     // First check if we're just reloading the current track
     if (track && track._id === id) {
-      console.log('Play request for current track, just toggling play state');
       if (playStatus) {
         pause();
       } else {
@@ -592,8 +418,6 @@ export const PlayerContextProvider = ({ children }) => {
       }
       return;
     }
-  
-    console.log('Request to play track with ID:', id);
     
     // Find the track in our data
     const selectedTrack = songsData.find((song) => song._id === id);
@@ -603,45 +427,56 @@ export const PlayerContextProvider = ({ children }) => {
       return;
     }
     
-    console.log('Found track to play:', selectedTrack.name);
+    // Set buffering state while we set up the track
+    setBuffering(true);
+    setLoadingProgress(0);
     
-    // Log track structure for debugging
-    console.log('================ TRACK STRUCTURE LOG ================');
-    console.log('Track ID:', selectedTrack._id);
-    console.log('Track Name:', selectedTrack.name);
-    console.log('Artist from getArtistName():', getArtistName(selectedTrack));
-    console.log('Album from getAlbumName():', getAlbumName(selectedTrack));
-    console.log('Track File:', selectedTrack.file);
-    console.log('Track Image:', selectedTrack.image);
-    console.log('Artist Fields:', {
-      artist: selectedTrack.artist,
-      artistName: selectedTrack.artistName,
-      singer: selectedTrack.singer,
-      desc: selectedTrack.desc,
-      createdBy: selectedTrack.createdBy,
-    });
-    console.log('==================================================');
-    
+    // Extract colors from the album art to use for UI theming
     try {
-      // Extract theme colors from album art
-      if (selectedTrack.image) {
-        await extractThemeColors(selectedTrack.image);
-      }
-      
-      // Set the track
+      const colorTheme = await extractColorsFromTrack(selectedTrack);
+      setThemeColors(colorTheme);
+    } catch (error) {
+      console.error('Error extracting colors:', error);
+      // Use fallback colors if extraction fails
+      setThemeColors({
+        primary: '#8b5cf6',
+        secondary: '#0f172a',
+        text: '#ffffff'
+      });
+    }
+    
+    // Set the track in state
       setTrack(selectedTrack);
       
-      // Set audio source and play
-      if (audioRef.current) {
-        audioRef.current.src = selectedTrack.file;
-        audioRef.current.load();
-        
-        // Play the track (which will trigger the canplay event handler in the useEffect)
-        play();
-      }
+    // Record this song in history if user is logged in
+    if (user && user._id && token) {
+      try {
+        await axios.post(
+          `${API_BASE_URL}/play/add`,
+          { song: id },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
     } catch (error) {
-      console.error("Error playing track:", error);
-      toast.error("Failed to play the selected track");
+        // Non-critical error, just log it
+        console.error('Failed to record play history:', error);
+      }
+    }
+    
+    // Auto-prefetch the next few songs for smoother playback
+    if (selectedTrack && bufferingStrategy === 'aggressive') {
+      // Find next songs to prefetch
+      // Could be next in album, related by artist, or based on user's history
+      const relatedSongs = songsData
+        .filter(s => 
+          s._id !== selectedTrack._id && // Not the current song
+          (s.artist === selectedTrack.artist || s.album === selectedTrack.album) // Same artist or album
+        )
+        .slice(0, 3); // Limit to 3 songs to prefetch
+      
+      // Start prefetching them
+      relatedSongs.forEach(song => {
+        prefetchTrack(song._id);
+      });
     }
   };
 
@@ -966,7 +801,6 @@ export const PlayerContextProvider = ({ children }) => {
       // Use all=true parameter to get all songs without pagination
       const response = await axios.get(`${API_BASE_URL}/api/song/list?all=true`);
       setSongsData(response.data.songs);
-      console.log(`Loaded ${response.data.songs.length} total songs from global context`);
       
       if (response.data.songs.length > 0) {
         setTrack(response.data.songs[0]);
@@ -1019,7 +853,6 @@ export const PlayerContextProvider = ({ children }) => {
 
       // Ensure we have a valid duration before updating UI
       if (isNaN(duration) || duration === 0 || duration === Infinity) {
-        console.log('Invalid audio duration:', duration);
         return;
       }
 
@@ -1038,11 +871,6 @@ export const PlayerContextProvider = ({ children }) => {
           minute: Math.floor(duration / 60),
         },
       });
-
-      // Debug the time update
-      if (currentTime % 5 < 0.1) { // Log only occasionally to avoid console spam
-        console.log(`Time update: ${Math.floor(currentTime / 60)}:${Math.floor(currentTime % 60)} / ${Math.floor(duration / 60)}:${Math.floor(duration % 60)}`);
-      }
     };
 
     const handleEnded = () => {
@@ -1070,13 +898,11 @@ export const PlayerContextProvider = ({ children }) => {
     
     // Handle waiting/buffering events
     const handleWaiting = () => {
-      console.log('Audio is waiting for more data...');
       setBuffering(true);
     };
     
     // Handle when enough data is available
     const handleCanPlay = () => {
-      console.log('Audio can play now');
       setBuffering(false);
     };
 
@@ -1105,28 +931,11 @@ export const PlayerContextProvider = ({ children }) => {
     if (track && audioRef.current) {
       // Skip if this is the same track that was just loaded (prevents infinite loops)
       if (window._lastLoadedTrack === track._id) {
-        console.log('Skipping reload of the same track:', track.name);
         return;
       }
       
-      // Log track ID to verify correct track is being loaded
-      console.log('Loading track with ID:', track._id);
-      console.log('Track name:', track.name);
-      console.log('Artist information:');
-      console.log('- Using helper function:', getArtistName(track));
-      console.log('- Direct artist field:', track.artist);
-      console.log('- Singer field:', track.singer);
-      console.log('- ArtistName field:', track.artistName);
-      console.log('- Metadata artist:', track.metadata?.artist);
-      console.log('- Meta artist:', track.meta?.artist);
-      console.log('- Tags artist:', track.tags?.artist);
-      console.log('- CreatedBy name:', track.createdBy?.name);
-      
       // Update last loaded track
       window._lastLoadedTrack = track._id;
-      
-      console.log('Track changed, loading new track:', track.name);
-      console.log('Audio source URL:', track.file);
       
       // Reset time information
       audioRef.current.currentTime = 0;
@@ -1136,82 +945,49 @@ export const PlayerContextProvider = ({ children }) => {
         audioRef.current.preload = 'metadata'; // Minimal preloading
       } else if (bufferingStrategy === 'aggressive') {
         audioRef.current.preload = 'auto'; // Full preloading
-      } else {
-        // Auto strategy - balance between performance and data usage
-        audioRef.current.preload = 'auto';
       }
       
-      // Force clear the src attribute first to ensure browser recognizes change
-      audioRef.current.removeAttribute('src');
-      
-      // Set the new source
-      audioRef.current.src = track.file;
-      
-      // Need to call load() to refresh the audio element with the new source
-      audioRef.current.load();
-      
-      // Set initial volume (in case it was muted or changed before)
-      if (typeof audioRef.current.volume !== 'undefined') {
-        audioRef.current.volume = 0.7; // Default volume level
-      }
-      
-      // Debug audio element properties
-      console.log('Audio element state after load:', {
-        readyState: audioRef.current.readyState,
-        paused: audioRef.current.paused,
-        currentSrc: audioRef.current.currentSrc,
-        src: audioRef.current.src, // This is what the browser actually uses
-        error: audioRef.current.error
-      });
-      
-      // Create a flag to track if the audio is ready to play
-      let audioReady = false;
-      
-      // Function to play when audio is ready
-      const playWhenReady = () => {
-        if (autoplayEnabled && !firstLoad) {
-          console.log('Attempting to autoplay after track change');
-          play();
-        } else {
-          console.log('Autoplay disabled or first load, not auto-playing');
+      // Add event listeners for buffering indication
+      const handleLoadStart = () => setBuffering(true);
+      const handleCanPlay = () => setBuffering(false);
+      const handlePlaying = () => setBuffering(false);
+      const handleWaiting = () => setBuffering(true);
+      const handleProgress = () => {
+        // Update loading progress only if we have a duration
+        if (audioRef.current && audioRef.current.duration) {
+          if (audioRef.current.buffered.length > 0) {
+            const bufferedEnd = audioRef.current.buffered.end(audioRef.current.buffered.length - 1);
+            const duration = audioRef.current.duration;
+            const loadPercentage = (bufferedEnd / duration) * 100;
+            setLoadingProgress(loadPercentage);
+            
+            // Automatically mark as not buffering if we've loaded enough
+            if (loadPercentage > 15) {
+              setBuffering(false);
+            }
+          }
         }
-        
-        // Once current track is playing, prefetch next tracks
-        prefetchNextTracks();
       };
       
-      // Add event listeners for audio readiness
-      const canPlayHandler = () => {
-        console.log('Audio canplay event fired - audio is ready to play');
-        audioReady = true;
-        setBuffering(false);
-        // Remove this event listener to avoid multiple plays
-        audioRef.current.removeEventListener('canplay', canPlayHandler);
-        // Play with a slight delay to ensure readiness
-        setTimeout(playWhenReady, 150);
-      };
+      // Register event listeners for buffering state
+      audioRef.current.addEventListener('loadstart', handleLoadStart);
+      audioRef.current.addEventListener('canplay', handleCanPlay);
+      audioRef.current.addEventListener('playing', handlePlaying);
+      audioRef.current.addEventListener('waiting', handleWaiting);
+      audioRef.current.addEventListener('progress', handleProgress);
       
-      // Listen for the canplay event
-      audioRef.current.addEventListener('canplay', canPlayHandler);
-      
-      // Fallback - if canplay doesn't fire within 3 seconds, try to play anyway
-      const readyTimeout = setTimeout(() => {
-        if (!audioReady) {
-          console.log('Fallback: canplay event did not fire within timeout, attempting to play anyway');
-          audioRef.current.removeEventListener('canplay', canPlayHandler);
-          playWhenReady();
-        }
-      }, 3000);
-      
-      // Cleanup
+      // Clean up event listeners
       return () => {
-        clearTimeout(readyTimeout);
         if (audioRef.current) {
-          audioRef.current.removeEventListener('canplay', canPlayHandler);
+          audioRef.current.removeEventListener('loadstart', handleLoadStart);
+          audioRef.current.removeEventListener('canplay', handleCanPlay);
+          audioRef.current.removeEventListener('playing', handlePlaying);
+          audioRef.current.removeEventListener('waiting', handleWaiting);
+          audioRef.current.removeEventListener('progress', handleProgress);
         }
       };
     }
-  }, [track, autoplayEnabled, firstLoad, bufferingStrategy]);
+  }, [track, bufferingStrategy]);
   
   // Effect for automatically adjusting buffering strategy based on network conditions
   useEffect(() => {
@@ -1226,31 +1002,20 @@ export const PlayerContextProvider = ({ children }) => {
                          navigator.webkitConnection;
       
       if (connection) {
-        console.log('Network information:', {
-          effectiveType: connection.effectiveType,
-          downlink: connection.downlink,
-          rtt: connection.rtt,
-          saveData: connection.saveData
-        });
-        
         // Adjust strategy based on network type
         if (connection.saveData) {
           // User has requested to save data
-          console.log('Data saver is enabled, using conservative buffering');
           setBufferingStrategy('conservative');
         } else if (connection.effectiveType === '4g' && connection.downlink > 5) {
           // Fast connection
-          console.log('Fast connection detected, using aggressive buffering');
           setBufferingStrategy('aggressive');
         } else if (connection.effectiveType === '2g' || connection.downlink < 1) {
           // Slow connection
-          console.log('Slow connection detected, using conservative buffering');
           setBufferingStrategy('conservative');
         }
       } else {
         // Fallback if Network Information API is not available
         // We could add more sophisticated detection here if needed
-        console.log('Network Information API not available, using default buffering');
       }
     };
     
@@ -1379,12 +1144,7 @@ export const PlayerContextProvider = ({ children }) => {
           preload={bufferingStrategy === 'conservative' ? 'metadata' : 'auto'}
           autoPlay={false}
           crossOrigin="anonymous"
-          onCanPlay={() => console.log("Audio can play now")}
           onError={(e) => console.error("Audio error:", e.target.error)}
-          onLoadedData={() => console.log("Audio data loaded successfully")}
-          onLoadStart={() => console.log("Audio loading started")}
-          onWaiting={() => console.log("Audio waiting for data")}
-          onStalled={() => console.log("Audio playback has stalled")}
           playsInline
         >
           <source key={`${track._id}-mp3`} src={track.file} type="audio/mp3" />

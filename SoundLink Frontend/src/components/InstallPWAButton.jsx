@@ -62,21 +62,7 @@ const InstallPWAButton = () => {
     return null; // Don't show button if already installed or can't install
   }
 
-  return (
-    <div className="fixed bottom-4 right-4 z-50">
-      <button
-        onClick={handleInstallClick}
-        className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-purple-600 to-fuchsia-500 text-white font-medium rounded-full hover:shadow-lg shadow-md transition-all"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M12 17V3" />
-          <path d="m6 11 6 6 6-6" />
-          <path d="M19 21H5" />
-        </svg>
-        Install App
-      </button>
-    </div>
-  );
+  return 
 };
 
 export default InstallPWAButton; 

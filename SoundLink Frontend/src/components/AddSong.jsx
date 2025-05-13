@@ -11,6 +11,7 @@ const AddSong = () => {
   const [name, setName] = useState("");
   const [desc, setDesc] = useState("");
   const [album, setAlbum] = useState("none");
+  const [lyrics, setLyrics] = useState("");
   const [loading, setLoading] = useState(false);
   const [albumData, setAlbumData] = useState([]);
   const [movieAlbumData, setMovieAlbumData] = useState([]);
@@ -83,6 +84,11 @@ const AddSong = () => {
       }
       formData.append("audio", song);
       formData.append("album", album);
+      
+      // Add lyrics to form data if provided
+      if (lyrics.trim()) {
+        formData.append("lyrics", lyrics);
+      }
 
       const res = await axios.post(`${url}/api/song/add`, formData);
 
@@ -93,6 +99,7 @@ const AddSong = () => {
         setName("");
         setDesc("");
         setAlbum("none");
+        setLyrics("");
         setImage(null);
         setSong(null);
         setExtractedImage(null);
@@ -224,6 +231,17 @@ const AddSong = () => {
             </optgroup>
           )}
         </select>
+      </div>
+
+      {/* Song Lyrics */}
+      <div className="flex flex-col gap-2.5">
+        <p>Song Lyrics (Optional)</p>
+        <textarea
+          placeholder="Enter song lyrics here..."
+          value={lyrics}
+          onChange={(e) => setLyrics(e.target.value)}
+          className="bg-transparent outline-green-600 border-2 border-gray-400 p-2.5 w-[max(40vw,250px)] h-[200px]"
+        />
       </div>
 
       {/* Submit Button */}

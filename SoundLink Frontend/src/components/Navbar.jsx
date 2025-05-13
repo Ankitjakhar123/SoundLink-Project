@@ -6,6 +6,9 @@ import axios from 'axios';
 import { PlayerContext } from '../context/PlayerContext';
 import QueueComponent from './QueueComponent';
 
+// Default avatar path - ensure this SVG file exists in the public directory
+const DEFAULT_AVATAR = '/default-avatar.svg';
+
 const Navbar = (props) => {
     const navigate = useNavigate()
     const [search, setSearch] = useState("")
@@ -187,14 +190,9 @@ const Navbar = (props) => {
         // Try both avatar and image properties since either might be used in the API
         const avatarUrl = user.avatar || user.image;
         
-        // Log the avatar URL for debugging
-        console.log("Original Avatar URL in Navbar:", avatarUrl);
-        console.log("User object in Navbar:", user);
-        
-        // No avatar URL available
-        if (!avatarUrl) {
-            console.log("No avatar URL found, using default");
-            return '/default-avatar.svg';
+        // No avatar URL available or using default avatar
+        if (!avatarUrl || avatarUrl === '/default-avatar.png' || avatarUrl === '/default-avatar.svg') {
+            return null;
         }
         
         // Add cache-busting parameter to prevent browser caching
@@ -207,13 +205,11 @@ const Navbar = (props) => {
         // Check if it's a Cloudinary URL and ensure it's using HTTPS
         if (avatarUrl.includes('cloudinary.com')) {
             const fixedUrl = avatarUrl.replace('http://', 'https://');
-            console.log("Cloudinary URL fixed:", fixedUrl);
             return addCacheBuster(fixedUrl);
         }
         
         // If it's a data URL or base64 image, return it directly
         if (avatarUrl.startsWith('data:') || avatarUrl.startsWith('blob:')) {
-            console.log("Data/Blob URL detected");
             return avatarUrl; // No need for cache buster on blob URLs
         }
         
@@ -221,13 +217,11 @@ const Navbar = (props) => {
         if (avatarUrl.startsWith('/uploads')) {
             const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
             const fullUrl = `${backendUrl}${avatarUrl}`;
-            console.log("Local upload URL constructed:", fullUrl);
             return addCacheBuster(fullUrl);
         }
         
         // Handle full URLs
         if (avatarUrl.startsWith('http://') || avatarUrl.startsWith('https://')) {
-            console.log("Full URL detected");
             return addCacheBuster(avatarUrl);
         }
         
@@ -235,12 +229,10 @@ const Navbar = (props) => {
         if (!avatarUrl.startsWith('/')) {
             const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
             const fullUrl = `${backendUrl}/${avatarUrl}`;
-            console.log("Relative path converted:", fullUrl);
             return addCacheBuster(fullUrl);
         }
         
         // For any other case, just return the URL as is
-        console.log("Using URL as is");
         return addCacheBuster(avatarUrl);
     };
 
@@ -387,17 +379,16 @@ const Navbar = (props) => {
                                             alt={user.username || 'User'} 
                                             className="w-full h-full object-cover"
                                             loading="eager"
-                                            onLoad={(e) => {
-                                                console.log("Avatar loaded successfully in Navbar:", e.target.src);
-                                            }}
                                             onError={(e) => {
-                                                console.error("Failed to load avatar in Navbar:", e.target.src);
-                                                e.target.onerror = null;
-                                                e.target.src = '/default-avatar.svg';
+                                                e.target.onerror = null; // Prevent infinite error loop
+                                                e.target.style.display = 'none';
+                                                e.target.parentNode.classList.add('bg-fuchsia-600');
                                             }}
                                         />
                                     ) : (
-                                        <FaUser className="text-white text-lg" />
+                                        <div className="w-full h-full bg-fuchsia-600 flex items-center justify-center text-white font-bold text-lg">
+                                            {user.username ? user.username.charAt(0).toUpperCase() : 'U'}
+                                        </div>
                                     )}
                                 </button>
                                 
@@ -409,20 +400,23 @@ const Navbar = (props) => {
                                         {/* User Info */}
                                         <div className="px-4 py-2 border-b border-neutral-700 flex items-center gap-2">
                                             <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
-                                                <img 
-                                                    src={getUserAvatar()} 
-                                                    alt={user.username || 'User'} 
-                                                    className="w-full h-full object-cover"
-                                                    loading="eager"
-                                                    onLoad={(e) => {
-                                                        console.log("Dropdown avatar loaded successfully:", e.target.src);
-                                                    }}
-                                                    onError={(e) => {
-                                                        console.error("Failed to load avatar in dropdown:", e.target.src);
-                                                        e.target.onerror = null;
-                                                        e.target.src = '/default-avatar.svg';
-                                                    }}
-                                                />
+                                                {getUserAvatar() ? (
+                                                    <img 
+                                                        src={getUserAvatar()} 
+                                                        alt={user.username || 'User'} 
+                                                        className="w-full h-full object-cover"
+                                                        loading="eager"
+                                                        onError={(e) => {
+                                                            e.target.onerror = null; // Prevent infinite error loop
+                                                            e.target.style.display = 'none';
+                                                            e.target.parentNode.classList.add('bg-fuchsia-600');
+                                                        }}
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full bg-fuchsia-600 flex items-center justify-center text-white font-bold text-sm">
+                                                        {user.username ? user.username.charAt(0).toUpperCase() : 'U'}
+                                                    </div>
+                                                )}
                                             </div>
                                             <div className="min-w-0">
                                                 <p className="text-white font-medium truncate">{user.username || 'User'}</p>

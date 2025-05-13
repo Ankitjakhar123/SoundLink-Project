@@ -7,6 +7,7 @@ const addSong = async (req, res) => {
     const desc = req.body.desc;
     const album = req.body.album;
     const artist = req.body.artist; // Add artist field
+    const lyrics = req.body.lyrics; // Add lyrics field
 
     const audioFile = req.files.audio[0];
     const imageFile = req.files.image[0];
@@ -18,9 +19,6 @@ const addSong = async (req, res) => {
     
     if (!isCloudinaryConfigured) {
       console.warn("Cloudinary is not configured properly. Please check environment variables.");
-      console.log("CLOUDINARY_CLOUD_NAME:", process.env.CLOUDINARY_CLOUD_NAME ? "Set" : "Not set");
-      console.log("CLOUDINARY_API_KEY:", process.env.CLOUDINARY_API_KEY ? "Set" : "Not set");
-      console.log("CLOUDINARY_API_SECRET:", process.env.CLOUDINARY_API_SECRET ? "Set" : "Not set");
       
       // Configure cloudinary with environment variables if they exist
       cloudinary.config({
@@ -29,26 +27,19 @@ const addSong = async (req, res) => {
         api_secret: process.env.CLOUDINARY_API_SECRET || process.env.CLOUDINARY_SECRET_KEY,
       });
     }
-
-    console.log("Uploading song:", name);
-    console.log("Album:", album);
     
     try {
       // Try to upload audio to Cloudinary
-      console.log("Uploading audio file to Cloudinary...");
       const audioUpload = await cloudinary.uploader.upload(audioFile.path, {
         resource_type: "video",
         folder: "soundlink/audio",
       });
-      console.log("Audio uploaded successfully:", audioUpload.secure_url);
       
       // Try to upload image to Cloudinary
-      console.log("Uploading image file to Cloudinary...");
       const imageUpload = await cloudinary.uploader.upload(imageFile.path, {
         resource_type: "image",
         folder: "soundlink/images",
       });
-      console.log("Image uploaded successfully:", imageUpload.secure_url);
 
       const duration = `${Math.floor(audioUpload.duration / 60)}:${Math.floor(audioUpload.duration % 60).toString().padStart(2, '0')}`;
 
@@ -67,9 +58,13 @@ const addSong = async (req, res) => {
         songData.artist = artist;
       }
 
+      // Add lyrics to songData if provided
+      if (lyrics) {
+        songData.lyrics = lyrics;
+      }
+
       const song = songModel(songData);
       await song.save();
-      console.log("Song saved to database:", name);
 
       res.json({ success: true, message: "Song Added", song });
     } catch (cloudinaryError) {
@@ -128,12 +123,17 @@ const removeSong = async (req, res) => {
 // Edit a song
 const editSong = async (req, res) => {
   try {
-    const { id, name, desc, album, artist } = req.body;
+    const { id, name, desc, album, artist, lyrics } = req.body;
     let updateData = { name, desc, album };
     
     // Include artist in update if provided
     if (artist) {
       updateData.artist = artist;
+    }
+    
+    // Include lyrics in update if provided
+    if (lyrics !== undefined) {
+      updateData.lyrics = lyrics;
     }
     
     if (req.files && req.files.image) {

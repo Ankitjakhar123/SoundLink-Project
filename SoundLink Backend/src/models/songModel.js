@@ -8,6 +8,7 @@ const songSchema = new mongoose.Schema({
   file: { type: String, required: true },
   duration: { type: String, required: true },
   artist: { type: mongoose.Schema.Types.ObjectId, ref: 'artist' },
+  lyrics: { type: String, default: "" },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'user' }
 }, {
   timestamps: true

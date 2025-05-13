@@ -39,10 +39,7 @@ const MovieAlbumDetail = () => {
             if (songsRes.data.success) {
               // Filter songs that belong to this movie album (prefixed with [Movie])
               const albumName = `[Movie] ${res.data.movieAlbum.title}`;
-              console.log(`Filtering songs for album: "${albumName}"`);
-              console.log(`Total songs found: ${songsRes.data.songs.length}`);
               const filteredSongs = songsRes.data.songs.filter(song => song.album === albumName);
-              console.log(`Filtered ${filteredSongs.length} songs for this movie album`);
               setAlbumSongs(filteredSongs);
             }
           } catch (songErr) {

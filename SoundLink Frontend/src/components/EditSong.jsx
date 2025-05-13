@@ -13,6 +13,7 @@ const EditSong = () => {
   const [name, setName] = useState("");
   const [desc, setDesc] = useState("");
   const [album, setAlbum] = useState("none");
+  const [lyrics, setLyrics] = useState("");
   const [albumData, setAlbumData] = useState([]);
   const [movieAlbumData, setMovieAlbumData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -30,6 +31,7 @@ const EditSong = () => {
             setName(found.name);
             setDesc(found.desc);
             setAlbum(found.album);
+            setLyrics(found.lyrics || "");
             setCurrentImage(found.image);
             setCurrentAudio(found.file);
           } else {
@@ -74,6 +76,7 @@ const EditSong = () => {
       formData.append("name", name);
       formData.append("desc", desc);
       formData.append("album", album);
+      formData.append("lyrics", lyrics);
       if (image) formData.append("image", image);
       if (song) formData.append("audio", song);
       const res = await axios.post(`${url}/api/song/edit`, formData);
@@ -100,61 +103,64 @@ const EditSong = () => {
 
   return (
     <form
+      className="mx-auto max-w-4xl p-8 bg-gray-100/5 rounded-3xl backdrop-blur-sm shadow-2xl flex flex-col gap-10 items-start"
       onSubmit={onSubmitHandler}
-      className="flex flex-col items-start gap-8 text-gray-600 w-full max-w-2xl mx-auto bg-black/90 rounded-3xl p-8 mt-10 shadow-2xl"
     >
-      <h2 className="text-2xl font-bold mb-6 text-white">Edit Song</h2>
-      {/* Upload Section */}
+      <div className="text-2xl font-bold">Edit Song</div>
       <div className="flex gap-8">
         {/* Song Upload */}
-        <div className="flex flex-col gap-4">
-          <p>Upload Song</p>
+        <div className="flex flex-col gap-2">
+          <p>Change Audio</p>
           <input
             type="file"
-            id="song"
             accept="audio/*"
+            id="audioFile"
             hidden
             onChange={(e) => setSong(e.target.files[0])}
           />
-          <label htmlFor="song">
+          <label htmlFor="audioFile" className="cursor-pointer">
             {song ? (
               <MdFileUpload className="w-24 h-24 text-fuchsia-500 mx-auto" />
             ) : currentAudio ? (
-              <audio controls src={currentAudio} className="w-24 h-24 mx-auto" />
+              <div className="w-24 h-24 grid place-items-center text-fuchsia-500 bg-fuchsia-100 rounded">
+                <MdMusicNote className="w-12 h-12 text-fuchsia-500" />
+              </div>
             ) : (
-              <MdFileUpload className="w-24 h-24 text-gray-400 mx-auto" />
+              <MdFileUpload className="w-24 h-24 text-gray-300 mx-auto" />
             )}
           </label>
         </div>
+
         {/* Image Upload */}
-        <div className="flex flex-col gap-4">
-          <p>Upload Image</p>
+        <div className="flex flex-col gap-2">
+          <p>Change Image</p>
           <input
             type="file"
-            id="image"
             accept="image/*"
+            id="imageFile"
             hidden
             onChange={(e) => setImage(e.target.files[0])}
           />
-          <label htmlFor="image">
+          <label htmlFor="imageFile" className="cursor-pointer">
             {image ? (
               <img
                 src={URL.createObjectURL(image)}
-                className="w-24 h-24 object-cover rounded cursor-pointer"
-                alt="Upload Artwork"
+                className="w-24 h-24 object-cover rounded"
+                alt="Selected Thumbnail"
               />
             ) : currentImage ? (
               <img
                 src={currentImage}
-                className="w-24 h-24 object-cover rounded cursor-pointer"
-                alt="Current Artwork"
+                className="w-24 h-24 object-cover rounded"
+                alt="Current Thumbnail"
               />
             ) : (
-              <MdMusicNote className="w-24 h-24 text-gray-400 mx-auto" />
+              <MdMusicNote className="w-24 h-24 text-gray-300 mx-auto" />
             )}
           </label>
         </div>
       </div>
+
       {/* Song Name */}
       <div className="flex flex-col gap-2.5">
         <p>Song Name</p>
@@ -212,19 +218,24 @@ const EditSong = () => {
           )}
         </select>
       </div>
+
+      {/* Song Lyrics */}
+      <div className="flex flex-col gap-2.5">
+        <p>Song Lyrics</p>
+        <textarea
+          placeholder="Enter song lyrics here..."
+          value={lyrics}
+          onChange={(e) => setLyrics(e.target.value)}
+          className="bg-transparent outline-green-600 border-2 border-gray-400 p-2.5 w-[max(40vw,250px)] h-[200px]"
+        />
+      </div>
+
       {/* Submit Button */}
       <button
         type="submit"
-        className="text-base bg-fuchsia-700 hover:bg-fuchsia-800 text-white py-2.5 px-14 rounded-lg font-bold shadow-lg mt-4"
+        className="px-8 py-2 bg-gradient-to-r from-fuchsia-700 to-pink-700 text-white rounded-lg font-medium shadow-lg hover:from-fuchsia-800 hover:to-pink-800 transition-all"
       >
         Save Changes
-      </button>
-      <button
-        type="button"
-        className="text-base bg-gray-700 hover:bg-gray-800 text-white py-2.5 px-8 rounded-lg font-bold shadow-lg mt-2"
-        onClick={() => navigate('/admin/songs')}
-      >
-        Cancel
       </button>
     </form>
   );

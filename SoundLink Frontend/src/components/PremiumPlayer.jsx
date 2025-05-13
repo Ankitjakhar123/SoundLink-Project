@@ -2,7 +2,7 @@ import React, { useContext, useState, useEffect, useRef } from "react";
 import { PlayerContext } from "../context/PlayerContext";
 // eslint-disable-next-line no-unused-vars
 import { AnimatePresence, motion } from "framer-motion";
-import { FaPlay, FaPause, FaStepForward, FaStepBackward, FaRandom, FaRedo, FaVolumeUp, FaVolumeMute, FaHeart } from "react-icons/fa";
+import { FaPlay, FaPause, FaStepForward, FaStepBackward, FaVolumeUp, FaVolumeMute, FaHeart } from "react-icons/fa";
 import { MdQueueMusic, MdDevices, MdShuffle, MdRepeat, MdOutlineLyrics, MdMoreVert } from "react-icons/md";
 import QueueComponent from "./QueueComponent";
 import LyricsPanel from "./LyricsPanel";
@@ -83,25 +83,6 @@ const PremiumPlayer = () => {
   useEffect(() => {
     // If track exists, set CSS variables for the padding
     if (track) {
-      // More detailed logging to examine the structure
-      console.log("===== TRACK OBJECT STRUCTURE =====");
-      console.log("Track ID:", track._id);
-      console.log("Track Name:", track.name);
-      console.log("Artist fields:", {
-        artist: track.artist,
-        artistName: track.artistName,
-        singer: track.singer,
-        uploadedBy: track.uploadedBy,
-        createdBy: track.createdBy,
-      });
-      console.log("Album fields:", {
-        album: track.album,
-        albumName: track.albumName,
-      });
-      console.log("All track properties:", Object.keys(track));
-      console.log("Track full object:", track);
-      console.log("==================================");
-      
       // Set a CSS variable for the player height
       const playerHeight = isSmallScreen ? '50px' : hidePlayer ? '0' : '60px';
       const navHeight = isSmallScreen ? '50px' : '0'; // Navigation bar height on mobile
@@ -178,20 +159,14 @@ const PremiumPlayer = () => {
   
   // Modified play function to ensure audio context is properly initialized
   const handlePlayPause = () => {
-    console.log('Current playStatus:', playStatus);
-    
     // First handle the pause case which doesn't need special handling
     if (playStatus) {
-      console.log('Attempting to pause...');
       pause();
       return;
     }
     
-    console.log('Attempting to play...');
-    
     // Initialize audio context
     if (window._audioContext && window._audioContext.state === 'suspended') {
-      console.log('Resuming suspended AudioContext...');
       window._audioContext.resume().catch(() => console.error('Error resuming AudioContext'));
     }
     
@@ -199,7 +174,6 @@ const PremiumPlayer = () => {
     if (!window._audioContext && window.AudioContext) {
       try {
         window._audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        console.log('Created new AudioContext');
       } catch (err) {
         console.error('Failed to create AudioContext:', err);
       }
@@ -211,14 +185,12 @@ const PremiumPlayer = () => {
       
       // Attempt to get the track started anyway
       if (track) {
-        console.log('Trying to force play even without audio reference');
         setTimeout(() => play(), 100);
       }
       return;
     }
     
     if (!audioRef.current.src && track && track.file) {
-      console.log('Setting audio source directly:', track.file);
       audioRef.current.src = track.file;
       audioRef.current.load();
     } else if (!audioRef.current.src) {
@@ -229,7 +201,6 @@ const PremiumPlayer = () => {
     // Special handling for mobile browsers and Safari
     if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || 
         /^((?!chrome|android).)*safari/i.test(navigator.userAgent)) {
-      console.log('Mobile device or Safari detected, using special unlock method');
       unlockAudio();
     } else {
       // For desktop browsers, just attempt to play
@@ -249,25 +220,22 @@ const PremiumPlayer = () => {
         setTimeout(() => {
           silent.pause();
           document.body.removeChild(silent);
-          console.log('Audio unlocked by silent play');
           
           // Now try to play the actual audio
           play();
         }, 20);
-      }).catch(e => {
-        console.log('Silent play failed:', e);
+      }).catch(() => {
         document.body.removeChild(silent);
         
         // Try direct play anyway
         play();
       });
-    } catch (e) {
+    } catch {
       // For browsers that don't support promises on play
-      console.log('Silent play failed (no promise support):', e);
       try {
         document.body.removeChild(silent);
       } catch (removeError) {
-        console.log('Error removing silent audio element:', removeError);
+        console.error('Error removing silent audio element:', removeError);
       }
       
       // Try direct play anyway
@@ -279,8 +247,6 @@ const PremiumPlayer = () => {
   useEffect(() => {
     // Create one-time unlock function for first user interaction
     const unlockAudioOnFirstInteraction = () => {
-      console.log('User interaction detected, preparing audio playback capability');
-      
       // Create and play a silent audio element to unlock audio playback
       const unlockElement = document.createElement('audio');
       unlockElement.src = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjMyLjEwNAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAACWQBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGD/////////////////////////////////////////AAAAAExhdmM1OC41OQAAAAAAAAAAAAAAACQCRgAAAAAAAAJZFiHN3gAAAAAAAAAAAAAAAAAAAAAA';
@@ -483,10 +449,10 @@ const PremiumPlayer = () => {
             <div className="relative z-10 min-h-full pb-20">
               {/* Top navigation row - sticky at top */}
               <div className="sticky top-0 flex justify-between items-center p-5 mb-2 z-20 backdrop-blur-sm bg-black/30">
-              <button 
+                <button 
                   className="w-8 h-8 flex items-center justify-center"
                   style={{ color: themeColors.text }}
-                onClick={() => setShowExtraControls(false)}
+                  onClick={() => setShowExtraControls(false)}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M15 18l-6-6 6-6" />
@@ -497,18 +463,29 @@ const PremiumPlayer = () => {
                     {track?.album || "Now Playing"}
                   </h3>
                 </div>
-                <button 
-                  className="w-8 h-8 flex items-center justify-center"
-                  style={{ color: themeColors.text }}
-                  onClick={toggleMoreMenu}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="1" />
-                    <circle cx="19" cy="12" r="1" />
-                    <circle cx="5" cy="12" r="1" />
-                  </svg>
-              </button>
-            </div>
+                <div className="flex items-center gap-2">
+                  <button 
+                    onClick={toggleLyrics}
+                    className="w-8 h-8 flex items-center justify-center"
+                    style={{ color: showLyrics ? themeColors.primary : themeColors.text }}
+                    title="Lyrics"
+                  >
+                    <MdOutlineLyrics size={20} />
+                  </button>
+                  <button 
+                    className="w-8 h-8 flex items-center justify-center"
+                    style={{ color: themeColors.text }}
+                    onClick={toggleMoreMenu}
+                    title="More Options"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="1" />
+                      <circle cx="19" cy="12" r="1" />
+                      <circle cx="5" cy="12" r="1" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
             
               {/* Album art */}
               <div className="px-5">
@@ -531,8 +508,6 @@ const PremiumPlayer = () => {
               <div className="px-5 mb-3">
                 <h2 className="text-xl font-bold" style={{ color: themeColors.text }}>{track.name}</h2>
                 <p className="text-sm opacity-80" style={{ color: themeColors.text }}>
-                  {/* Debug artist name */}
-                  {console.log('Rendering artist name in PremiumPlayer:', getArtistName(track))}
                   {getArtistName(track)}
                 </p>
             </div>
@@ -670,7 +645,6 @@ const PremiumPlayer = () => {
                   <span 
                     className="text-xs px-2 py-1 rounded-full cursor-pointer"
                     style={{ color: themeColors.primary }}
-                    onClick={() => console.log('Show all credits')}
                   >
                     Show all
                   </span>
@@ -920,7 +894,7 @@ const PremiumPlayer = () => {
 
         {/* Main player bar - always visible when track is playing */}
         <div 
-          className={`flex items-center justify-between px-4 py-2 border-t backdrop-blur-xl gap-4 ${hidePlayer ? 'compact-player' : ''}`}
+          className={`flex items-center justify-between px-2 sm:px-4 py-2 border-t backdrop-blur-xl ${hidePlayer ? 'compact-player' : ''}`}
           style={{ 
             background: `linear-gradient(180deg, ${themeColors.secondary}dd, ${themeColors.secondary})`,
             borderColor: `${themeColors.text}20`
@@ -928,7 +902,7 @@ const PremiumPlayer = () => {
         >
           {/* Song Info - clickable on mobile to show full player */}
           <div 
-            className={`flex items-center gap-3 min-w-[80px] ${isSmallScreen ? "flex-1" : "w-[25%]"}`}
+            className={`flex items-center gap-3 ${isSmallScreen ? "flex-1" : "w-[20%]"}`}
             onClick={() => isSmallScreen && setShowExtraControls(true)}
           >
             <div className="relative">
@@ -965,16 +939,27 @@ const PremiumPlayer = () => {
 
           {/* Controls + Progress - hidden on small screens when extended view is not shown */}
           {(!isSmallScreen || !showExtraControls) && (
-            <div className={`flex flex-col items-center ${isSmallScreen ? "hidden" : "w-[50%] max-w-md"}`}>
+            <div className={`flex flex-col items-center ${isSmallScreen ? "hidden" : "w-[45%] max-w-md"}`}>
             <div className="flex items-center gap-3 mb-0.5">
+              {/* Playback modifier controls */}
               <button
                 onClick={() => { shuffle(); handleShuffle(); }}
                 className="text-base transition"
                 style={shuffleActive ? { color: themeColors.primary } : { color: `${themeColors.text}99` }}
                 title="Shuffle"
               >
-                <FaRandom />
+                <MdShuffle />
               </button>
+              <button
+                onClick={toggleLoop}
+                className="text-base transition"
+                style={loop ? { color: themeColors.primary } : { color: `${themeColors.text}99` }}
+                title="Repeat"
+              >
+                <MdRepeat />
+              </button>
+              
+              {/* Main playback controls */}
               <button 
                 onClick={Previous} 
                 className="text-base transition" 
@@ -984,7 +969,7 @@ const PremiumPlayer = () => {
                 <FaStepBackward />
               </button>
               <button
-                  onClick={handlePlayPause}
+                onClick={handlePlayPause}
                 className="rounded-full p-2 shadow-lg hover:scale-110 transition-transform border-2 text-lg"
                 style={{ 
                   background: `linear-gradient(135deg, ${themeColors.primary}, ${themeColors.accent || themeColors.primary})`,
@@ -993,7 +978,7 @@ const PremiumPlayer = () => {
                 }}
                 title={playStatus ? "Pause" : "Play"}
               >
-                  {playStatus ? <FaPause /> : <FaPlay className="relative ml-0.5" />}
+                {playStatus ? <FaPause /> : <FaPlay className="relative ml-0.5" />}
               </button>
               <button 
                 onClick={Next} 
@@ -1002,14 +987,6 @@ const PremiumPlayer = () => {
                 title="Next"
               >
                 <FaStepForward />
-              </button>
-              <button
-                  onClick={toggleLoop}
-                className="text-base transition"
-                style={loop ? { color: themeColors.primary } : { color: `${themeColors.text}99` }}
-                title="Repeat"
-              >
-                <FaRedo />
               </button>
             </div>
             {/* Progress Bar */}
@@ -1088,8 +1065,17 @@ const PremiumPlayer = () => {
 
           {/* Volume + Extras - hidden on mobile */}
           {!isSmallScreen && (
-            <div className="flex flex-col">
-              <div className="flex items-center gap-4 min-w-[90px] w-[25%] justify-end">
+            <div className="flex flex-col w-[30%]">
+              <div className="flex items-center gap-3 justify-end">
+                {/* Left set of controls - Content related */}
+                <button 
+                  onClick={toggleLyrics}
+                  className="text-base transition"
+                  style={showLyrics ? { color: themeColors.accent } : { color: `${themeColors.text}99` }}
+                  title="Lyrics"
+                >
+                  <MdOutlineLyrics />
+                </button>
                 <button 
                   onClick={() => toggleFavorite(track._id)}
                   className="text-base transition"
@@ -1106,6 +1092,11 @@ const PremiumPlayer = () => {
                 >
                   <MdQueueMusic />
                 </button>
+                
+                {/* Separator */}
+                <div className="h-5 w-[1px] bg-white/20 mx-1"></div>
+                
+                {/* Right set of controls - Audio playback related */}
                 <button
                   onClick={handleMute}
                   className="text-base transition"
@@ -1134,7 +1125,12 @@ const PremiumPlayer = () => {
                 >
                   <MdDevices />
                 </button>
-                <div className="flex items-center gap-1 ml-2" style={{ color: `${themeColors.text}99` }}>
+                
+                {/* Separator */}
+                <div className="h-5 w-[1px] bg-white/20 mx-1"></div>
+                
+                {/* Playback options */}
+                <div className="flex items-center gap-1" style={{ color: `${themeColors.text}99` }}>
                   <span className="text-[10px]">Autoplay</span>
                   <div
                     onClick={handleAutoplayToggle}
@@ -1146,14 +1142,14 @@ const PremiumPlayer = () => {
                         autoplayEnabled ? "translate-x-[18px]" : "translate-x-0.5"
                       }`}
                     ></div>
+                  </div>
                 </div>
-              </div>
               
                 {/* More options button */}
                 <div className="relative">
                   <button 
                     onClick={toggleMoreMenu}
-                    className="text-base transition ml-2"
+                    className="text-base transition ml-1"
                     style={{ color: `${themeColors.text}99` }}
                     title="More options"
                   >

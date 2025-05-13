@@ -47,6 +47,7 @@ const BulkSongUpload = () => {
       let artist = "Unknown Artist";
       let album = selectedAlbum ? getSelectedAlbumName(selectedAlbum) : "";
       let cover = null;
+      let lyrics = ""; // Initialize lyrics as empty string
       try {
         const metadata = await parseBlob(file);
         if (metadata.common.title) title = metadata.common.title;
@@ -55,6 +56,18 @@ const BulkSongUpload = () => {
         if (metadata.common.picture && metadata.common.picture[0]) {
           const pic = metadata.common.picture[0];
           cover = new Blob([pic.data], { type: pic.format });
+        }
+        // Try to extract lyrics from metadata if available
+        if (metadata.common.lyrics) {
+          if (typeof metadata.common.lyrics === 'string') {
+            lyrics = metadata.common.lyrics;
+          } else if (Array.isArray(metadata.common.lyrics)) {
+            lyrics = metadata.common.lyrics.join('\n');
+          } else if (typeof metadata.common.lyrics === 'object') {
+            // Some formats store lyrics as objects with language keys
+            const lyricsValues = Object.values(metadata.common.lyrics);
+            lyrics = lyricsValues.join('\n');
+          }
         }
       } catch {
         // ignore, fallback to defaults
@@ -65,6 +78,7 @@ const BulkSongUpload = () => {
         artist,
         album,
         cover,
+        lyrics,
         editable: true,
       };
     }));
@@ -99,7 +113,16 @@ const BulkSongUpload = () => {
   const handleUpload = async () => {
     setUploading(true);
     let newProgress = [...uploadProgress];
+    let successCount = 0;
+    let skipCount = 0;
+
     for (let i = 0; i < songs.length; i++) {
+      // Skip songs that were already successfully uploaded
+      if (newProgress[i]?.status === "success") {
+        skipCount++;
+        continue;
+      }
+
       newProgress[i] = { percent: 0, status: "uploading" };
       setUploadProgress([...newProgress]);
       const formData = new FormData();
@@ -108,6 +131,7 @@ const BulkSongUpload = () => {
       formData.append("album", selectedAlbum ? getSelectedAlbumName(selectedAlbum) : songs[i].album);
       formData.append("audio", songs[i].file);
       if (songs[i].cover) formData.append("image", songs[i].cover);
+      if (songs[i].lyrics) formData.append("lyrics", songs[i].lyrics);
       try {
         await axios.post(`${url}/api/song/add`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
@@ -119,14 +143,25 @@ const BulkSongUpload = () => {
         });
         newProgress[i] = { percent: 100, status: "success" };
         setUploadProgress([...newProgress]);
-      } catch {
+        successCount++;
+      } catch (error) {
         newProgress[i] = { percent: 100, status: "error" };
         setUploadProgress([...newProgress]);
         toast.error(`Failed to upload: ${songs[i].title}`);
+        console.error("Upload error:", error);
       }
     }
+    
     setUploading(false);
-    toast.success("Bulk upload complete!");
+    
+    // Show appropriate success message based on what happened
+    if (skipCount > 0 && successCount > 0) {
+      toast.success(`Uploaded ${successCount} songs, skipped ${skipCount} previously uploaded songs.`);
+    } else if (skipCount > 0 && successCount === 0) {
+      toast.info(`No new uploads. ${skipCount} songs were already uploaded.`);
+    } else {
+      toast.success(`Successfully uploaded ${successCount} songs!`);
+    }
   };
 
   return (
@@ -185,38 +220,74 @@ const BulkSongUpload = () => {
       {songs.length > 0 && (
         <div className="space-y-6 mb-8">
           {songs.map((song, idx) => (
-            <div key={idx} className="flex flex-col md:flex-row items-center gap-6 bg-neutral-900 rounded-xl p-4 border border-fuchsia-900">
-              {/* Cover Art */}
-              <div className="flex flex-col items-center">
-                {song.cover ? (
-                  <img src={URL.createObjectURL(song.cover)} alt="cover" className="w-20 h-20 rounded object-cover mb-2" />
-                ) : (
-                  <MdMusicNote className="w-20 h-20 text-fuchsia-500 mb-2" />
-                )}
-                <input type="file" accept="image/*" className="hidden" id={`cover-upload-${idx}`} onChange={e => handleCoverChange(idx, e.target.files[0])} />
-                <label htmlFor={`cover-upload-${idx}`} className="text-xs text-fuchsia-400 cursor-pointer hover:underline flex items-center gap-1"><MdImage />Change</label>
+            <div key={idx} className={`flex flex-col bg-neutral-900 rounded-xl p-4 border ${uploadProgress[idx]?.status === "success" ? "border-green-500/50 bg-neutral-900/80" : "border-fuchsia-900"}`}>
+              <div className="flex flex-col md:flex-row items-center gap-6 mb-3">
+                {/* Cover Art */}
+                <div className="flex flex-col items-center">
+                  {song.cover ? (
+                    <img src={URL.createObjectURL(song.cover)} alt="cover" className="w-20 h-20 rounded object-cover mb-2" />
+                  ) : (
+                    <MdMusicNote className="w-20 h-20 text-fuchsia-500 mb-2" />
+                  )}
+                  <input type="file" accept="image/*" className="hidden" id={`cover-upload-${idx}`} onChange={e => handleCoverChange(idx, e.target.files[0])} />
+                  <label htmlFor={`cover-upload-${idx}`} className={`text-xs text-fuchsia-400 cursor-pointer hover:underline flex items-center gap-1 ${uploadProgress[idx]?.status === "success" ? "opacity-50" : ""}`}>
+                    <MdImage />Change
+                  </label>
+                </div>
+                {/* Editable Fields */}
+                <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-white text-sm mb-1">Title</label>
+                    <input 
+                      type="text" 
+                      value={song.title} 
+                      onChange={e => handleSongChange(idx, 'title', e.target.value)} 
+                      className={`bg-neutral-800 text-white border border-fuchsia-700 rounded px-3 py-2 w-full ${uploadProgress[idx]?.status === "success" ? "opacity-70" : ""}`}
+                      disabled={uploadProgress[idx]?.status === "success"} 
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-white text-sm mb-1">Artist</label>
+                    <input 
+                      type="text" 
+                      value={song.artist} 
+                      onChange={e => handleSongChange(idx, 'artist', e.target.value)} 
+                      className={`bg-neutral-800 text-white border border-fuchsia-700 rounded px-3 py-2 w-full ${uploadProgress[idx]?.status === "success" ? "opacity-70" : ""}`}
+                      disabled={uploadProgress[idx]?.status === "success"} 
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-white text-sm mb-1">Album</label>
+                    <input 
+                      type="text" 
+                      value={song.album} 
+                      onChange={e => handleSongChange(idx, 'album', e.target.value)} 
+                      className={`bg-neutral-800 text-white border border-fuchsia-700 rounded px-3 py-2 w-full ${uploadProgress[idx]?.status === "success" ? "opacity-70" : ""}`}
+                      disabled={uploadProgress[idx]?.status === "success"} 
+                    />
+                  </div>
+                </div>
+                {/* Progress Bar */}
+                <div className="w-full md:w-32 flex flex-col items-center">
+                  <div className="w-full bg-neutral-800 rounded-full h-3 mb-1">
+                    <div className={`h-3 rounded-full transition-all duration-500 ${uploadProgress[idx]?.status === 'success' ? 'bg-green-500' : uploadProgress[idx]?.status === 'error' ? 'bg-red-500' : 'bg-fuchsia-500'}`} style={{ width: `${uploadProgress[idx]?.percent || 0}%` }}></div>
+                  </div>
+                  <span className={`text-xs ${uploadProgress[idx]?.status === 'success' ? 'text-green-400' : uploadProgress[idx]?.status === 'error' ? 'text-red-400' : 'text-white'}`}>
+                    {uploadProgress[idx]?.status === 'success' ? 'Uploaded' : uploadProgress[idx]?.status === 'error' ? 'Failed' : `${uploadProgress[idx]?.percent || 0}%`}
+                  </span>
+                </div>
               </div>
-              {/* Editable Fields */}
-              <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-white text-sm mb-1">Title</label>
-                  <input type="text" value={song.title} onChange={e => handleSongChange(idx, 'title', e.target.value)} className="bg-neutral-800 text-white border border-fuchsia-700 rounded px-3 py-2 w-full" />
-                </div>
-                <div>
-                  <label className="block text-white text-sm mb-1">Artist</label>
-                  <input type="text" value={song.artist} onChange={e => handleSongChange(idx, 'artist', e.target.value)} className="bg-neutral-800 text-white border border-fuchsia-700 rounded px-3 py-2 w-full" />
-                </div>
-                <div>
-                  <label className="block text-white text-sm mb-1">Album</label>
-                  <input type="text" value={song.album} onChange={e => handleSongChange(idx, 'album', e.target.value)} className="bg-neutral-800 text-white border border-fuchsia-700 rounded px-3 py-2 w-full" />
-                </div>
-              </div>
-              {/* Progress Bar */}
-              <div className="w-full md:w-32 flex flex-col items-center">
-                <div className="w-full bg-neutral-800 rounded-full h-3 mb-1">
-                  <div className={`h-3 rounded-full transition-all duration-500 ${uploadProgress[idx]?.status === 'success' ? 'bg-green-500' : uploadProgress[idx]?.status === 'error' ? 'bg-red-500' : 'bg-fuchsia-500'}`} style={{ width: `${uploadProgress[idx]?.percent || 0}%` }}></div>
-                </div>
-                <span className="text-xs text-white">{uploadProgress[idx]?.percent || 0}%</span>
+              
+              {/* Lyrics Field - Full Width */}
+              <div className="w-full mt-2">
+                <label className="block text-white text-sm mb-1">Lyrics</label>
+                <textarea 
+                  value={song.lyrics || ''} 
+                  onChange={e => handleSongChange(idx, 'lyrics', e.target.value)} 
+                  className={`bg-neutral-800 text-white border border-fuchsia-700 rounded px-3 py-2 w-full h-24 resize-y ${uploadProgress[idx]?.status === "success" ? "opacity-70" : ""}`}
+                  placeholder="Enter song lyrics here..."
+                  disabled={uploadProgress[idx]?.status === "success"}
+                />
               </div>
             </div>
           ))}
@@ -224,8 +295,14 @@ const BulkSongUpload = () => {
       )}
       {/* Upload Button */}
       {songs.length > 0 && (
-        <button onClick={handleUpload} disabled={uploading} className={`bg-gradient-to-r from-fuchsia-700 to-pink-700 text-white font-semibold px-8 py-3 rounded-xl shadow-lg border border-fuchsia-900/40 hover:scale-105 transition-transform ${uploading ? 'opacity-60 cursor-not-allowed' : ''}`}>
-          {uploading ? 'Uploading...' : 'Upload All'}
+        <button 
+          onClick={handleUpload} 
+          disabled={uploading || songs.every((_song, idx) => uploadProgress[idx]?.status === "success")} 
+          className={`bg-gradient-to-r from-fuchsia-700 to-pink-700 text-white font-semibold px-8 py-3 rounded-xl shadow-lg border border-fuchsia-900/40 hover:scale-105 transition-transform ${uploading || songs.every((_song, idx) => uploadProgress[idx]?.status === "success") ? 'opacity-60 cursor-not-allowed' : ''}`}
+        >
+          {uploading ? 'Uploading...' : 
+           songs.every((_song, idx) => uploadProgress[idx]?.status === "success") ? 'All Songs Uploaded' :
+           songs.some((_song, idx) => uploadProgress[idx]?.status === "success") ? 'Upload Remaining Songs' : 'Upload All Songs'}
         </button>
       )}
     </div>
