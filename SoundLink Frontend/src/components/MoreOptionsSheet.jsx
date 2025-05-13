@@ -255,11 +255,11 @@ const MoreOptionsSheet = ({ isOpen, onClose, trackId }) => {
               {!showPlaylists ? (
                 /* Main menu options */
                 mainMenuItems.map((item, index) => (
-                  <button
-                    key={index}
-                    className="w-full flex items-center px-4 py-3 hover:bg-white/5"
-                    onClick={item.action}
-                  >
+                <button
+                  key={index}
+                  className="w-full flex items-center px-4 py-3 hover:bg-white/5"
+                  onClick={item.action}
+                >
                     <div 
                       className="w-8 h-8 flex items-center justify-center mr-4" 
                       style={{ 
@@ -268,12 +268,12 @@ const MoreOptionsSheet = ({ isOpen, onClose, trackId }) => {
                           : themeColors.text 
                       }}
                     >
-                      {item.icon}
-                    </div>
-                    <span className="text-base" style={{ color: themeColors.text }}>
-                      {item.label}
-                    </span>
-                  </button>
+                    {item.icon}
+                  </div>
+                  <span className="text-base" style={{ color: themeColors.text }}>
+                    {item.label}
+                  </span>
+                </button>
                 ))
               ) : (
                 /* Playlist selection sub-menu */

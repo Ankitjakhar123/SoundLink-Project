@@ -266,22 +266,22 @@ const BulkSongUpload = () => {
           {songs.map((song, idx) => (
             <div key={idx} className={`flex flex-col bg-neutral-900 rounded-xl p-4 border ${uploadProgress[idx]?.status === "success" ? "border-green-500/50 bg-neutral-900/80" : "border-fuchsia-900"}`}>
               <div className="flex flex-col md:flex-row items-center gap-6 mb-3">
-                {/* Cover Art */}
-                <div className="flex flex-col items-center">
-                  {song.cover ? (
-                    <img src={URL.createObjectURL(song.cover)} alt="cover" className="w-20 h-20 rounded object-cover mb-2" />
-                  ) : (
-                    <MdMusicNote className="w-20 h-20 text-fuchsia-500 mb-2" />
-                  )}
-                  <input type="file" accept="image/*" className="hidden" id={`cover-upload-${idx}`} onChange={e => handleCoverChange(idx, e.target.files[0])} />
+              {/* Cover Art */}
+              <div className="flex flex-col items-center">
+                {song.cover ? (
+                  <img src={URL.createObjectURL(song.cover)} alt="cover" className="w-20 h-20 rounded object-cover mb-2" />
+                ) : (
+                  <MdMusicNote className="w-20 h-20 text-fuchsia-500 mb-2" />
+                )}
+                <input type="file" accept="image/*" className="hidden" id={`cover-upload-${idx}`} onChange={e => handleCoverChange(idx, e.target.files[0])} />
                   <label htmlFor={`cover-upload-${idx}`} className={`text-xs text-fuchsia-400 cursor-pointer hover:underline flex items-center gap-1 ${uploadProgress[idx]?.status === "success" ? "opacity-50" : ""}`}>
                     <MdImage />Change
                   </label>
-                </div>
-                {/* Editable Fields */}
-                <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-white text-sm mb-1">Title</label>
+              </div>
+              {/* Editable Fields */}
+              <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-white text-sm mb-1">Title</label>
                     <input 
                       type="text" 
                       value={song.title} 
@@ -289,9 +289,9 @@ const BulkSongUpload = () => {
                       className={`bg-neutral-800 text-white border border-fuchsia-700 rounded px-3 py-2 w-full ${uploadProgress[idx]?.status === "success" ? "opacity-70" : ""}`}
                       disabled={uploadProgress[idx]?.status === "success"} 
                     />
-                  </div>
-                  <div>
-                    <label className="block text-white text-sm mb-1">Artist</label>
+                </div>
+                <div>
+                  <label className="block text-white text-sm mb-1">Artist</label>
                     <input 
                       type="text" 
                       value={song.artist} 
@@ -299,9 +299,9 @@ const BulkSongUpload = () => {
                       className={`bg-neutral-800 text-white border border-fuchsia-700 rounded px-3 py-2 w-full ${uploadProgress[idx]?.status === "success" ? "opacity-70" : ""}`}
                       disabled={uploadProgress[idx]?.status === "success"} 
                     />
-                  </div>
-                  <div>
-                    <label className="block text-white text-sm mb-1">Album</label>
+                </div>
+                <div>
+                  <label className="block text-white text-sm mb-1">Album</label>
                     <input 
                       type="text" 
                       value={song.album} 
@@ -310,12 +310,12 @@ const BulkSongUpload = () => {
                       disabled={uploadProgress[idx]?.status === "success"} 
                     />
                   </div>
+              </div>
+              {/* Progress Bar */}
+              <div className="w-full md:w-32 flex flex-col items-center">
+                <div className="w-full bg-neutral-800 rounded-full h-3 mb-1">
+                  <div className={`h-3 rounded-full transition-all duration-500 ${uploadProgress[idx]?.status === 'success' ? 'bg-green-500' : uploadProgress[idx]?.status === 'error' ? 'bg-red-500' : 'bg-fuchsia-500'}`} style={{ width: `${uploadProgress[idx]?.percent || 0}%` }}></div>
                 </div>
-                {/* Progress Bar */}
-                <div className="w-full md:w-32 flex flex-col items-center">
-                  <div className="w-full bg-neutral-800 rounded-full h-3 mb-1">
-                    <div className={`h-3 rounded-full transition-all duration-500 ${uploadProgress[idx]?.status === 'success' ? 'bg-green-500' : uploadProgress[idx]?.status === 'error' ? 'bg-red-500' : 'bg-fuchsia-500'}`} style={{ width: `${uploadProgress[idx]?.percent || 0}%` }}></div>
-                  </div>
                   <span className={`text-xs ${uploadProgress[idx]?.status === 'success' ? 'text-green-400' : uploadProgress[idx]?.status === 'error' ? 'text-red-400' : 'text-white'}`}>
                     {uploadProgress[idx]?.status === 'success' ? 'Uploaded' : uploadProgress[idx]?.status === 'error' ? 'Failed' : `${uploadProgress[idx]?.percent || 0}%`}
                   </span>

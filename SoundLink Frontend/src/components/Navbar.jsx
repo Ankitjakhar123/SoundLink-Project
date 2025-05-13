@@ -401,17 +401,17 @@ const Navbar = (props) => {
                                         <div className="px-4 py-2 border-b border-neutral-700 flex items-center gap-2">
                                             <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
                                                 {getUserAvatar() ? (
-                                                    <img 
-                                                        src={getUserAvatar()} 
-                                                        alt={user.username || 'User'} 
-                                                        className="w-full h-full object-cover"
-                                                        loading="eager"
-                                                        onError={(e) => {
+                                                <img 
+                                                    src={getUserAvatar()} 
+                                                    alt={user.username || 'User'} 
+                                                    className="w-full h-full object-cover"
+                                                    loading="eager"
+                                                    onError={(e) => {
                                                             e.target.onerror = null; // Prevent infinite error loop
                                                             e.target.style.display = 'none';
                                                             e.target.parentNode.classList.add('bg-fuchsia-600');
-                                                        }}
-                                                    />
+                                                    }}
+                                                />
                                                 ) : (
                                                     <div className="w-full h-full bg-fuchsia-600 flex items-center justify-center text-white font-bold text-sm">
                                                         {user.username ? user.username.charAt(0).toUpperCase() : 'U'}

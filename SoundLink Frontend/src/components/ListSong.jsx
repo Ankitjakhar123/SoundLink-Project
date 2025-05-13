@@ -207,11 +207,11 @@ const ListSong = () => {
           >
             <span className="hidden sm:block">{index + 1}</span>
             <div className="w-14 h-14 rounded-lg overflow-hidden block">
-              <img
-                src={item.image}
+            <img
+              src={item.image}
                 className="w-full h-full object-cover"
-                alt={item.name}
-              />
+              alt={item.name}
+            />
             </div>
             {editId === item._id ? (
               <input
@@ -345,19 +345,19 @@ const ListSong = () => {
                     You can also import/export .lrc files with timestamps.
                   </p>
                 </div>
-                <div className="flex gap-2 justify-end">
-                  <button
-                    className="text-green-400 bg-black border border-green-400 hover:bg-green-900 px-4 py-2 rounded font-semibold transition"
-                    onClick={() => saveEdit(item._id)}
-                  >
-                    Save
-                  </button>
-                  <button
-                    className="text-gray-300 bg-black border border-gray-600 hover:bg-gray-800 px-4 py-2 rounded font-semibold transition"
-                    onClick={cancelEdit}
-                  >
-                    Cancel
-                  </button>
+              <div className="flex gap-2 justify-end">
+                <button
+                  className="text-green-400 bg-black border border-green-400 hover:bg-green-900 px-4 py-2 rounded font-semibold transition"
+                  onClick={() => saveEdit(item._id)}
+                >
+                  Save
+                </button>
+                <button
+                  className="text-gray-300 bg-black border border-gray-600 hover:bg-gray-800 px-4 py-2 rounded font-semibold transition"
+                  onClick={cancelEdit}
+                >
+                  Cancel
+                </button>
                 </div>
               </div>
             ) : (

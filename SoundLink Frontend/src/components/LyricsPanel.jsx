@@ -167,8 +167,8 @@ const LyricsPanel = ({ isOpen, onClose }) => {
                         }}
                       >
                         {line.text || ' '} {/* Empty lines render as space */}
-                      </p>
-                    </div>
+                </p>
+              </div>
                   );
                 })
               ) : (
@@ -179,8 +179,8 @@ const LyricsPanel = ({ isOpen, onClose }) => {
                   </p>
                   <p className="text-sm opacity-70" style={{ color: themeColors.text }}>
                     Lyrics for this song have not been added yet.
-                  </p>
-                </div>
+                </p>
+              </div>
               )}
             </div>
           </div>
