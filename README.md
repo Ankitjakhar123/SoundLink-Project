@@ -1,20 +1,7 @@
 <div align="center">
-  <div style="position: relative; background: linear-gradient(135deg, #FF2C77, #7627EB); border-radius: 24px; padding: 50px 40px 40px; margin-bottom: 30px; box-shadow: 0 15px 35px rgba(0,0,0,0.25); overflow: hidden;">
-    <!-- Decorative wave pattern -->
-    <div style="position: absolute; top: 0; left: 0; right: 0; height: 120px; background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiB2aWV3Qm94PSIwIDAgMTQ0MCA0MDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTAgMzgwIEMgNDAwIDQwMCw4MDAgMTAwLCAxNDQwIDM4MCBMIDE0NDAgMCBMIDAgMCBMIDAgMzgwIFoiIGZpbGw9IndoaXRlIiBvcGFjaXR5PSIwLjEiLz48L3N2Zz4='); background-size: cover;"></div>
-    
-    <!-- Logo with glow effect -->
-    <img src="SoundLink Frontend/public/icons/soundlink-logo.svg" alt="SoundLink Logo" width="400" style="position: relative; filter: drop-shadow(0px 4px 15px rgba(0,0,0,0.3)); margin-bottom: 10px; z-index: 2;">
-    
-    <!-- Enhanced tagline with better visibility -->
-    <div style="position: relative; margin-top: 25px; background: rgba(0,0,0,0.2); padding: 12px 20px; border-radius: 50px; display: inline-block; backdrop-filter: blur(5px); z-index: 2;">
-      <p style="color: #fff; font-size: 18px; margin: 0; text-shadow: 0 2px 4px rgba(0,0,0,0.3); font-weight: bold;">Your music, anywhere, anytime.</p>
-    </div>
-    
-    <!-- Decorative elements -->
-    <div style="position: absolute; bottom: 15px; right: 15px; height: 40px; width: 40px; border-radius: 50%; background: rgba(255,255,255,0.1); z-index: 1;"></div>
-    <div style="position: absolute; top: 25px; left: 25px; height: 25px; width: 25px; border-radius: 50%; background: rgba(255,255,255,0.1); z-index: 1;"></div>
-  </div>
+  <img src="SoundLink Frontend/public/icons/soundlink-logo.svg" alt="SoundLink Logo" width="400">
+  
+  <h3>Your music, anywhere, anytime.</h3>
   
   <p>A modern, responsive music streaming platform that works seamlessly across all your devices.</p>
   
@@ -149,78 +136,54 @@ Want to try without installing? Visit [SoundLink Live Demo](https://ankitsoundli
 ### Architecture Diagram
 
 <div align="center">
-<table style="border-collapse: separate; border-spacing: 0; width: 100%; max-width: 800px; margin: 0 auto; background: linear-gradient(145deg, #181818, #252525); border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); margin-bottom: 30px; overflow: hidden;">
-  <tr>
-    <td style="padding: 30px;">
-      <!-- First row -->
-      <div style="display: flex; justify-content: center; align-items: center; flex-wrap: wrap; margin-bottom: 30px; gap: 10px;">
-        <!-- Frontend -->
-        <div style="background: linear-gradient(145deg, #121212, #1e1e1e); border-radius: 12px; padding: 20px; text-align: center; width: 180px; border-left: 4px solid #FF2C77; box-shadow: 0 5px 15px rgba(255,44,119,0.15);">
-          <div style="background-color: #1A1A1A; border-radius: 100px; width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px auto; border: 2px solid #FF2C77;">
-            <span style="font-size: 30px;">⚛️</span>
-          </div>
-          <h3 style="color: #FF2C77; margin: 0 0 5px 0;">Frontend</h3>
-          <p style="color: #AAA; font-size: 14px; margin: 0;">React, TailwindCSS, Vite</p>
-        </div>
-        
-        <!-- Arrow -->
-        <div style="display: flex; align-items: center; color: #F8B500; font-size: 24px; padding: 0 10px;">⟷</div>
-        
-        <!-- Backend -->
-        <div style="background: linear-gradient(145deg, #121212, #1e1e1e); border-radius: 12px; padding: 20px; text-align: center; width: 180px; border-left: 4px solid #7627EB; box-shadow: 0 5px 15px rgba(118,39,235,0.15);">
-          <div style="background-color: #1A1A1A; border-radius: 100px; width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px auto; border: 2px solid #7627EB;">
-            <span style="font-size: 30px;">🛠️</span>
-          </div>
-          <h3 style="color: #7627EB; margin: 0 0 5px 0;">Backend</h3>
-          <p style="color: #AAA; font-size: 14px; margin: 0;">Express, Node.js</p>
-        </div>
-        
-        <!-- Arrow -->
-        <div style="display: flex; align-items: center; color: #F8B500; font-size: 24px; padding: 0 10px;">⟷</div>
-        
-        <!-- Database -->
-        <div style="background: linear-gradient(145deg, #121212, #1e1e1e); border-radius: 12px; padding: 20px; text-align: center; width: 180px; border-left: 4px solid #FF4E33; box-shadow: 0 5px 15px rgba(255,78,51,0.15);">
-          <div style="background-color: #1A1A1A; border-radius: 100px; width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px auto; border: 2px solid #FF4E33;">
-            <span style="font-size: 30px;">🗃️</span>
-          </div>
-          <h3 style="color: #FF4E33; margin: 0 0 5px 0;">Database</h3>
-          <p style="color: #AAA; font-size: 14px; margin: 0;">MongoDB, Mongoose</p>
-        </div>
-      </div>
-      
-      <!-- Second row -->
-      <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 20px;">
-        <!-- Storage -->
-        <div style="background: linear-gradient(145deg, #121212, #1e1e1e); border-radius: 12px; padding: 15px; text-align: center; width: 150px; border-left: 4px solid #B02EE9; box-shadow: 0 5px 15px rgba(176,46,233,0.15);">
-          <div style="background-color: #1A1A1A; border-radius: 100px; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px auto; border: 2px solid #B02EE9;">
-            <span style="font-size: 24px;">☁️</span>
-          </div>
-          <h4 style="color: #B02EE9; margin: 0 0 5px 0;">File Storage</h4>
-          <p style="color: #AAA; font-size: 12px; margin: 0;">Cloudinary</p>
-        </div>
-        
-        <!-- Auth -->
-        <div style="background: linear-gradient(145deg, #121212, #1e1e1e); border-radius: 12px; padding: 15px; text-align: center; width: 150px; border-left: 4px solid #F8B500; box-shadow: 0 5px 15px rgba(248,181,0,0.15);">
-          <div style="background-color: #1A1A1A; border-radius: 100px; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px auto; border: 2px solid #F8B500;">
-            <span style="font-size: 24px;">🔐</span>
-          </div>
-          <h4 style="color: #F8B500; margin: 0 0 5px 0;">Authentication</h4>
-          <p style="color: #AAA; font-size: 12px; margin: 0;">JWT</p>
-        </div>
-        
-        <!-- PWA -->
-        <div style="background: linear-gradient(145deg, #121212, #1e1e1e); border-radius: 12px; padding: 15px; text-align: center; width: 150px; border-left: 4px solid #FF2C77; box-shadow: 0 5px 15px rgba(255,44,119,0.15);">
-          <div style="background-color: #1A1A1A; border-radius: 100px; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px auto; border: 2px solid #FF2C77;">
-            <span style="font-size: 24px;">📱</span>
-          </div>
-          <h4 style="color: #FF2C77; margin: 0 0 5px 0;">Progressive Web App</h4>
-          <p style="color: #AAA; font-size: 12px; margin: 0;">PWA</p>
-        </div>
-      </div>
-    </td>
-  </tr>
-</table>
-<p><em>SoundLink's premium architecture - React frontend, Express backend, and MongoDB database</em></p>
+  <table>
+    <tr>
+      <td align="center">
+        <table>
+          <tr>
+            <td align="center">
+              <h3>Frontend</h3>
+              <p>⚛️</p>
+              <p>React, TailwindCSS, Vite</p>
+            </td>
+            <td align="center">⟷</td>
+            <td align="center">
+              <h3>Backend</h3>
+              <p>🛠️</p>
+              <p>Express, Node.js</p>
+            </td>
+            <td align="center">⟷</td>
+            <td align="center">
+              <h3>Database</h3>
+              <p>🗃️</p>
+              <p>MongoDB, Mongoose</p>
+            </td>
+          </tr>
+        </table>
+        <br>
+        <table>
+          <tr>
+            <td align="center">
+              <h4>File Storage</h4>
+              <p>☁️</p>
+              <p>Cloudinary</p>
+            </td>
+            <td align="center">
+              <h4>Authentication</h4>
+              <p>🔐</p>
+              <p>JWT</p>
+            </td>
+            <td align="center">
+              <h4>Progressive Web App</h4>
+              <p>📱</p>
+              <p>PWA</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+  <p><em>SoundLink's premium architecture - React frontend, Express backend, and MongoDB database</em></p>
 </div>
 
 ## ✨ Key Features
