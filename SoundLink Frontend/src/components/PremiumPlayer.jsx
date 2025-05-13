@@ -660,10 +660,10 @@ const PremiumPlayer = () => {
             <div className="relative z-10 min-h-full pb-20">
               {/* Top navigation row - sticky at top */}
               <div className="sticky top-0 flex justify-between items-center p-5 mb-2 z-20 backdrop-blur-sm bg-black/30">
-                <button 
+              <button 
                   className="w-8 h-8 flex items-center justify-center"
                   style={{ color: themeColors.text }}
-                  onClick={() => setShowExtraControls(false)}
+                onClick={() => setShowExtraControls(false)}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M15 18l-6-6 6-6" />
@@ -683,20 +683,20 @@ const PremiumPlayer = () => {
                   >
                     <MdOutlineLyrics size={20} />
                   </button>
-                  <button 
-                    className="w-8 h-8 flex items-center justify-center"
-                    style={{ color: themeColors.text }}
+                <button 
+                  className="w-8 h-8 flex items-center justify-center"
+                  style={{ color: themeColors.text }}
                     onClick={(e) => toggleOptionsMenu(e)}
                     title="More Options"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="12" cy="12" r="1" />
-                      <circle cx="19" cy="12" r="1" />
-                      <circle cx="5" cy="12" r="1" />
-                    </svg>
-                  </button>
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="1" />
+                    <circle cx="19" cy="12" r="1" />
+                    <circle cx="5" cy="12" r="1" />
+                  </svg>
+              </button>
                 </div>
-              </div>
+            </div>
             
               {/* Album art */}
               <div className="px-5">
@@ -809,7 +809,7 @@ const PremiumPlayer = () => {
                   <span 
                     className="text-xs px-2 py-1 rounded-full cursor-pointer"
                     style={{ color: themeColors.primary }}
-                    onClick={toggleLyrics}
+                  onClick={toggleLyrics}
                   >
                     Full screen
                   </span>
@@ -825,7 +825,7 @@ const PremiumPlayer = () => {
                   ></div>
                   
                   <div className="w-full text-center">
-                    {track.lyrics ? (
+                  {track.lyrics ? (
                       // If track has lyrics, display them with timed highlighting
                       (() => {
                         // Parse the lyrics to find any time-synced lines
@@ -916,30 +916,30 @@ const PremiumPlayer = () => {
                           // For non-timed lyrics, display normally
                           return filteredLines.slice(0, 6).map((line, index) => (
                             <p key={index} className="py-1 transition-colors duration-300" style={{ color: `${themeColors.text}${index % 2 === 0 ? 'ff' : '99'}` }}>
-                              {line}
-                            </p>
+                        {line}
+                      </p>
                           ));
                         }
                       })()
-                    ) : (
-                      // Default lyrics when not available
+                  ) : (
+                    // Default lyrics when not available
                       <div className="py-4 space-y-2">
-                        <p style={{ color: `${themeColors.text}99` }}>
-                          [Verse 1]<br/>
-                          <span style={{ color: themeColors.text }}>{track.name} by {getArtistName(track)}</span><br/>
-                          This is where the song lyrics will appear<br/>
-                          Line by line with proper formatting<br/>
-                          For the current song that's playing
-                        </p>
-                        <p style={{ color: `${themeColors.text}99` }}>
-                          [Chorus]<br/>
-                          <span style={{ color: themeColors.text }}>The chorus of the song</span><br/>
-                          Will be displayed here<br/>
-                          With each line properly aligned<br/>
-                          For easy readability
-                        </p>
+                      <p style={{ color: `${themeColors.text}99` }}>
+                        [Verse 1]<br/>
+                        <span style={{ color: themeColors.text }}>{track.name} by {getArtistName(track)}</span><br/>
+                        This is where the song lyrics will appear<br/>
+                        Line by line with proper formatting<br/>
+                        For the current song that's playing
+                      </p>
+                      <p style={{ color: `${themeColors.text}99` }}>
+                        [Chorus]<br/>
+                        <span style={{ color: themeColors.text }}>The chorus of the song</span><br/>
+                        Will be displayed here<br/>
+                        With each line properly aligned<br/>
+                        For easy readability
+                      </p>
                       </div>
-                    )}
+                  )}
                   </div>
                 </div>
               </div>
@@ -1245,56 +1245,56 @@ const PremiumPlayer = () => {
           
           {/* Player controls and info */}
           <div className="flex items-center justify-between">
-            {/* Song Info - clickable on mobile to show full player */}
-            <div 
+          {/* Song Info - clickable on mobile to show full player */}
+          <div 
               className={`flex items-center gap-3 ${isSmallScreen ? "flex-1" : "w-[20%]"}`}
-              onClick={() => isSmallScreen && setShowExtraControls(true)}
-            >
-              <div className="relative">
-                <img
-                  src={track.image}
-                  alt={track.name}
-                  className="w-10 h-10 rounded object-cover border"
-                  style={{ borderColor: `${themeColors.text}30` }}
-                />
-                {buffering && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded">
-                    <div className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin"
-                      style={{ borderColor: themeColors.primary, borderTopColor: 'transparent' }}></div>
-                  </div>
-                )}
-              </div>
-              <div className="flex flex-col min-w-0">
-                <span className="text-sm font-bold truncate max-w-[120px]" style={{ color: themeColors.text }}>{track.name}</span>
-                <span className="text-xs truncate max-w-[120px]" style={{ color: `${themeColors.text}99` }}>{getArtistName(track)}</span>
-              </div>
-              {isSmallScreen && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleFavorite(track._id);
-                  }}
-                  className="ml-auto"
-                  style={isFavorite(track._id) ? { color: themeColors.accent } : { color: `${themeColors.text}99` }}
-                >
-                  <FaHeart />
-                </button>
+            onClick={() => isSmallScreen && setShowExtraControls(true)}
+          >
+            <div className="relative">
+              <img
+                src={track.image}
+                alt={track.name}
+                className="w-10 h-10 rounded object-cover border"
+                style={{ borderColor: `${themeColors.text}30` }}
+              />
+              {buffering && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded">
+                  <div className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin"
+                    style={{ borderColor: themeColors.primary, borderTopColor: 'transparent' }}></div>
+                </div>
               )}
             </div>
+            <div className="flex flex-col min-w-0">
+              <span className="text-sm font-bold truncate max-w-[120px]" style={{ color: themeColors.text }}>{track.name}</span>
+              <span className="text-xs truncate max-w-[120px]" style={{ color: `${themeColors.text}99` }}>{getArtistName(track)}</span>
+            </div>
+            {isSmallScreen && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleFavorite(track._id);
+                }}
+                className="ml-auto"
+                style={isFavorite(track._id) ? { color: themeColors.accent } : { color: `${themeColors.text}99` }}
+              >
+                <FaHeart />
+              </button>
+            )}
+          </div>
 
-            {/* Controls + Progress - hidden on small screens when extended view is not shown */}
-            {(!isSmallScreen || !showExtraControls) && (
+          {/* Controls + Progress - hidden on small screens when extended view is not shown */}
+          {(!isSmallScreen || !showExtraControls) && (
               <div className={`flex flex-col items-center ${isSmallScreen ? "hidden" : "w-[45%] max-w-md mx-auto"}`}>
                 <div className="flex items-center justify-center gap-4 mb-1">
                   {/* Playback modifier controls */}
-                  <button
-                    onClick={() => { shuffle(); handleShuffle(); }}
-                    className="text-base transition"
-                    style={shuffleActive ? { color: themeColors.primary } : { color: `${themeColors.text}99` }}
-                    title="Shuffle"
-                  >
+              <button
+                onClick={() => { shuffle(); handleShuffle(); }}
+                className="text-base transition"
+                style={shuffleActive ? { color: themeColors.primary } : { color: `${themeColors.text}99` }}
+                title="Shuffle"
+              >
                     <MdShuffle size={20} />
-                  </button>
+              </button>
                   <button
                     onClick={toggleLoop}
                     className="text-base transition"
@@ -1305,111 +1305,111 @@ const PremiumPlayer = () => {
                   </button>
                   
                   {/* Main playback controls */}
-                  <button 
-                    onClick={Previous} 
-                    className="text-base transition" 
-                    style={{ color: `${themeColors.text}99` }}
-                    title="Previous"
-                  >
+              <button 
+                onClick={Previous} 
+                className="text-base transition" 
+                style={{ color: `${themeColors.text}99` }}
+                title="Previous"
+              >
                     <FaStepBackward size={18} />
-                  </button>
-                  <button
-                    onClick={handlePlayPause}
+              </button>
+              <button
+                  onClick={handlePlayPause}
                     className="rounded-full p-3 shadow-lg hover:scale-110 transition-transform border-2 text-lg"
-                    style={{ 
-                      background: `linear-gradient(135deg, ${themeColors.primary}, ${themeColors.accent || themeColors.primary})`,
-                      borderColor: `${themeColors.primary}80`,
-                      color: themeColors.text
-                    }}
-                    title={playStatus ? "Pause" : "Play"}
-                  >
+                style={{ 
+                  background: `linear-gradient(135deg, ${themeColors.primary}, ${themeColors.accent || themeColors.primary})`,
+                  borderColor: `${themeColors.primary}80`,
+                  color: themeColors.text
+                }}
+                title={playStatus ? "Pause" : "Play"}
+              >
                     {playStatus ? <FaPause className="text-xl" /> : <FaPlay className="relative ml-0.5" size={20} />}
-                  </button>
-                  <button 
-                    onClick={Next} 
-                    className="text-base transition" 
-                    style={{ color: `${themeColors.text}99` }}
-                    title="Next"
-                  >
+              </button>
+              <button 
+                onClick={Next} 
+                className="text-base transition" 
+                style={{ color: `${themeColors.text}99` }}
+                title="Next"
+              >
                     <FaStepForward size={18} />
-                  </button>
-                </div>
-                {/* Progress Bar */}
-                <div className="flex items-center gap-1 w-full">
+              </button>
+            </div>
+            {/* Progress Bar */}
+            <div className="flex items-center gap-1 w-full">
                   <span className="text-xs min-w-[28px]" style={{ color: `${themeColors.text}99` }}>
-                    {formatTime(time.currentTime.minute, time.currentTime.second)}
-                  </span>
+                {formatTime(time.currentTime.minute, time.currentTime.second)}
+              </span>
                   <div className="relative w-full h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: `${themeColors.text}30` }}>
-                    {/* Buffering Progress Indicator */}
-                    <div 
-                      className="absolute top-0 left-0 h-full rounded-full"
-                      style={{ width: `${loadingProgress}%`, backgroundColor: `${themeColors.text}50` }}
-                      title="Buffered amount"
-                    ></div>
-                    {/* Playback Progress */}
-                    <input
-                      type="range"
-                      min={0}
-                      max={durationSec || 1}
-                      step={0.1}
-                      value={currentSec}
-                      onChange={handleSeek}
-                      onTouchStart={handleProgressTouchStart}
-                      onTouchEnd={handleProgressTouchEnd}
+                {/* Buffering Progress Indicator */}
+                <div 
+                  className="absolute top-0 left-0 h-full rounded-full"
+                  style={{ width: `${loadingProgress}%`, backgroundColor: `${themeColors.text}50` }}
+                  title="Buffered amount"
+                ></div>
+                {/* Playback Progress */}
+                <input
+                  type="range"
+                  min={0}
+                  max={durationSec || 1}
+                  step={0.1}
+                  value={currentSec}
+                  onChange={handleSeek}
+                  onTouchStart={handleProgressTouchStart}
+                  onTouchEnd={handleProgressTouchEnd}
                       className="w-full absolute top-0 left-0 h-1.5 cursor-pointer opacity-70 z-10"
-                      style={{ accentColor: themeColors.accent }}
-                    />
-                    {buffering && (
-                      <div className="absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center">
-                        <div className="w-4 h-4 rounded-full animate-pulse" style={{ backgroundColor: themeColors.accent }}></div>
-                      </div>
-                    )}
+                  style={{ accentColor: themeColors.accent }}
+                />
+                {buffering && (
+                  <div className="absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center">
+                    <div className="w-4 h-4 rounded-full animate-pulse" style={{ backgroundColor: themeColors.accent }}></div>
                   </div>
+                )}
+              </div>
                   <span className="text-xs min-w-[28px]" style={{ color: `${themeColors.text}99` }}>
-                    {formatTime(time.totalTime.minute, time.totalTime.second)}
-                  </span>
-                </div>
-              </div>
-            )}
+                {formatTime(time.totalTime.minute, time.totalTime.second)}
+              </span>
+            </div>
+          </div>
+          )}
 
-            {/* Mobile controls - when not in expanded view */}
-            {isSmallScreen && !showExtraControls && (
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handlePlayPause();
-                  }}
-                  className="rounded-full p-2 shadow-md flex items-center justify-center w-8 h-8"
-                  style={{ background: `linear-gradient(135deg, ${themeColors.primary}, ${themeColors.accent})` }}
-                >
-                  {playStatus ? <FaPause className="text-sm" /> : <FaPlay className="text-sm ml-0.5" />}
-                </button>
-                <button 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    Next();
-                  }}
-                  className="text-sm flex items-center justify-center w-6 h-6"
-                  style={{ color: `${themeColors.text}99` }}
-                >
-                  <FaStepForward />
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleMute();
-                  }}
-                  className="text-sm flex items-center justify-center w-6 h-6"
-                  style={{ color: `${themeColors.text}99` }}
-                >
-                  {isMuted || volume === 0 ? <FaVolumeMute /> : <FaVolumeUp />}
-                </button>
-              </div>
-            )}
+          {/* Mobile controls - when not in expanded view */}
+          {isSmallScreen && !showExtraControls && (
+            <div className="flex items-center gap-3">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handlePlayPause();
+                }}
+                className="rounded-full p-2 shadow-md flex items-center justify-center w-8 h-8"
+                style={{ background: `linear-gradient(135deg, ${themeColors.primary}, ${themeColors.accent})` }}
+              >
+                {playStatus ? <FaPause className="text-sm" /> : <FaPlay className="text-sm ml-0.5" />}
+              </button>
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  Next();
+                }}
+                className="text-sm flex items-center justify-center w-6 h-6"
+                style={{ color: `${themeColors.text}99` }}
+              >
+                <FaStepForward />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleMute();
+                }}
+                className="text-sm flex items-center justify-center w-6 h-6"
+                style={{ color: `${themeColors.text}99` }}
+              >
+                {isMuted || volume === 0 ? <FaVolumeMute /> : <FaVolumeUp />}
+              </button>
+            </div>
+          )}
 
-            {/* Volume + Extras - hidden on mobile */}
-            {!isSmallScreen && (
+          {/* Volume + Extras - hidden on mobile */}
+          {!isSmallScreen && (
               <div className="flex items-center w-[30%] justify-end">
                 <button 
                   onClick={toggleInlineLyrics}
@@ -1479,17 +1479,17 @@ const PremiumPlayer = () => {
                 
                 {/* Separator */}
                 <div className="h-5 w-[1px] bg-white/20 mx-3"></div>
-                
+              
                 {/* More options button */}
-                <button 
+                  <button 
                   onClick={(e) => toggleOptionsMenu(e)}
                   className="text-base transition mr-3"
-                  style={{ color: `${themeColors.text}99` }}
-                  title="More options"
-                >
+                    style={{ color: `${themeColors.text}99` }}
+                    title="More options"
+                  >
                   <MdMoreVert size={20} />
-                </button>
-                
+                  </button>
+                  
                 {/* Buffering settings button - separate from song options */}
                 <button 
                   onClick={(e) => toggleBufferingMenu(e)}
@@ -1542,62 +1542,62 @@ const PremiumPlayer = () => {
         {/* Buffering menu dropdown */}
         {showBufferingMenu && (
           <div 
-            className="absolute bottom-full right-0 mb-2 rounded-xl shadow-xl p-3 w-48 z-50"
-            style={{ 
-              backgroundColor: themeColors.secondary, 
-              borderColor: `${themeColors.primary}40`,
-              borderWidth: '1px'
-            }}
-            ref={moreMenuRef}
-          >
-            <h4 className="text-xs font-bold mb-2 pb-1" 
-              style={{ 
-                color: themeColors.text,
-                borderBottom: `1px solid ${themeColors.text}30`
-              }}>
-              Buffer Mode
-            </h4>
-            <div className="flex flex-col gap-1">
-              <button 
-                onClick={() => handleBufferingChange('auto')}
-                className="flex items-center justify-between px-3 py-1.5 rounded-lg text-sm"
-                style={bufferingStrategy === 'auto' 
-                  ? { backgroundColor: themeColors.primary, color: themeColors.text } 
-                  : { color: themeColors.text, backgroundColor: `${themeColors.text}15` }}
-              >
-                <span>Auto</span>
-                {bufferingStrategy === 'auto' && (
-                  <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
-                )}
-              </button>
-              <button 
-                onClick={() => handleBufferingChange('aggressive')}
-                className="flex items-center justify-between px-3 py-1.5 rounded-lg text-sm"
-                style={bufferingStrategy === 'aggressive' 
-                  ? { backgroundColor: themeColors.primary, color: themeColors.text } 
-                  : { color: themeColors.text, backgroundColor: `${themeColors.text}15` }}
-              >
-                <span>High Quality</span>
-                {bufferingStrategy === 'aggressive' && (
-                  <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
-                )}
-              </button>
-              <button 
-                onClick={() => handleBufferingChange('conservative')}
-                className="flex items-center justify-between px-3 py-1.5 rounded-lg text-sm"
-                style={bufferingStrategy === 'conservative' 
-                  ? { backgroundColor: themeColors.primary, color: themeColors.text } 
-                  : { color: themeColors.text, backgroundColor: `${themeColors.text}15` }}
-              >
-                <span>Data Saver</span>
-                {bufferingStrategy === 'conservative' && (
-                  <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
-                )}
-              </button>
+                      className="absolute bottom-full right-0 mb-2 rounded-xl shadow-xl p-3 w-48 z-50"
+                      style={{ 
+                        backgroundColor: themeColors.secondary, 
+                        borderColor: `${themeColors.primary}40`,
+                        borderWidth: '1px'
+                      }}
+                      ref={moreMenuRef}
+                    >
+                      <h4 className="text-xs font-bold mb-2 pb-1" 
+                        style={{ 
+                          color: themeColors.text,
+                          borderBottom: `1px solid ${themeColors.text}30`
+                        }}>
+                        Buffer Mode
+                      </h4>
+                      <div className="flex flex-col gap-1">
+                        <button 
+                          onClick={() => handleBufferingChange('auto')}
+                          className="flex items-center justify-between px-3 py-1.5 rounded-lg text-sm"
+                          style={bufferingStrategy === 'auto' 
+                            ? { backgroundColor: themeColors.primary, color: themeColors.text } 
+                            : { color: themeColors.text, backgroundColor: `${themeColors.text}15` }}
+                        >
+                          <span>Auto</span>
+                          {bufferingStrategy === 'auto' && (
+                            <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
+                          )}
+                        </button>
+                        <button 
+                          onClick={() => handleBufferingChange('aggressive')}
+                          className="flex items-center justify-between px-3 py-1.5 rounded-lg text-sm"
+                          style={bufferingStrategy === 'aggressive' 
+                            ? { backgroundColor: themeColors.primary, color: themeColors.text } 
+                            : { color: themeColors.text, backgroundColor: `${themeColors.text}15` }}
+                        >
+                          <span>High Quality</span>
+                          {bufferingStrategy === 'aggressive' && (
+                            <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
+                          )}
+                        </button>
+                        <button 
+                          onClick={() => handleBufferingChange('conservative')}
+                          className="flex items-center justify-between px-3 py-1.5 rounded-lg text-sm"
+                          style={bufferingStrategy === 'conservative' 
+                            ? { backgroundColor: themeColors.primary, color: themeColors.text } 
+                            : { color: themeColors.text, backgroundColor: `${themeColors.text}15` }}
+                        >
+                          <span>Data Saver</span>
+                          {bufferingStrategy === 'conservative' && (
+                            <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
+                          )}
+                        </button>
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
     </AnimatePresence>
   );
 };
@@ -1685,7 +1685,7 @@ const InlineLyricsDisplay = ({ track, currentTime, themeColors }) => {
       <div 
         className="max-w-xl mx-auto overflow-hidden text-center h-16"
         ref={lyricsContainerRef}
-        style={{
+            style={{
           maskImage: 'linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%)',
           WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%)'
         }}
@@ -1722,8 +1722,8 @@ const InlineLyricsDisplay = ({ track, currentTime, themeColors }) => {
             <p className="text-sm opacity-70" style={{ color: themeColors.text }}>
               No synced lyrics available
             </p>
-          )}
-        </div>
+        )}
+      </div>
       </div>
     </motion.div>
   );
