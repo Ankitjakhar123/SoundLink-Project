@@ -1,7 +1,8 @@
 /* SoundLink custom theme overrides */
 :root {
+  /* Default theme colors */
   --soundlink-primary: #a855f7;    /* Purple */
-  --soundlink-primary-dark: #9333ea; 
+  --soundlink-primary-dark: #9333ea;
   --soundlink-primary-hover: #c084fc;
   --soundlink-background: #121212;  /* Dark background */
   --soundlink-surface: #1e1e1e;    /* Slightly lighter surface */
@@ -9,42 +10,113 @@
   --soundlink-text: #ffffff;
   --soundlink-text-secondary: #a0a0a0;
   --soundlink-highlight: #c084fc;  /* Lighter purple for highlights */
+  --soundlink-secondary: #121212;
+  --soundlink-accent: #ec4899;
+  
+  /* Dynamic theme colors (set by PlayerContext) */
+  --theme-primary: var(--soundlink-primary);
+  --theme-secondary: var(--soundlink-secondary);
+  --theme-text: var(--soundlink-text);
+  --theme-accent: var(--soundlink-accent);
 }
 
 /* Apply the theme to buttons */
-.btn-primary, 
-.bg-cyan-400, 
-.bg-cyan-500, 
-.bg-cyan-600,
-.bg-cyan-700,
-.bg-cyan-800,
-.bg-cyan-900 {
-  background-color: var(--soundlink-primary) !important;
+.btn-primary,
+.button-primary,
+button[type="submit"]:not(.custom-button),
+.primary-button {
+  background-color: var(--theme-primary) !important;
   color: white !important;
+  transition: background-color 0.2s ease;
 }
 
 .btn-primary:hover,
-.hover\:bg-cyan-400:hover,
-.hover\:bg-cyan-500:hover,
-.hover\:bg-cyan-600:hover,
-.hover\:bg-cyan-700:hover,
-.hover\:bg-cyan-800:hover,
-.hover\:bg-cyan-900:hover {
-  background-color: var(--soundlink-primary-hover) !important;
+.button-primary:hover,
+button[type="submit"]:not(.custom-button):hover,
+.primary-button:hover {
+  background-color: var(--theme-primary-hover) !important;
 }
 
 /* Apply theme to text */
-.text-cyan-400,
-.text-cyan-500,
-.text-cyan-600 {
-  color: var(--soundlink-primary) !important;
+.text-primary,
+.primary-text {
+  color: var(--theme-primary) !important;
 }
 
 /* Apply theme to borders */
-.border-cyan-500,
-.border-cyan-600,
-.border-cyan-700 {
-  border-color: var(--soundlink-primary) !important;
+.border-primary,
+.primary-border,
+input:focus:not(.custom-input) {
+  border-color: var(--theme-primary) !important;
+}
+
+/* Apply theme to form controls */
+.form-control:focus,
+input[type="text"]:focus:not(.custom-input),
+input[type="email"]:focus:not(.custom-input),
+input[type="password"]:focus:not(.custom-input) {
+  border-color: var(--theme-primary) !important;
+  box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.2) !important;
+}
+
+/* Custom spinner */
+.custom-spinner {
+  border-color: var(--theme-primary) !important;
+  border-top-color: transparent !important;
+}
+
+/* Custom backgrounds */
+.bg-primary-light {
+  background-color: rgba(168, 85, 247, 0.2) !important;
+}
+
+/* Link colors */
+a:not(.custom-link) {
+  color: var(--theme-primary) !important;
+}
+
+/* Hover states */
+.hover-primary:hover {
+  color: #c084fc !important;
+}
+
+/* Custom player theming */
+.player-container .progress-bar {
+  background-color: var(--theme-accent) !important;
+}
+
+.player-container .play-button {
+  background: linear-gradient(135deg, var(--theme-primary), var(--theme-accent)) !important;
+}
+
+.player-container .active-control {
+  color: var(--theme-accent) !important;
+}
+
+/* Adjustments for mobile */
+@media (max-width: 768px) {
+  .mobile-player-overlay {
+    background: linear-gradient(135deg, var(--theme-primary)88, var(--theme-secondary)ee) !important;
+  }
+}
+
+/* Custom scrollbar with theme color */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #222;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--theme-primary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--theme-accent);
 }
 
 /* Update progress bars */

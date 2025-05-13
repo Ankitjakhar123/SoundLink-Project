@@ -1,6 +1,7 @@
 import React, { useContext, useState, useEffect } from "react";
 import Sidebar from "./components/Sidebar";
 import PremiumPlayer from "./components/PremiumPlayer";
+import BottomNavigation from "./components/BottomNavigation";
 import { PlayerContext } from "./context/PlayerContext";
 import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 import DisplayHome from "./components/DisplayHome";
@@ -72,8 +73,20 @@ const App = () => {
     if ('mediaSession' in navigator && track) {
       navigator.mediaSession.metadata = new MediaMetadata({
         title: track.name,
-        artist: track.artist || 'Unknown Artist',
-        album: track.album || 'Unknown Album',
+        artist: track.singer || 
+               track.artist || 
+               track.artistName || 
+               (track.metadata && track.metadata.artist) || 
+               (track.meta && track.meta.artist) ||
+               (track.tags && track.tags.artist) ||
+               (track.createdBy && track.createdBy.name) ||
+               'Unknown Artist',
+        album: track.albumName || 
+               track.album || 
+               (track.metadata && track.metadata.album) || 
+               (track.meta && track.meta.album) ||
+               (track.tags && track.tags.album) ||
+               'Unknown Album',
         artwork: [
           { src: track.image || '/icons/soundlink-icon.svg?v=2', sizes: '512x512', type: 'image/png' }
         ]
@@ -185,6 +198,10 @@ const App = () => {
         ) : (
           <div className="text-white p-4">Please select a track to play.</div>
         )}
+      </div>
+      {/* Add bottom navigation for mobile screens */}
+      <div className="md:hidden">
+        <BottomNavigation />
       </div>
     </div>
   );

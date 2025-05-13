@@ -1,9 +1,14 @@
 import React, { useContext, useState, useEffect, useRef } from "react";
 import { PlayerContext } from "../context/PlayerContext";
-import { AnimatePresence } from "framer-motion";
+// eslint-disable-next-line no-unused-vars
+import { AnimatePresence, motion } from "framer-motion";
 import { FaPlay, FaPause, FaStepForward, FaStepBackward, FaRandom, FaRedo, FaVolumeUp, FaVolumeMute, FaHeart } from "react-icons/fa";
-import { MdQueueMusic, MdDevices, MdShuffle, MdRepeat, MdOutlineLyrics } from "react-icons/md";
+import { MdQueueMusic, MdDevices, MdShuffle, MdRepeat, MdOutlineLyrics, MdMoreVert } from "react-icons/md";
 import QueueComponent from "./QueueComponent";
+import LyricsPanel from "./LyricsPanel";
+import ArtistExplorer from "./ArtistExplorer";
+import CreditsSection from "./CreditsSection";
+import MoreOptionsSheet from "./MoreOptionsSheet";
 
 const formatTime = (min, sec) => `${min}:${sec < 10 ? "0" : ""}${sec}`;
 
@@ -29,6 +34,10 @@ const PremiumPlayer = () => {
     loadingProgress,
     setBufferingStrategy,
     bufferingStrategy,
+    themeColors,
+    songsData,
+    getArtistName,
+    getAlbumName,
   } = useContext(PlayerContext);
   
   const [volume, setVolume] = useState(0.7);
@@ -38,15 +47,61 @@ const PremiumPlayer = () => {
   const [showQueue, setShowQueue] = useState(false);
   const [showLyrics, setShowLyrics] = useState(false);
   const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth < 768);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
   
   const playerRef = useRef(null);
   const progressBarRef = useRef(null);
+  // eslint-disable-next-line no-unused-vars
   const volumeControlRef = useRef(null);
+  const moreMenuRef = useRef(null);
+
+  // Helper function to check if two tracks have the same artist
+  const isSameArtist = (track1, track2) => {
+    if (!track1 || !track2) return false;
+    
+    const artist1 = getArtistName(track1).toLowerCase();
+    const artist2 = getArtistName(track2).toLowerCase();
+    
+    return artist1 === artist2 || 
+           artist1.includes(artist2) || 
+           artist2.includes(artist1);
+  };
+  
+  // Helper function to check if two tracks are from the same album
+  const isSameAlbum = (track1, track2) => {
+    if (!track1 || !track2) return false;
+    
+    const album1 = getAlbumName(track1).toLowerCase();
+    const album2 = getAlbumName(track2).toLowerCase();
+    
+    return album1 === album2 || 
+           album1.includes(album2) || 
+           album2.includes(album1);
+  };
 
   // Add player height to document for styling
   useEffect(() => {
     // If track exists, set CSS variables for the padding
     if (track) {
+      // More detailed logging to examine the structure
+      console.log("===== TRACK OBJECT STRUCTURE =====");
+      console.log("Track ID:", track._id);
+      console.log("Track Name:", track.name);
+      console.log("Artist fields:", {
+        artist: track.artist,
+        artistName: track.artistName,
+        singer: track.singer,
+        uploadedBy: track.uploadedBy,
+        createdBy: track.createdBy,
+      });
+      console.log("Album fields:", {
+        album: track.album,
+        albumName: track.albumName,
+      });
+      console.log("All track properties:", Object.keys(track));
+      console.log("Track full object:", track);
+      console.log("==================================");
+      
       // Set a CSS variable for the player height
       const playerHeight = isSmallScreen ? '50px' : hidePlayer ? '0' : '60px';
       const navHeight = isSmallScreen ? '50px' : '0'; // Navigation bar height on mobile
@@ -332,9 +387,24 @@ const PremiumPlayer = () => {
     };
   }, []);
 
+  // Close more menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (moreMenuRef.current && !moreMenuRef.current.contains(event.target)) {
+        setShowMoreMenu(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   // Handle buffering strategy change
   const handleBufferingChange = (strategy) => {
     setBufferingStrategy(strategy);
+    setShowMoreMenu(false); // Close menu after selection
     // Save preference to localStorage
     localStorage.setItem('bufferingStrategy', strategy);
   };
@@ -346,6 +416,19 @@ const PremiumPlayer = () => {
       setBufferingStrategy(savedStrategy);
     }
   }, [setBufferingStrategy]);
+
+  // Toggle more menu
+  const toggleMoreMenu = (e) => {
+    if (e) e.stopPropagation();
+    setShowMoreMenu(prev => !prev);
+  };
+
+  // Generate gradient style based on theme colors
+  // eslint-disable-next-line no-unused-vars
+  const gradientStyle = {
+    background: `linear-gradient(135deg, ${themeColors.primary}88, ${themeColors.secondary}ee)`,
+    color: themeColors.text
+  };
 
   // If there's no track to play, don't render anything
   if (!track) return null;
@@ -359,22 +442,77 @@ const PremiumPlayer = () => {
       >
         {/* Mobile Player (full controls) */}
         {isSmallScreen && showExtraControls && !hidePlayer && (
-          <div className="fixed inset-0 bottom-[50px] bg-black/95 flex flex-col p-4 z-40 mobile-player-overlay">
-            {/* Close button */}
-            <div className="flex justify-between items-center mb-6">
-              <div className="w-8"></div> {/* Spacer */}
-              <h3 className="font-bold text-white text-lg">Now Playing</h3>
+          <div 
+            className="fixed inset-0 bottom-[50px] z-40 mobile-player-overlay overflow-y-auto"
+            style={{ 
+              color: themeColors.text,
+            }}
+          >
+            {/* Album art background with blur - fixed position */}
+            <div 
+              className="fixed inset-0 z-0 bg-cover bg-center" 
+              style={{ 
+                backgroundImage: `url(${track.image})`,
+                filter: 'blur(60px) brightness(0.5)',
+                transform: 'scale(1.2)', // Prevent blur edges
+              }}
+            ></div>
+            
+            {/* Color overlay with gradient from album colors - fixed position */}
+            <div 
+              className="fixed inset-0 z-0 opacity-90"
+              style={{ 
+                background: `linear-gradient(167deg, ${themeColors.primary}ee 0%, ${themeColors.secondary} 80%, ${themeColors.secondary} 100%)`,
+                mixBlendMode: 'color',
+              }}
+            ></div>
+            
+            {/* Dark overlay with gradient - fixed position */}
+            <div className="fixed inset-0 bg-gradient-to-b from-black/70 via-black/40 to-black/80 z-0"></div>
+            
+            {/* Additional color boost at top - fixed position */}
+            <div 
+              className="fixed top-0 left-0 right-0 h-32 z-0"
+              style={{ 
+                background: `linear-gradient(to bottom, ${themeColors.primary}80 0%, transparent 100%)`,
+                opacity: 0.7,
+              }}
+            ></div>
+            
+            {/* Content container - now a single scrollable area */}
+            <div className="relative z-10 min-h-full pb-20">
+              {/* Top navigation row - sticky at top */}
+              <div className="sticky top-0 flex justify-between items-center p-5 mb-2 z-20 backdrop-blur-sm bg-black/30">
               <button 
+                  className="w-8 h-8 flex items-center justify-center"
+                  style={{ color: themeColors.text }}
                 onClick={() => setShowExtraControls(false)}
-                className="w-8 h-8 text-white/80 hover:text-white flex items-center justify-center"
-              >
-                &times;
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M15 18l-6-6 6-6" />
+                  </svg>
+                </button>
+                <div className="text-center">
+                  <h3 className="font-bold text-sm opacity-80" style={{ color: themeColors.text }}>
+                    {track?.album || "Now Playing"}
+                  </h3>
+                </div>
+                <button 
+                  className="w-8 h-8 flex items-center justify-center"
+                  style={{ color: themeColors.text }}
+                  onClick={toggleMoreMenu}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="1" />
+                    <circle cx="19" cy="12" r="1" />
+                    <circle cx="5" cy="12" r="1" />
+                  </svg>
               </button>
             </div>
             
-            {/* Album art & song info */}
-            <div className="flex-1 flex flex-col items-center justify-center gap-6">
-              <div className="relative w-64 h-64 rounded-lg overflow-hidden shadow-2xl border border-neutral-800">
+              {/* Album art */}
+              <div className="px-5">
+                <div className="relative w-[85vw] h-[85vw] max-w-[350px] max-h-[350px] mx-auto rounded-lg overflow-hidden shadow-2xl border border-white/10 mb-4">
                 <img 
                   src={track.image} 
                   alt={track.name} 
@@ -382,28 +520,32 @@ const PremiumPlayer = () => {
                 />
                 {buffering && (
                   <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                    <div className="w-10 h-10 border-4 border-fuchsia-600 border-t-transparent rounded-full animate-spin"></div>
+                      <div className="w-10 h-10 border-4 border-t-transparent rounded-full animate-spin" 
+                        style={{ borderColor: themeColors.primary, borderTopColor: 'transparent' }}></div>
                   </div>
                 )}
+                </div>
               </div>
               
-              <div className="text-center">
-                <h2 className="text-xl font-bold text-white mb-1">{track.name}</h2>
-                <p className="text-neutral-400">{track.artist || track.album}</p>
-              </div>
+              {/* Song metadata */}
+              <div className="px-5 mb-3">
+                <h2 className="text-xl font-bold" style={{ color: themeColors.text }}>{track.name}</h2>
+                <p className="text-sm opacity-80" style={{ color: themeColors.text }}>
+                  {/* Debug artist name */}
+                  {console.log('Rendering artist name in PremiumPlayer:', getArtistName(track))}
+                  {getArtistName(track)}
+                </p>
             </div>
             
+              {/* Player controls */}
+              <div className="px-5 mb-8">
             {/* Progress bar */}
-            <div className="w-full mb-6">
-              <div className="flex items-center justify-between text-xs text-neutral-400 mb-2">
-                <span>{formatTime(time.currentTime.minute, time.currentTime.second)}</span>
-                <span>{formatTime(time.totalTime.minute, time.totalTime.second)}</span>
-              </div>
-              <div className="relative w-full h-2 bg-neutral-800 rounded-full overflow-hidden">
+                <div className="w-full mb-4">
+                  <div className="relative w-full h-1 bg-white/20 rounded-full overflow-hidden">
                 {/* Buffering Progress Indicator */}
                 <div 
-                  className="absolute top-0 left-0 h-full bg-neutral-600 rounded-full"
-                  style={{ width: `${loadingProgress}%` }}
+                      className="absolute top-0 left-0 h-full rounded-full"
+                      style={{ width: `${loadingProgress}%`, backgroundColor: `${themeColors.text}40` }}
                 ></div>
                 {/* Playback Progress */}
                 <input
@@ -416,131 +558,374 @@ const PremiumPlayer = () => {
                   onChange={handleSeek}
                   onTouchStart={handleProgressTouchStart}
                   onTouchEnd={handleProgressTouchEnd}
-                  className="w-full absolute top-0 left-0 h-2 accent-fuchsia-600 cursor-pointer opacity-70 z-10"
+                      className="w-full absolute top-0 left-0 h-1 cursor-pointer opacity-70 z-10"
+                      style={{ accentColor: themeColors.primary }}
                 />
               </div>
+                  <div className="flex items-center justify-between text-xs mt-1" style={{ color: `${themeColors.text}99` }}>
+                    <span>{formatTime(time.currentTime.minute, time.currentTime.second)}</span>
+                    <span>{formatTime(time.totalTime.minute, time.totalTime.second)}</span>
+                  </div>
             </div>
             
             {/* Controls */}
-            <div className="flex flex-col gap-6 mb-8">
-              <div className="flex items-center justify-evenly">
+                <div className="flex justify-evenly items-center">
                 <button
                   onClick={() => { shuffle(); handleShuffle(); }}
-                  className={`text-2xl ${shuffleActive ? "text-fuchsia-500" : "text-neutral-400"}`}
+                    className="w-10 h-10 flex items-center justify-center"
+                    style={{ color: shuffleActive ? themeColors.primary : `${themeColors.text}99` }}
                 >
-                  <MdShuffle />
+                    <MdShuffle className="text-xl" />
                 </button>
                 <button 
                   onClick={Previous}
-                  className="text-2xl text-neutral-400"
+                    className="w-10 h-10 flex items-center justify-center"
+                    style={{ color: themeColors.text }}
                 >
-                  <FaStepBackward />
+                    <FaStepBackward className="text-xl" />
                 </button>
                 <button
                   onClick={handlePlayPause}
-                  className="bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white rounded-full p-4 shadow-lg text-2xl"
-                >
-                  {playStatus ? <FaPause /> : <FaPlay />}
+                    className="w-14 h-14 flex items-center justify-center text-white rounded-full shadow-lg"
+                    style={{ 
+                      background: `linear-gradient(135deg, ${themeColors.primary}, ${themeColors.accent || themeColors.primary})`,
+                      boxShadow: `0 4px 10px ${themeColors.primary}80`
+                    }}
+                  >
+                    {playStatus ? <FaPause className="text-xl" /> : <FaPlay className="text-xl ml-1" />}
                 </button>
                 <button 
                   onClick={Next}
-                  className="text-2xl text-neutral-400"
+                    className="w-10 h-10 flex items-center justify-center"
+                    style={{ color: themeColors.text }}
                 >
-                  <FaStepForward />
+                    <FaStepForward className="text-xl" />
                 </button>
                 <button
                   onClick={toggleLoop}
-                  className={`text-2xl ${loop ? "text-fuchsia-500" : "text-neutral-400"}`}
+                    className="w-10 h-10 flex items-center justify-center"
+                    style={loop ? { color: themeColors.primary } : { color: `${themeColors.text}99` }}
                 >
-                  <MdRepeat />
+                    <MdRepeat className="text-xl" />
                 </button>
+                </div>
               </div>
               
-              <div className="flex items-center justify-evenly">
-                <button
-                  onClick={() => toggleFavorite(track._id)}
-                  className={`text-xl ${isFavorite(track._id) ? "text-fuchsia-500" : "text-neutral-400"}`}
-                >
-                  <FaHeart />
-                </button>
-                <button
-                  onClick={toggleQueue}
-                  className={`text-xl ${showQueue ? "text-fuchsia-500" : "text-neutral-400"}`}
-                >
-                  <MdQueueMusic />
-                </button>
-                <button
+              {/* Divider line */}
+              <div className="h-[1px] bg-white/10 mx-5 mb-6"></div>
+              
+              {/* Lyrics Section */}
+              <div className="px-5 py-4 mb-6">
+                <div className="flex justify-between items-center mb-3">
+                  <h4 className="text-base font-bold" style={{ color: themeColors.text }}>
+                    Lyrics
+                  </h4>
+                  <span 
+                    className="text-xs px-2 py-1 rounded-full cursor-pointer"
+                    style={{ color: themeColors.primary }}
                   onClick={toggleLyrics}
-                  className={`text-xl ${showLyrics ? "text-fuchsia-500" : "text-neutral-400"}`}
-                >
-                  <MdOutlineLyrics />
-                </button>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={handleMute}
-                    className="text-xl text-neutral-400"
                   >
-                    {isMuted ? <FaVolumeMute /> : <FaVolumeUp />}
-                  </button>
-                  <input
-                    ref={volumeControlRef}
-                    type="range"
-                    min={0}
-                    max={1}
-                    step={0.01}
-                    value={isMuted ? 0 : volume}
-                    onChange={(e) => setVolume(Number(e.target.value))}
-                    onTouchStart={handleVolumeTouchStart}
-                    onTouchEnd={handleVolumeTouchEnd}
-                    className="w-16 accent-fuchsia-600 cursor-pointer h-1 volume-slider"
-                    disabled={isMuted}
-                  />
+                    Full screen
+                  </span>
                 </div>
-                <div className="flex items-center gap-2 text-neutral-400">
-                  <span className="text-xs">Autoplay</span>
-                  <div
-                    onClick={handleAutoplayToggle}
-                    className={`w-10 h-5 rounded-full relative cursor-pointer transition-colors ${autoplayEnabled ? "bg-fuchsia-600" : "bg-neutral-600"}`}
+                
+                <div className="space-y-6 text-sm">
+                  {track.lyrics ? (
+                    // If track has lyrics, display them
+                    track.lyrics.split('\n').map((line, index) => (
+                      <p key={index} style={{ color: `${themeColors.text}${index % 2 === 0 ? 'ff' : '99'}` }}>
+                        {line}
+                      </p>
+                    ))
+                  ) : (
+                    // Default lyrics when not available
+                    <>
+                      <p style={{ color: `${themeColors.text}99` }}>
+                        [Verse 1]<br/>
+                        <span style={{ color: themeColors.text }}>{track.name} by {getArtistName(track)}</span><br/>
+                        This is where the song lyrics will appear<br/>
+                        Line by line with proper formatting<br/>
+                        For the current song that's playing
+                      </p>
+                      <p style={{ color: `${themeColors.text}99` }}>
+                        [Chorus]<br/>
+                        <span style={{ color: themeColors.text }}>The chorus of the song</span><br/>
+                        Will be displayed here<br/>
+                        With each line properly aligned<br/>
+                        For easy readability
+                      </p>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <div className="h-[1px] bg-white/10 mx-5 mb-6"></div>
+
+              {/* Credits section */}
+              <div className="px-5 mb-6">
+                <div className="flex justify-between items-center mb-2">
+                  <h4 className="text-base font-bold" style={{ color: themeColors.text }}>
+                    Credits
+                  </h4>
+                  <span 
+                    className="text-xs px-2 py-1 rounded-full cursor-pointer"
+                    style={{ color: themeColors.primary }}
+                    onClick={() => console.log('Show all credits')}
                   >
-                    <div
-                      className={`absolute w-4 h-4 bg-white rounded-full top-0.5 transition-transform ${
-                        autoplayEnabled ? "translate-x-5" : "translate-x-0.5"
-                      }`}
-                    ></div>
+                    Show all
+                  </span>
+                </div>
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-sm opacity-70" style={{ color: themeColors.text }}>Performer</span>
+                  <span className="text-sm font-medium" style={{ color: themeColors.text }}>
+                    {getArtistName(track)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-sm opacity-70" style={{ color: themeColors.text }}>Song</span>
+                  <span className="text-sm font-medium" style={{ color: themeColors.text }}>
+                    {track.title || track.name || (track.metadata && track.metadata.title) || 'Unknown Track'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-sm opacity-70" style={{ color: themeColors.text }}>Album</span>
+                  <span className="text-sm font-medium" style={{ color: themeColors.text }}>
+                    {getAlbumName(track)}
+                  </span>
+                </div>
+                {(track.composer || track.music || (track.metadata && track.metadata.composer)) && (
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-sm opacity-70" style={{ color: themeColors.text }}>Composer</span>
+                    <span className="text-sm font-medium" style={{ color: themeColors.text }}>
+                      {track.composer || 
+                       track.music || 
+                       (track.metadata && track.metadata.composer) ||
+                       'Unknown'}
+                    </span>
                   </div>
+                )}
+                {(track.lyricist || (track.metadata && track.metadata.lyricist)) && (
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-sm opacity-70" style={{ color: themeColors.text }}>Lyricist</span>
+                    <span className="text-sm font-medium" style={{ color: themeColors.text }}>
+                      {track.lyricist || 
+                       (track.metadata && track.metadata.lyricist) ||
+                       'Unknown'}
+                    </span>
+                  </div>
+                )}
+                {track.producer && (
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-sm opacity-70" style={{ color: themeColors.text }}>Producer</span>
+                    <span className="text-sm font-medium" style={{ color: themeColors.text }}>{track.producer}</span>
+                  </div>
+                )}
+                {(track.year || (track.metadata && track.metadata.year)) && (
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-sm opacity-70" style={{ color: themeColors.text }}>Released</span>
+                    <span className="text-sm font-medium" style={{ color: themeColors.text }}>
+                      {track.year || (track.metadata && track.metadata.year)}
+                    </span>
+                  </div>
+                )}
+                {(track.genre || (track.metadata && track.metadata.genre)) && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm opacity-70" style={{ color: themeColors.text }}>Genre</span>
+                    <span className="text-sm font-medium" style={{ color: themeColors.text }}>
+                      {track.genre || (track.metadata && track.metadata.genre)}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <div className="h-[1px] bg-white/10 mx-5 mb-6"></div>
+
+              {/* Related content header */}
+              <div className="px-5 mb-3">
+                <h4 className="text-base font-bold" style={{ color: themeColors.text }}>
+                  {getArtistName(track) !== 'Unknown Artist' ? `More from ${getArtistName(track)}` : 'You might also like'}
+                </h4>
+              </div>
+
+              {/* Artist's songs - real data from context */}
+              <div className="px-5 mb-6">
+                <h5 className="text-sm font-semibold mb-2" style={{ color: `${themeColors.text}99` }}>
+                  Popular songs
+                </h5>
+                <div className="space-y-2">
+                  {songsData
+                    .filter(song => song._id !== track._id && isSameArtist(song, track))
+                    .slice(0, 5)
+                    .map((song, index) => (
+                      <div 
+                        key={song._id}
+                        className="flex items-center p-2 rounded-md hover:bg-white/10 transition-colors cursor-pointer" 
+                        style={{ background: index === 0 ? `${themeColors.primary}15` : 'transparent' }}
+                        onClick={() => {
+                          // Play the selected song
+                          const newTrack = songsData.find(s => s._id === song._id);
+                          if (newTrack) {
+                            audioRef.current.src = newTrack.file;
+                            audioRef.current.play();
+                          }
+                        }}
+                      >
+                        <div className="w-10 h-10 rounded overflow-hidden mr-3">
+                          <img 
+                            src={song.image} 
+                            alt={song.name} 
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate" style={{ color: index === 0 ? themeColors.primary : themeColors.text }}>
+                            {song.name}
+                          </p>
+                          <p className="text-xs truncate" style={{ color: `${themeColors.text}70` }}>
+                            {getArtistName(song)} • {getAlbumName(song)}
+                          </p>
+                        </div>
+                        <button className="w-8 h-8 flex items-center justify-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: `${themeColors.text}70` }}>
+                            <circle cx="12" cy="12" r="1" />
+                            <circle cx="19" cy="12" r="1" />
+                            <circle cx="5" cy="12" r="1" />
+                          </svg>
+                        </button>
+                      </div>
+                    ))}
+                    
+                  {/* Show message if no songs found */}
+                  {songsData.filter(song => song._id !== track._id && isSameArtist(song, track)).length === 0 && (
+                    <div className="text-center p-4 text-sm opacity-70" style={{ color: themeColors.text }}>
+                      No other songs found from this artist
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Similar tracks based on genre */}
+              <div className="px-5 mb-6">
+                <h5 className="text-sm font-semibold mb-2" style={{ color: `${themeColors.text}99` }}>
+                  You might also like
+                </h5>
+                <div className="space-y-2">
+                  {songsData
+                    .filter(song => 
+                      song._id !== track._id && 
+                      (song.genre === track.genre || isSameArtist(song, track))
+                    )
+                    .slice(0, 3)
+                    .map((song, index) => (
+                      <div 
+                        key={song._id}
+                        className="flex items-center p-2 rounded-md hover:bg-white/10 transition-colors cursor-pointer" 
+                        style={{ background: index === 0 ? `${themeColors.primary}15` : 'transparent' }}
+                        onClick={() => {
+                          // Play the selected song
+                          const newTrack = songsData.find(s => s._id === song._id);
+                          if (newTrack) {
+                            audioRef.current.src = newTrack.file;
+                            audioRef.current.play();
+                          }
+                        }}
+                      >
+                        <div className="w-10 h-10 rounded overflow-hidden mr-3">
+                          <img 
+                            src={song.image} 
+                            alt={song.name} 
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate" style={{ color: index === 0 ? themeColors.primary : themeColors.text }}>
+                            {song.name}
+                          </p>
+                          <p className="text-xs truncate" style={{ color: `${themeColors.text}70` }}>
+                            {getArtistName(song)} • {getAlbumName(song)}
+                          </p>
+                        </div>
+                        <button 
+                          className="w-8 h-8 flex items-center justify-center"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            console.log('More options for', song.name);
+                          }}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: `${themeColors.text}70` }}>
+                            <circle cx="12" cy="12" r="1" />
+                            <circle cx="19" cy="12" r="1" />
+                            <circle cx="5" cy="12" r="1" />
+                          </svg>
+                        </button>
+                      </div>
+                    ))}
+                </div>
+              </div>
+
+              {/* Albums section */}
+              <div className="px-5 mb-20">
+                <h5 className="text-sm font-semibold mb-2" style={{ color: `${themeColors.text}99` }}>
+                  From the same album
+                </h5>
+                <div className="flex gap-3 overflow-x-auto pb-1 no-scrollbar">
+                  {songsData
+                    .filter(song => song._id !== track._id && isSameAlbum(song, track))
+                    .slice(0, 5)
+                    .map((song, index) => (
+                      <div 
+                        key={song._id} 
+                        className="min-w-[120px] cursor-pointer"
+                        onClick={() => {
+                          // Play the selected song
+                          const newTrack = songsData.find(s => s._id === song._id);
+                          if (newTrack) {
+                            audioRef.current.src = newTrack.file;
+                            audioRef.current.play();
+                          }
+                        }}
+                      >
+                        <div className="w-[120px] h-[120px] rounded-md overflow-hidden mb-2 border" 
+                          style={{ borderColor: index === 0 ? themeColors.primary : 'transparent' }}
+                        >
+                          <img 
+                            src={song.image} 
+                            alt={song.name} 
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <p className="text-xs font-medium truncate" style={{ color: index === 0 ? themeColors.primary : themeColors.text }}>
+                          {song.name}
+                        </p>
+                        <p className="text-xs truncate opacity-70" style={{ color: themeColors.text }}>
+                          {getArtistName(song)}
+                        </p>
+                      </div>
+                    ))}
+                    
+                  {/* Show message if no songs found */}
+                  {songsData.filter(song => song._id !== track._id && isSameAlbum(song, track)).length === 0 && (
+                    <div className="text-center p-4 w-full text-sm opacity-70" style={{ color: themeColors.text }}>
+                      No other songs found from this album
+                    </div>
+                  )}
                 </div>
               </div>
               
-              {/* Add buffering strategy selector */}
-              <div className="flex items-center justify-center gap-4 mt-2 text-neutral-400 text-xs">
-                <span>Buffer Mode:</span>
-                <div className="flex gap-2">
-                  <button 
-                    onClick={() => handleBufferingChange('auto')}
-                    className={`px-2 py-1 rounded ${bufferingStrategy === 'auto' ? 'bg-fuchsia-600 text-white' : 'bg-neutral-800'}`}
-                  >
-                    Auto
-                  </button>
-                  <button 
-                    onClick={() => handleBufferingChange('aggressive')}
-                    className={`px-2 py-1 rounded ${bufferingStrategy === 'aggressive' ? 'bg-fuchsia-600 text-white' : 'bg-neutral-800'}`}
-                  >
-                    High Quality
-                  </button>
-                  <button 
-                    onClick={() => handleBufferingChange('conservative')}
-                    className={`px-2 py-1 rounded ${bufferingStrategy === 'conservative' ? 'bg-fuchsia-600 text-white' : 'bg-neutral-800'}`}
-                  >
-                    Data Saver
-                  </button>
-                </div>
-              </div>
+              {/* Add extra padding at bottom for better scrolling */}
+              <div className="h-24"></div>
             </div>
           </div>
         )}
 
         {/* Main player bar - always visible when track is playing */}
-        <div className={`flex items-center justify-between px-4 py-2 bg-black/95 border-t border-neutral-800 backdrop-blur-xl gap-4 ${hidePlayer ? 'compact-player' : ''}`}>
+        <div 
+          className={`flex items-center justify-between px-4 py-2 border-t backdrop-blur-xl gap-4 ${hidePlayer ? 'compact-player' : ''}`}
+          style={{ 
+            background: `linear-gradient(180deg, ${themeColors.secondary}dd, ${themeColors.secondary})`,
+            borderColor: `${themeColors.text}20`
+          }}
+        >
           {/* Song Info - clickable on mobile to show full player */}
           <div 
             className={`flex items-center gap-3 min-w-[80px] ${isSmallScreen ? "flex-1" : "w-[25%]"}`}
@@ -550,17 +935,19 @@ const PremiumPlayer = () => {
               <img
                 src={track.image}
                 alt={track.name}
-                className="w-10 h-10 rounded object-cover border border-neutral-800"
+                className="w-10 h-10 rounded object-cover border"
+                style={{ borderColor: `${themeColors.text}30` }}
               />
               {buffering && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded">
-                  <div className="w-4 h-4 border-2 border-fuchsia-600 border-t-transparent rounded-full animate-spin"></div>
+                  <div className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin"
+                    style={{ borderColor: themeColors.primary, borderTopColor: 'transparent' }}></div>
                 </div>
               )}
             </div>
             <div className="flex flex-col min-w-0">
-              <span className="text-sm font-bold text-white truncate max-w-[120px]">{track.name}</span>
-              <span className="text-xs text-neutral-400 truncate max-w-[120px]">{track.artist || track.album}</span>
+              <span className="text-sm font-bold truncate max-w-[120px]" style={{ color: themeColors.text }}>{track.name}</span>
+              <span className="text-xs truncate max-w-[120px]" style={{ color: `${themeColors.text}99` }}>{getArtistName(track)}</span>
             </div>
             {isSmallScreen && (
               <button
@@ -568,7 +955,8 @@ const PremiumPlayer = () => {
                   e.stopPropagation();
                   toggleFavorite(track._id);
                 }}
-                className={`ml-auto ${isFavorite(track._id) ? "text-fuchsia-500" : "text-neutral-400"}`}
+                className="ml-auto"
+                style={isFavorite(track._id) ? { color: themeColors.accent } : { color: `${themeColors.text}99` }}
               >
                 <FaHeart />
               </button>
@@ -581,27 +969,44 @@ const PremiumPlayer = () => {
             <div className="flex items-center gap-3 mb-0.5">
               <button
                 onClick={() => { shuffle(); handleShuffle(); }}
-                className={`text-base transition ${shuffleActive ? "text-fuchsia-500" : "text-neutral-400 hover:text-fuchsia-500"}`}
+                className="text-base transition"
+                style={shuffleActive ? { color: themeColors.primary } : { color: `${themeColors.text}99` }}
                 title="Shuffle"
               >
                 <FaRandom />
               </button>
-              <button onClick={Previous} className="text-base text-neutral-400 hover:text-fuchsia-500 transition" title="Previous">
+              <button 
+                onClick={Previous} 
+                className="text-base transition" 
+                style={{ color: `${themeColors.text}99` }}
+                title="Previous"
+              >
                 <FaStepBackward />
               </button>
               <button
                   onClick={handlePlayPause}
-                className="bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white rounded-full p-2 shadow-lg hover:scale-110 transition-transform border-2 border-fuchsia-800 text-lg"
+                className="rounded-full p-2 shadow-lg hover:scale-110 transition-transform border-2 text-lg"
+                style={{ 
+                  background: `linear-gradient(135deg, ${themeColors.primary}, ${themeColors.accent || themeColors.primary})`,
+                  borderColor: `${themeColors.primary}80`,
+                  color: themeColors.text
+                }}
                 title={playStatus ? "Pause" : "Play"}
               >
                   {playStatus ? <FaPause /> : <FaPlay className="relative ml-0.5" />}
               </button>
-              <button onClick={Next} className="text-base text-neutral-400 hover:text-fuchsia-500 transition" title="Next">
+              <button 
+                onClick={Next} 
+                className="text-base transition" 
+                style={{ color: `${themeColors.text}99` }}
+                title="Next"
+              >
                 <FaStepForward />
               </button>
               <button
                   onClick={toggleLoop}
-                className={`text-base transition ${loop ? "text-fuchsia-500" : "text-neutral-400 hover:text-fuchsia-500"}`}
+                className="text-base transition"
+                style={loop ? { color: themeColors.primary } : { color: `${themeColors.text}99` }}
                 title="Repeat"
               >
                 <FaRedo />
@@ -609,12 +1014,14 @@ const PremiumPlayer = () => {
             </div>
             {/* Progress Bar */}
             <div className="flex items-center gap-1 w-full">
-              <span className="text-[10px] text-neutral-400 min-w-[28px]">{formatTime(time.currentTime.minute, time.currentTime.second)}</span>
-              <div className="relative w-full h-1 bg-neutral-800 rounded-full overflow-hidden">
+              <span className="text-[10px] min-w-[28px]" style={{ color: `${themeColors.text}99` }}>
+                {formatTime(time.currentTime.minute, time.currentTime.second)}
+              </span>
+              <div className="relative w-full h-1 rounded-full overflow-hidden" style={{ backgroundColor: `${themeColors.text}30` }}>
                 {/* Buffering Progress Indicator */}
                 <div 
-                  className="absolute top-0 left-0 h-full bg-neutral-600 rounded-full"
-                  style={{ width: `${loadingProgress}%` }}
+                  className="absolute top-0 left-0 h-full rounded-full"
+                  style={{ width: `${loadingProgress}%`, backgroundColor: `${themeColors.text}50` }}
                   title="Buffered amount"
                 ></div>
                 {/* Playback Progress */}
@@ -627,15 +1034,18 @@ const PremiumPlayer = () => {
                   onChange={handleSeek}
                   onTouchStart={handleProgressTouchStart}
                   onTouchEnd={handleProgressTouchEnd}
-                  className="w-full absolute top-0 left-0 h-1 accent-fuchsia-600 cursor-pointer opacity-70 z-10"
+                  className="w-full absolute top-0 left-0 h-1 cursor-pointer opacity-70 z-10"
+                  style={{ accentColor: themeColors.accent }}
                 />
                 {buffering && (
                   <div className="absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center">
-                    <div className="w-4 h-4 rounded-full bg-fuchsia-600 animate-pulse"></div>
+                    <div className="w-4 h-4 rounded-full animate-pulse" style={{ backgroundColor: themeColors.accent }}></div>
                   </div>
                 )}
               </div>
-              <span className="text-[10px] text-neutral-400 min-w-[28px]">{formatTime(time.totalTime.minute, time.totalTime.second)}</span>
+              <span className="text-[10px] min-w-[28px]" style={{ color: `${themeColors.text}99` }}>
+                {formatTime(time.totalTime.minute, time.totalTime.second)}
+              </span>
             </div>
           </div>
           )}
@@ -648,7 +1058,8 @@ const PremiumPlayer = () => {
                   e.stopPropagation();
                   handlePlayPause();
                 }}
-                className="bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white rounded-full p-2 shadow-md flex items-center justify-center w-8 h-8"
+                className="rounded-full p-2 shadow-md flex items-center justify-center w-8 h-8"
+                style={{ background: `linear-gradient(135deg, ${themeColors.primary}, ${themeColors.accent})` }}
               >
                 {playStatus ? <FaPause className="text-sm" /> : <FaPlay className="text-sm ml-0.5" />}
               </button>
@@ -657,7 +1068,8 @@ const PremiumPlayer = () => {
                   e.stopPropagation();
                   Next();
                 }}
-                className="text-sm text-neutral-400 flex items-center justify-center w-6 h-6"
+                className="text-sm flex items-center justify-center w-6 h-6"
+                style={{ color: `${themeColors.text}99` }}
               >
                 <FaStepForward />
               </button>
@@ -666,7 +1078,8 @@ const PremiumPlayer = () => {
                   e.stopPropagation();
                   handleMute();
                 }}
-                className="text-sm text-neutral-400 flex items-center justify-center w-6 h-6"
+                className="text-sm flex items-center justify-center w-6 h-6"
+                style={{ color: `${themeColors.text}99` }}
               >
                 {isMuted || volume === 0 ? <FaVolumeMute /> : <FaVolumeUp />}
               </button>
@@ -679,21 +1092,24 @@ const PremiumPlayer = () => {
               <div className="flex items-center gap-4 min-w-[90px] w-[25%] justify-end">
                 <button 
                   onClick={() => toggleFavorite(track._id)}
-                  className={`text-base transition ${isFavorite(track._id) ? "text-fuchsia-500" : "text-neutral-400 hover:text-fuchsia-500"}`}
+                  className="text-base transition"
+                  style={isFavorite(track._id) ? { color: themeColors.accent } : { color: `${themeColors.text}99` }}
                   title="Like"
                 >
                   <FaHeart />
                 </button>
                 <button 
                   onClick={toggleQueue}
-                  className={`text-base transition ${showQueue ? "text-fuchsia-500" : "text-neutral-400 hover:text-fuchsia-500"}`}
+                  className="text-base transition"
+                  style={showQueue ? { color: themeColors.accent } : { color: `${themeColors.text}99` }}
                   title="Queue"
                 >
                   <MdQueueMusic />
                 </button>
                 <button
                   onClick={handleMute}
-                  className="text-base text-neutral-400 hover:text-fuchsia-500 transition"
+                  className="text-base transition"
+                  style={{ color: `${themeColors.text}99` }}
                   title={isMuted ? "Unmute" : "Mute"}
                 >
                   {isMuted || volume === 0 ? <FaVolumeMute /> : <FaVolumeUp />}
@@ -707,43 +1123,104 @@ const PremiumPlayer = () => {
                   onChange={(e) => setVolume(Number(e.target.value))}
                   onTouchStart={handleVolumeTouchStart}
                   onTouchEnd={handleVolumeTouchEnd}
-                  className="w-16 accent-fuchsia-600 cursor-pointer h-1 volume-slider"
+                  className="w-16 cursor-pointer h-1 volume-slider"
+                  style={{ accentColor: themeColors.accent }}
                   disabled={isMuted}
                 />
                 <button 
-                  className="text-base text-neutral-400 hover:text-fuchsia-500 transition"
+                  className="text-base transition"
+                  style={{ color: `${themeColors.text}99` }}
                   title="Devices"
                 >
                   <MdDevices />
                 </button>
-                <div className="flex items-center gap-1 ml-2 text-neutral-400">
+                <div className="flex items-center gap-1 ml-2" style={{ color: `${themeColors.text}99` }}>
                   <span className="text-[10px]">Autoplay</span>
                   <div
                     onClick={handleAutoplayToggle}
-                    className={`w-8 h-4 rounded-full relative cursor-pointer transition-colors ${autoplayEnabled ? "bg-fuchsia-600" : "bg-neutral-600"}`}
+                    className={`w-8 h-4 rounded-full relative cursor-pointer transition-colors`}
+                    style={{ backgroundColor: autoplayEnabled ? themeColors.accent : '#666' }}
                   >
                     <div
                       className={`absolute w-3 h-3 bg-white rounded-full top-0.5 transition-transform ${
                         autoplayEnabled ? "translate-x-[18px]" : "translate-x-0.5"
                       }`}
                     ></div>
-                  </div>
                 </div>
               </div>
               
-              {/* Add buffering strategy selector for desktop */}
-              <div className="flex items-center justify-end gap-2 mt-1">
-                <div className="text-[10px] text-neutral-400 flex items-center">
-                  <span className="mr-1">Buffer:</span>
-                  <select 
-                    value={bufferingStrategy}
-                    onChange={(e) => handleBufferingChange(e.target.value)}
-                    className="bg-neutral-800 text-white text-[10px] px-1 py-0.5 rounded border-none outline-none"
+                {/* More options button */}
+                <div className="relative">
+                  <button 
+                    onClick={toggleMoreMenu}
+                    className="text-base transition ml-2"
+                    style={{ color: `${themeColors.text}99` }}
+                    title="More options"
                   >
-                    <option value="auto">Auto</option>
-                    <option value="aggressive">High Quality</option>
-                    <option value="conservative">Data Saver</option>
-                  </select>
+                    <MdMoreVert />
+                  </button>
+                  
+                  {/* More menu dropdown */}
+                  {showMoreMenu && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      className="absolute bottom-full right-0 mb-2 rounded-xl shadow-xl p-3 w-48 z-50"
+                      style={{ 
+                        backgroundColor: themeColors.secondary, 
+                        borderColor: `${themeColors.primary}40`,
+                        borderWidth: '1px'
+                      }}
+                      ref={moreMenuRef}
+                    >
+                      <h4 className="text-xs font-bold mb-2 pb-1" 
+                        style={{ 
+                          color: themeColors.text,
+                          borderBottom: `1px solid ${themeColors.text}30`
+                        }}>
+                        Buffer Mode
+                      </h4>
+                      <div className="flex flex-col gap-1">
+                        <button 
+                          onClick={() => handleBufferingChange('auto')}
+                          className="flex items-center justify-between px-3 py-1.5 rounded-lg text-sm"
+                          style={bufferingStrategy === 'auto' 
+                            ? { backgroundColor: themeColors.primary, color: themeColors.text } 
+                            : { color: themeColors.text, backgroundColor: `${themeColors.text}15` }}
+                        >
+                          <span>Auto</span>
+                          {bufferingStrategy === 'auto' && (
+                            <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
+                          )}
+                        </button>
+                        <button 
+                          onClick={() => handleBufferingChange('aggressive')}
+                          className="flex items-center justify-between px-3 py-1.5 rounded-lg text-sm"
+                          style={bufferingStrategy === 'aggressive' 
+                            ? { backgroundColor: themeColors.primary, color: themeColors.text } 
+                            : { color: themeColors.text, backgroundColor: `${themeColors.text}15` }}
+                        >
+                          <span>High Quality</span>
+                          {bufferingStrategy === 'aggressive' && (
+                            <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
+                          )}
+                        </button>
+                        <button 
+                          onClick={() => handleBufferingChange('conservative')}
+                          className="flex items-center justify-between px-3 py-1.5 rounded-lg text-sm"
+                          style={bufferingStrategy === 'conservative' 
+                            ? { backgroundColor: themeColors.primary, color: themeColors.text } 
+                            : { color: themeColors.text, backgroundColor: `${themeColors.text}15` }}
+                        >
+                          <span>Data Saver</span>
+                          {bufferingStrategy === 'conservative' && (
+                            <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
+                          )}
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
                 </div>
               </div>
             </div>
@@ -752,6 +1229,35 @@ const PremiumPlayer = () => {
         
         {/* Queue panel */}
         <QueueComponent isOpen={showQueue && !hidePlayer} onClose={() => setShowQueue(false)} />
+
+        {/* Lyrics panel */}
+        <LyricsPanel isOpen={showLyrics && !hidePlayer} onClose={() => setShowLyrics(false)} />
+
+        {/* More options sheet */}
+        <MoreOptionsSheet 
+          isOpen={showMoreMenu} 
+          onClose={() => setShowMoreMenu(false)} 
+          trackId={track?._id}
+        />
+
+        {/* Full screen player content - Artist Explorer and Credits when expanded on mobile */}
+        {isSmallScreen && showExtraControls && !hidePlayer && (
+          <div className="fixed bottom-0 left-0 right-0 w-full z-30 px-4 pb-4 pt-80 mt-auto"
+            style={{
+              background: `linear-gradient(to top, ${themeColors.secondary}, transparent)`,
+              pointerEvents: 'none'
+            }}
+          >
+            <div className="pointer-events-auto">
+              <ArtistExplorer 
+                track={track}
+              />
+              <CreditsSection 
+                track={track}
+              />
+            </div>
+          </div>
+        )}
       </div>
     </AnimatePresence>
   );

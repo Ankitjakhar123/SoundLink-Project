@@ -3,6 +3,7 @@ import axios from "axios";
 import { AuthContext } from "./AuthContext";
 import { toast } from "react-toastify";
 import { API_BASE_URL } from "../utils/api";
+import { extractColors } from 'extract-colors';
 //import { assets } from "../assets/assets";
 
 export const PlayerContext = createContext();
@@ -13,6 +14,115 @@ export const PlayerContextProvider = ({ children }) => {
   const seekBar = useRef();
   const volumeRef = useRef();
   const { user, token } = useContext(AuthContext);
+
+  // Helper function to extract the artist name from any possible field
+  const getArtistName = (trackObj) => {
+    if (!trackObj) {
+      console.log('getArtistName called with null/undefined track');
+      return 'Unknown Artist';
+    }
+    
+    // For debugging - log all possible artist fields
+    console.log('getArtistName - checking fields for track:', trackObj.name);
+    console.log('- singer:', trackObj.singer);
+    console.log('- artist:', trackObj.artist);
+    console.log('- artistName:', trackObj.artistName);
+    console.log('- desc:', trackObj.desc);
+    console.log('- metadata.artist:', trackObj.metadata && trackObj.metadata.artist);
+    console.log('- meta.artist:', trackObj.meta && trackObj.meta.artist);
+    console.log('- tags.artist:', trackObj.tags && trackObj.tags.artist);
+    console.log('- createdBy.name:', trackObj.createdBy && trackObj.createdBy.name);
+    
+    // Check each field in priority order
+    if (trackObj.singer) {
+      console.log('Using singer field:', trackObj.singer);
+      return trackObj.singer;
+    }
+    
+    if (trackObj.artist) {
+      console.log('Using artist field:', trackObj.artist);
+      return trackObj.artist;
+    }
+    
+    if (trackObj.artistName) {
+      console.log('Using artistName field:', trackObj.artistName);
+      return trackObj.artistName;
+    }
+    
+    if (trackObj.metadata && trackObj.metadata.artist) {
+      console.log('Using metadata.artist field:', trackObj.metadata.artist);
+      return trackObj.metadata.artist;
+    }
+    
+    if (trackObj.meta && trackObj.meta.artist) {
+      console.log('Using meta.artist field:', trackObj.meta.artist);
+      return trackObj.meta.artist;
+    }
+    
+    if (trackObj.tags && trackObj.tags.artist) {
+      console.log('Using tags.artist field:', trackObj.tags.artist);
+      return trackObj.tags.artist;
+    }
+    
+    if (trackObj.createdBy && trackObj.createdBy.name) {
+      console.log('Using createdBy.name field:', trackObj.createdBy.name);
+      return trackObj.createdBy.name;
+    }
+    
+    // Check if desc might contain artist info
+    if (trackObj.desc) {
+      console.log('Using desc field as fallback:', trackObj.desc);
+      return trackObj.desc;
+    }
+    
+    console.log('No artist information found, returning Unknown Artist');
+    return 'Unknown Artist';
+  };
+  
+  // Helper function to extract the album name from any possible field
+  const getAlbumName = (trackObj) => {
+    if (!trackObj) {
+      console.log('getAlbumName called with null/undefined track');
+      return 'Unknown Album';
+    }
+    
+    // For debugging - log all possible album fields
+    console.log('getAlbumName - checking fields for track:', trackObj.name);
+    console.log('- albumName:', trackObj.albumName);
+    console.log('- album:', trackObj.album);
+    console.log('- metadata.album:', trackObj.metadata && trackObj.metadata.album);
+    console.log('- meta.album:', trackObj.meta && trackObj.meta.album);
+    console.log('- tags.album:', trackObj.tags && trackObj.tags.album);
+    
+    // Check each field in priority order
+    if (trackObj.albumName) {
+      console.log('Using albumName field:', trackObj.albumName);
+      return trackObj.albumName;
+    }
+    
+    if (trackObj.album) {
+      console.log('Using album field:', trackObj.album);
+      return trackObj.album;
+    }
+    
+    if (trackObj.metadata && trackObj.metadata.album) {
+      console.log('Using metadata.album field:', trackObj.metadata.album);
+      return trackObj.metadata.album;
+    }
+    
+    if (trackObj.meta && trackObj.meta.album) {
+      console.log('Using meta.album field:', trackObj.meta.album);
+      return trackObj.meta.album;
+    }
+    
+    if (trackObj.tags && trackObj.tags.album) {
+      console.log('Using tags.album field:', trackObj.tags.album);
+      return trackObj.tags.album;
+    }
+    
+    console.log('No album information found, returning Unknown Album');
+    return 'Unknown Album';
+  };
 
   const [songsData, setSongsData] = useState([]);
   const [albumsData, setAlbumsData] = useState([]);
@@ -45,6 +155,14 @@ export const PlayerContextProvider = ({ children }) => {
   const [time, setTime] = useState({
     currentTime: { second: 0, minute: 0 },
     totalTime: { second: 0, minute: 0 }
+  });
+  
+  // Theme colors extracted from album art
+  const [themeColors, setThemeColors] = useState({
+    primary: '#a855f7', // Default fuchsia color
+    secondary: '#121212',
+    text: '#ffffff',
+    accent: '#ec4899'
   });
 
   // Initialize the audio context on user interaction
@@ -189,6 +307,31 @@ export const PlayerContextProvider = ({ children }) => {
     if (audioRef.current) {
       try {
         console.log('Beginning play attempt...');
+        // Debug track object structure
+        if (track) {
+          console.log('Track structure debugging:');
+          console.log('Track ID:', track._id);
+          console.log('Track Name:', track.name);
+          console.log('Artist fields:', {
+            artist: track.artist,
+            artistName: track.artistName,
+            singer: track.singer,
+            createdBy: track.createdBy,
+            metadata_artist: track.metadata?.artist,
+            meta_artist: track.meta?.artist,
+            tags_artist: track.tags?.artist
+          });
+          console.log('Artist name from helper:', getArtistName(track));
+          
+          // Also show album fields for completeness
+          console.log('Album fields:', {
+            album: track.album,
+            albumName: track.albumName,
+            metadata_album: track.metadata?.album,
+            meta_album: track.meta?.album,
+            tags_album: track.tags?.album
+          });
+        }
         
         // Fix for cross-origin issues and potential src problems
         if (!audioRef.current.src || audioRef.current.src === '') {
@@ -335,39 +478,170 @@ export const PlayerContextProvider = ({ children }) => {
     });
   };
 
-  const playWithId = async (id) => {
-    const selectedTrack = songsData.find(item => item._id === id);
-    if (selectedTrack) {
-      // Log full track structure for debugging
-      console.log('Selected track:', selectedTrack);
-      console.log('Track file URL:', selectedTrack.file);
+  // Extract colors from album art
+  const extractThemeColors = async (imageUrl) => {
+    if (!imageUrl) return;
+    
+    try {
+      console.log('Extracting colors from:', imageUrl);
       
-      // If this is the same track, toggle play/pause
-      if (track && track._id === id) {
-        console.log('Same track clicked, toggling play/pause', playStatus);
-        if (playStatus) {
-          pause();
-        } else {
-          play();
-        }
-      } else {
-        // This is a new track
-        console.log('New track selected:', selectedTrack.name);
-        console.log('Track audio file URL:', selectedTrack.file);
+      // Use react-extract-colors to get palette
+      const colors = await extractColors(imageUrl, {
+        crossOrigin: 'Anonymous',
+        pixels: 40000, // Process more pixels for better results
+        distance: 0.12, // Lower = more colors
+        saturationDistance: 0.2,
+        lightnessDistance: 0.2,
+        hueDistance: 0.083333333,
+      });
+      
+      if (colors && colors.length > 0) {
+        console.log('Extracted colors:', colors);
         
-        // Begin buffering indication
-        setBuffering(true);
-        setLoadingProgress(0);
+        // Get the most vibrant color for primary
+        const sortedByVibrance = [...colors].sort((a, b) => {
+          // Calculate color vibrance (simple approximation)
+          const getVibrance = (color) => {
+            const r = parseInt(color.hex.slice(1, 3), 16);
+            const g = parseInt(color.hex.slice(3, 5), 16);
+            const b = parseInt(color.hex.slice(5, 7), 16);
+            
+            // Standard deviation of RGB as a simple vibrance measure
+            const mean = (r + g + b) / 3;
+            const variance = ((r - mean) ** 2 + (g - mean) ** 2 + (b - mean) ** 2) / 3;
+            return Math.sqrt(variance);
+          };
+          
+          return getVibrance(b) - getVibrance(a);
+        });
         
-        // Check if we've already prefetched this track
-        if (prefetchedTracks[id]) {
-          console.log('Using prefetched track data');
-        }
+        // Get the darkest color for secondary/background
+        const sortedByDarkness = [...colors].sort((a, b) => {
+          // Calculate brightness (lower = darker)
+          const getBrightness = (color) => {
+            const r = parseInt(color.hex.slice(1, 3), 16);
+            const g = parseInt(color.hex.slice(3, 5), 16);
+            const b = parseInt(color.hex.slice(5, 7), 16);
+            return (r * 299 + g * 587 + b * 114) / 1000;
+          };
+          
+          return getBrightness(a) - getBrightness(b);
+        });
         
-        setTrack(selectedTrack);
-        setPlayStatus(true); // Set playStatus to true immediately for UI feedback
-        setAutoplayEnabled(true);
+        // Get a bright color for accent
+        const sortedByBrightness = [...colors].sort((a, b) => {
+          // Calculate brightness (higher = brighter)
+          const getBrightness = (color) => {
+            const r = parseInt(color.hex.slice(1, 3), 16);
+            const g = parseInt(color.hex.slice(3, 5), 16);
+            const b = parseInt(color.hex.slice(5, 7), 16);
+            return (r * 299 + g * 587 + b * 114) / 1000;
+          };
+          
+          return getBrightness(b) - getBrightness(a);
+        });
+        
+        // Determine text color based on background brightness
+        const darkBackground = sortedByDarkness[0]?.hex || '#121212';
+        const backgroundBrightness = getBrightness(darkBackground);
+        const textColor = backgroundBrightness < 128 ? '#ffffff' : '#000000';
+        
+        // Update theme colors
+        setThemeColors({
+          primary: sortedByVibrance[0]?.hex || '#a855f7',
+          secondary: darkBackground,
+          text: textColor,
+          accent: sortedByBrightness[0]?.hex || '#ec4899'
+        });
+        
+        // Apply CSS variables for global theming
+        document.documentElement.style.setProperty('--theme-primary', sortedByVibrance[0]?.hex || '#a855f7');
+        document.documentElement.style.setProperty('--theme-secondary', darkBackground);
+        document.documentElement.style.setProperty('--theme-text', textColor);
+        document.documentElement.style.setProperty('--theme-accent', sortedByBrightness[0]?.hex || '#ec4899');
       }
+    } catch (error) {
+      console.error('Error extracting colors:', error);
+      // Fallback to default theme
+      setThemeColors({
+        primary: '#a855f7',
+        secondary: '#121212',
+        text: '#ffffff',
+        accent: '#ec4899'
+      });
+    }
+  };
+  
+  // Helper function to calculate brightness
+  const getBrightness = (hexColor) => {
+    const r = parseInt(hexColor.slice(1, 3), 16);
+    const g = parseInt(hexColor.slice(3, 5), 16);
+    const b = parseInt(hexColor.slice(5, 7), 16);
+    return (r * 299 + g * 587 + b * 114) / 1000;
+  };
+
+  // Modified playWithId to extract colors from album art
+  const playWithId = async (id) => {
+    // First check if we're just reloading the current track
+    if (track && track._id === id) {
+      console.log('Play request for current track, just toggling play state');
+      if (playStatus) {
+        pause();
+      } else {
+        play();
+      }
+      return;
+    }
+  
+    console.log('Request to play track with ID:', id);
+    
+    // Find the track in our data
+    const selectedTrack = songsData.find((song) => song._id === id);
+    
+    if (!selectedTrack) {
+      console.error(`Track with ID ${id} not found in songsData`);
+      return;
+    }
+    
+    console.log('Found track to play:', selectedTrack.name);
+    
+    // Log track structure for debugging
+    console.log('================ TRACK STRUCTURE LOG ================');
+    console.log('Track ID:', selectedTrack._id);
+    console.log('Track Name:', selectedTrack.name);
+    console.log('Artist from getArtistName():', getArtistName(selectedTrack));
+    console.log('Album from getAlbumName():', getAlbumName(selectedTrack));
+    console.log('Track File:', selectedTrack.file);
+    console.log('Track Image:', selectedTrack.image);
+    console.log('Artist Fields:', {
+      artist: selectedTrack.artist,
+      artistName: selectedTrack.artistName,
+      singer: selectedTrack.singer,
+      desc: selectedTrack.desc,
+      createdBy: selectedTrack.createdBy,
+    });
+    console.log('==================================================');
+    
+    try {
+      // Extract theme colors from album art
+      if (selectedTrack.image) {
+        await extractThemeColors(selectedTrack.image);
+      }
+      
+      // Set the track
+      setTrack(selectedTrack);
+      
+      // Set audio source and play
+      if (audioRef.current) {
+        audioRef.current.src = selectedTrack.file;
+        audioRef.current.load();
+        
+        // Play the track (which will trigger the canplay event handler in the useEffect)
+        play();
+      }
+    } catch (error) {
+      console.error("Error playing track:", error);
+      toast.error("Failed to play the selected track");
     }
   };
 
@@ -837,6 +1111,16 @@ export const PlayerContextProvider = ({ children }) => {
       
       // Log track ID to verify correct track is being loaded
       console.log('Loading track with ID:', track._id);
+      console.log('Track name:', track.name);
+      console.log('Artist information:');
+      console.log('- Using helper function:', getArtistName(track));
+      console.log('- Direct artist field:', track.artist);
+      console.log('- Singer field:', track.singer);
+      console.log('- ArtistName field:', track.artistName);
+      console.log('- Metadata artist:', track.metadata?.artist);
+      console.log('- Meta artist:', track.meta?.artist);
+      console.log('- Tags artist:', track.tags?.artist);
+      console.log('- CreatedBy name:', track.createdBy?.name);
       
       // Update last loaded track
       window._lastLoadedTrack = track._id;
@@ -1050,6 +1334,9 @@ export const PlayerContextProvider = ({ children }) => {
     loop,
     loading,
     error,
+    // Helper functions for metadata extraction
+    getArtistName,
+    getAlbumName,
     // Buffering and lazy loading related
     buffering,
     loadingProgress,
@@ -1077,7 +1364,9 @@ export const PlayerContextProvider = ({ children }) => {
     setAutoplayEnabled,
     // Player visibility settings
     hidePlayer,
-    togglePlayerVisibility
+    togglePlayerVisibility,
+    // Theme colors
+    themeColors,
   };
 
   return (

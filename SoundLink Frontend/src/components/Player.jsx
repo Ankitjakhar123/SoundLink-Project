@@ -21,6 +21,7 @@ const Player = () => {
     changeVolume,
     volumeRef,
     loop,
+    getArtistName,
   } = useContext(PlayerContext);
 
   return track ? (
@@ -35,7 +36,7 @@ const Player = () => {
         <img className="w-12" src={track.image} alt={track.name} />
         <div>
           <p>{track.name}</p>
-          <p className="text-sm text-gray-400">{track.desc}</p>
+          <p className="text-sm text-gray-400">{getArtistName(track)}</p>
         </div>
       </div>
 
