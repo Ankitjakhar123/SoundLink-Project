@@ -1,14 +1,32 @@
 <div align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://via.placeholder.com/1200x300.gif?text=SoundLink+Music+Streaming+Experience">
+    <source media="(prefers-color-scheme: light)" srcset="https://via.placeholder.com/1200x300.gif?text=SoundLink+Music+Streaming+Experience">
+    <img src="https://via.placeholder.com/1200x300.gif?text=SoundLink+Music+Streaming+Experience" alt="SoundLink Music Streaming Platform" width="100%">
+  </picture>
+
   <img src="SoundLink Frontend/public/icons/soundlink-icon-512.png" alt="SoundLink Logo" width="150px" height="150px">
   <h1>🎵 SoundLink</h1>
   <p><strong>Your music, anywhere, anytime.</strong></p>
   <p>A modern, responsive music streaming platform that works seamlessly across all your devices.</p>
   
-  [![Website](https://img.shields.io/badge/Visit-SoundLink-1DB954?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMTAwIDEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI0NSIgZmlsbD0iIzFEQjk1NCIvPjxwYXRoIGQ9Ik0zMCAzMEg3MFY3MEgzMFYzMFoiIGZpbGw9IiMxMTEiLz48cGF0aCBkPSJNNDAgNDBMNjUgNTBMNDAgNjBWNDBaIiBmaWxsPSIjZmZmIi8+PC9zdmc+&logoColor=white)](https://ankitsoundlink.netlify.app/)
-  [![PWA Ready](https://img.shields.io/badge/PWA-Ready-5E35B1?style=for-the-badge&logo=pwa&logoColor=white)](https://web.dev/progressive-web-apps/)
-  [![Built with React](https://img.shields.io/badge/Built%20with-React-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://reactjs.org/)
-  [![Powered by Vite](https://img.shields.io/badge/Powered%20by-Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
-  [![TailwindCSS](https://img.shields.io/badge/Styled_with-Tailwind-38B2AC?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+  <p align="center">
+    <a href="https://ankitsoundlink.netlify.app/" target="_blank">
+      <img src="https://img.shields.io/badge/Try_SoundLink_Now-1DB954?style=for-the-badge" alt="Try SoundLink Now">
+    </a>
+    <a href="https://web.dev/progressive-web-apps/" target="_blank">
+      <img src="https://img.shields.io/badge/PWA-Ready-5E35B1?style=for-the-badge&logo=pwa&logoColor=white" alt="PWA Ready">
+    </a>
+    <a href="https://reactjs.org/" target="_blank">
+      <img src="https://img.shields.io/badge/Built_with-React-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="Built with React">
+    </a>
+    <a href="https://vitejs.dev/" target="_blank">
+      <img src="https://img.shields.io/badge/Powered_by-Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white" alt="Powered by Vite">
+    </a>
+    <a href="https://tailwindcss.com/" target="_blank">
+      <img src="https://img.shields.io/badge/Styled_with-Tailwind-38B2AC?style=for-the-badge&logo=tailwindcss&logoColor=white" alt="Styled with Tailwind">
+    </a>
+  </p>
   
   ![GitHub stars](https://img.shields.io/github/stars/ankit/soundlink?style=flat-square&color=yellow)
   ![GitHub forks](https://img.shields.io/github/forks/ankit/soundlink?style=flat-square&color=blue)
@@ -29,40 +47,30 @@
 
 ---
 
-## 📑 Table of Contents
-- [📋 Overview](#-overview)
-- [⚡ Quick Start](#-quick-start)
-- [🧩 Technical Architecture](#-technical-architecture)
-- [✨ Key Features](#-key-features)
-- [🎵 Music Player Features](#-music-player-features)
-- [👤 User Features](#-user-features)
-- [🛠️ Admin Features](#️-admin-features)
-- [📚 Data Models](#-data-models)
-- [📱 Installation](#-installation)
-- [🚀 Development](#-development)
-- [🧩 Tech Stack](#-tech-stack)
-- [🎨 Design Philosophy](#-design-philosophy)
-- [📋 Core Components](#-core-components)
-- [📸 App Screenshots](#-app-screenshots)
-- [📋 Recent Updates](#-recent-updates)
-- [📊 Performance Metrics](#-performance-metrics)
-- [⚙️ System Requirements](#️-system-requirements)
-- [🔄 API Integration](#-api-integration)
-- [🤝 Contributing](#-contributing)
-- [📄 License](#-license)
-- [🚀 Roadmap](#-roadmap)
-- [⚠️ Security](#️-security)
-- [🤔 Support & Feedback](#-support--feedback)
-- [❓ FAQ](#-faq)
-- [🙏 Acknowledgements](#-acknowledgements)
+<h2 align="center">📑 Quick Navigation</h2>
+
+<div align="center" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 20px 0;">
+  <a href="#-overview" style="display: inline-block; padding: 10px 15px; background-color: #1DB954; color: white; text-decoration: none; border-radius: 5px; min-width: 150px; text-align: center; margin: 5px; font-weight: bold;">📋 Overview</a>
+  <a href="#-quick-start" style="display: inline-block; padding: 10px 15px; background-color: #1DB954; color: white; text-decoration: none; border-radius: 5px; min-width: 150px; text-align: center; margin: 5px; font-weight: bold;">⚡ Quick Start</a>
+  <a href="#-technical-architecture" style="display: inline-block; padding: 10px 15px; background-color: #1DB954; color: white; text-decoration: none; border-radius: 5px; min-width: 150px; text-align: center; margin: 5px; font-weight: bold;">🧩 Architecture</a>
+  <a href="#-key-features" style="display: inline-block; padding: 10px 15px; background-color: #1DB954; color: white; text-decoration: none; border-radius: 5px; min-width: 150px; text-align: center; margin: 5px; font-weight: bold;">✨ Features</a>
+  <a href="#-app-screenshots" style="display: inline-block; padding: 10px 15px; background-color: #1DB954; color: white; text-decoration: none; border-radius: 5px; min-width: 150px; text-align: center; margin: 5px; font-weight: bold;">📸 Screenshots</a>
+  <a href="#-animated-demos" style="display: inline-block; padding: 10px 15px; background-color: #1DB954; color: white; text-decoration: none; border-radius: 5px; min-width: 150px; text-align: center; margin: 5px; font-weight: bold;">🎬 Demos</a>
+  <a href="#-tech-stack" style="display: inline-block; padding: 10px 15px; background-color: #1DB954; color: white; text-decoration: none; border-radius: 5px; min-width: 150px; text-align: center; margin: 5px; font-weight: bold;">🧩 Tech Stack</a>
+  <a href="#-installation" style="display: inline-block; padding: 10px 15px; background-color: #1DB954; color: white; text-decoration: none; border-radius: 5px; min-width: 150px; text-align: center; margin: 5px; font-weight: bold;">📱 Installation</a>
+  <a href="#-development" style="display: inline-block; padding: 10px 15px; background-color: #1DB954; color: white; text-decoration: none; border-radius: 5px; min-width: 150px; text-align: center; margin: 5px; font-weight: bold;">🚀 Development</a>
+  <a href="#-performance-metrics" style="display: inline-block; padding: 10px 15px; background-color: #1DB954; color: white; text-decoration: none; border-radius: 5px; min-width: 150px; text-align: center; margin: 5px; font-weight: bold;">📊 Performance</a>
+  <a href="#-roadmap" style="display: inline-block; padding: 10px 15px; background-color: #1DB954; color: white; text-decoration: none; border-radius: 5px; min-width: 150px; text-align: center; margin: 5px; font-weight: bold;">🚀 Roadmap</a>
+  <a href="#-faq" style="display: inline-block; padding: 10px 15px; background-color: #1DB954; color: white; text-decoration: none; border-radius: 5px; min-width: 150px; text-align: center; margin: 5px; font-weight: bold;">❓ FAQ</a>
+</div>
 
 ## 📋 Overview
 
 SoundLink is a feature-rich music streaming platform built with modern web technologies. It offers a seamless music listening experience across devices with a focus on performance, design, and user experience. The application is structured as a Progressive Web App (PWA), allowing users to install it on their devices and enjoy offline functionality.
 
 <div align="center">
-  <a href="https://ankitsoundlink.netlify.app/">
-    <img src="https://img.shields.io/badge/Try_SoundLink_Now-1DB954?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMTAwIDEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI0NSIgZmlsbD0iIzFEQjk1NCIvPjxwYXRoIGQ9Ik0zMCAzMEg3MFY3MEgzMFYzMFoiIGZpbGw9IiMxMTEiLz48cGF0aCBkPSJNNDAgNDBMNjUgNTBMNDAgNjBWNDBaIiBmaWxsPSIjZmZmIi8+PC9zdmc+&logoColor=white" alt="Try SoundLink Now">
+  <a href="https://ankitsoundlink.netlify.app/" target="_blank">
+    <img src="https://img.shields.io/badge/Try_SoundLink_Now-1DB954?style=for-the-badge" alt="Try SoundLink Now">
   </a>
 </div>
 
@@ -112,11 +120,61 @@ Want to try without installing? Visit [SoundLink Live Demo](https://ankitsoundli
 ### Architecture Diagram
 
 <div align="center">
-  <img src="https://via.placeholder.com/800x500?text=SoundLink+Architecture+Diagram" alt="SoundLink Architecture" width="80%">
-  <p><em>SoundLink's microservice-based architecture with React frontend and Express backend</em></p>
+  <table>
+    <tr>
+      <td align="center">
+        <img src="https://via.placeholder.com/150x150/1DB954/FFFFFF?text=React+Frontend" alt="Frontend" /><br/>
+        <b>Frontend</b>
+        <p>React, TailwindCSS, Vite</p>
+      </td>
+      <td align="center" width="50">
+        <h1>⟷</h1>
+        <p>API</p>
+      </td>
+      <td align="center">
+        <img src="https://via.placeholder.com/150x150/000000/FFFFFF?text=Express+Backend" alt="Backend" /><br/>
+        <b>Backend</b>
+        <p>Express, Node.js</p>
+      </td>
+      <td align="center" width="50">
+        <h1>⟷</h1>
+        <p>DB</p>
+      </td>
+      <td align="center">
+        <img src="https://via.placeholder.com/150x150/4EA94B/FFFFFF?text=MongoDB" alt="Database" /><br/>
+        <b>Database</b>
+        <p>MongoDB, Mongoose</p>
+      </td>
+    </tr>
+    <tr>
+      <td colspan="5" align="center">
+        <table width="100%">
+          <tr>
+            <td align="center" width="33%">
+              <img src="https://via.placeholder.com/100x100/3448C5/FFFFFF?text=Cloudinary" alt="Storage" /><br/>
+              <b>File Storage</b>
+            </td>
+            <td align="center" width="33%">
+              <img src="https://via.placeholder.com/100x100/000000/FFFFFF?text=JWT" alt="Auth" /><br/>
+              <b>Authentication</b>
+            </td>
+            <td align="center" width="33%">
+              <img src="https://via.placeholder.com/100x100/5E35B1/FFFFFF?text=PWA" alt="PWA" /><br/>
+              <b>Progressive Web App</b>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+  <p><em>SoundLink's architecture: React frontend, Express backend, MongoDB database, with Cloudinary storage</em></p>
 </div>
 
 ## ✨ Key Features
+
+<div align="center">
+  <img src="https://via.placeholder.com/1000x400.gif?text=Interactive+Feature+Showcase" alt="SoundLink Features" width="80%" style="border-radius: 8px; margin-bottom: 30px;">
+</div>
 
 - 🎧 **High-Quality Streaming** - Enjoy crystal-clear audio with adaptive bitrate streaming
 - 📱 **Progressive Web App** - Install on any device (Android, iOS, desktop) for native-like experience
@@ -291,15 +349,32 @@ SoundLink is built with a focus on user experience and accessibility. The dark-t
 ## 📸 App Screenshots
 
 <div align="center">
-  <img src="https://res.cloudinary.com/dhxvwbtfj/image/upload/v1747155152/Screenshot_2025-05-13_221228_e0d7yh.png" width="30%">
-  <img src="https://res.cloudinary.com/dhxvwbtfj/image/upload/v1747155156/Screenshot_2025-05-13_221354_iyw18h.png" width="30%">
-  <img src="https://res.cloudinary.com/dhxvwbtfj/image/upload/v1747155158/Screenshot_2025-05-13_221324_iet0tp.png" width="30%">
+  <div class="screenshot-container" style="margin-bottom: 20px; display: flex; justify-content: space-between; flex-wrap: wrap;">
+    <img src="https://res.cloudinary.com/dhxvwbtfj/image/upload/v1747155152/Screenshot_2025-05-13_221228_e0d7yh.png" alt="SoundLink Home Screen" width="30%" style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); margin-bottom: 10px;">
+    <img src="https://res.cloudinary.com/dhxvwbtfj/image/upload/v1747155156/Screenshot_2025-05-13_221354_iyw18h.png" alt="SoundLink Premium Player" width="30%" style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); margin-bottom: 10px;">
+    <img src="https://res.cloudinary.com/dhxvwbtfj/image/upload/v1747155158/Screenshot_2025-05-13_221324_iet0tp.png" alt="SoundLink Library View" width="30%" style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); margin-bottom: 10px;">
+  </div>
   
-  <p>
-    <img src="https://res.cloudinary.com/dhxvwbtfj/image/upload/v1747155152/Screenshot_2025-05-13_221434_exjiw2.png" width="45%">
-    <img src="https://res.cloudinary.com/dhxvwbtfj/image/upload/v1747155152/Screenshot_2025-05-13_221539_q7pgui.png" width="45%">
-    <img src="https://res.cloudinary.com/dhxvwbtfj/image/upload/v1747155153/Screenshot_2025-05-13_221450_g46cq8.png" width="45%">
-  </p>
+  <div class="screenshot-container" style="display: flex; justify-content: space-around; flex-wrap: wrap;">
+    <img src="https://res.cloudinary.com/dhxvwbtfj/image/upload/v1747155152/Screenshot_2025-05-13_221434_exjiw2.png" alt="SoundLink Mobile Interface" width="30%" style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); margin: 0 5px 10px 5px;">
+    <img src="https://res.cloudinary.com/dhxvwbtfj/image/upload/v1747155152/Screenshot_2025-05-13_221539_q7pgui.png" alt="SoundLink Lyrics View" width="30%" style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); margin: 0 5px 10px 5px;">
+    <img src="https://res.cloudinary.com/dhxvwbtfj/image/upload/v1747155153/Screenshot_2025-05-13_221450_g46cq8.png" alt="SoundLink Playlist View" width="30%" style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); margin: 0 5px 10px 5px;">
+  </div>
+</div>
+
+## 🎬 Animated Demos
+
+<div align="center">
+  <h3>Player Interface in Action</h3>
+  <img src="https://via.placeholder.com/800x450.gif?text=Music+Player+Demo" alt="Music Player Demo" width="70%" style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); margin-bottom: 30px;">
+  
+  <h3>Playlist Management</h3>
+  <img src="https://via.placeholder.com/800x450.gif?text=Playlist+Management+Demo" alt="Playlist Demo" width="70%" style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); margin-bottom: 30px;">
+  
+  <h3>Mobile Experience</h3>
+  <img src="https://via.placeholder.com/400x800.gif?text=Mobile+Experience+Demo" alt="Mobile Demo" width="35%" style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); margin-bottom: 20px;">
+  
+  <p>See SoundLink in action! Visit our <a href="https://ankitsoundlink.netlify.app/" target="_blank">live demo</a> to experience all features.</p>
 </div>
 
 ## 📋 Recent Updates
@@ -430,7 +505,7 @@ SoundLink focuses on providing a clean, distraction-free listening experience wi
   <p>Made with ❤️ and 🎵</p>
   <p>© 2025 SoundLink. All rights reserved.</p>
   
-  <a href="https://ankitsoundlink.netlify.app/">
-    <img src="https://img.shields.io/badge/Visit_SoundLink-1DB954?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMTAwIDEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI0NSIgZmlsbD0iIzFEQjk1NCIvPjxwYXRoIGQ9Ik0zMCAzMEg3MFY3MEgzMFYzMFoiIGZpbGw9IiMxMTEiLz48cGF0aCBkPSJNNDAgNDBMNjUgNTBMNDAgNjBWNDBaIiBmaWxsPSIjZmZmIi8+PC9zdmc+&logoColor=white" alt="Visit SoundLink">
+  <a href="https://ankitsoundlink.netlify.app/" target="_blank">
+    <img src="https://img.shields.io/badge/Visit_SoundLink-1DB954?style=for-the-badge" alt="Visit SoundLink">
   </a>
 </div> 
