@@ -1225,8 +1225,8 @@ const PremiumPlayer = () => {
 
             {/* Controls + Progress - hidden on small screens when extended view is not shown */}
             {(!isSmallScreen || !showExtraControls) && (
-              <div className={`flex flex-col items-center ${isSmallScreen ? "hidden" : "w-[45%] max-w-md"}`}>
-                <div className="flex items-center gap-3 mb-0.5">
+              <div className={`flex flex-col items-center ${isSmallScreen ? "hidden" : "w-[45%] max-w-md mx-auto"}`}>
+                <div className="flex items-center justify-center gap-4 mb-1">
                   {/* Playback modifier controls */}
                   <button
                     onClick={() => { shuffle(); handleShuffle(); }}
@@ -1234,7 +1234,7 @@ const PremiumPlayer = () => {
                     style={shuffleActive ? { color: themeColors.primary } : { color: `${themeColors.text}99` }}
                     title="Shuffle"
                   >
-                    <MdShuffle />
+                    <MdShuffle size={20} />
                   </button>
                   <button
                     onClick={toggleLoop}
@@ -1242,7 +1242,7 @@ const PremiumPlayer = () => {
                     style={loop ? { color: themeColors.primary } : { color: `${themeColors.text}99` }}
                     title="Repeat"
                   >
-                    <MdRepeat />
+                    <MdRepeat size={20} />
                   </button>
                   
                   {/* Main playback controls */}
@@ -1252,11 +1252,11 @@ const PremiumPlayer = () => {
                     style={{ color: `${themeColors.text}99` }}
                     title="Previous"
                   >
-                    <FaStepBackward />
+                    <FaStepBackward size={18} />
                   </button>
                   <button
                     onClick={handlePlayPause}
-                    className="rounded-full p-2 shadow-lg hover:scale-110 transition-transform border-2 text-lg"
+                    className="rounded-full p-3 shadow-lg hover:scale-110 transition-transform border-2 text-lg"
                     style={{ 
                       background: `linear-gradient(135deg, ${themeColors.primary}, ${themeColors.accent || themeColors.primary})`,
                       borderColor: `${themeColors.primary}80`,
@@ -1264,7 +1264,7 @@ const PremiumPlayer = () => {
                     }}
                     title={playStatus ? "Pause" : "Play"}
                   >
-                    {playStatus ? <FaPause /> : <FaPlay className="relative ml-0.5" />}
+                    {playStatus ? <FaPause size={20} /> : <FaPlay className="relative ml-0.5" size={20} />}
                   </button>
                   <button 
                     onClick={Next} 
@@ -1272,15 +1272,15 @@ const PremiumPlayer = () => {
                     style={{ color: `${themeColors.text}99` }}
                     title="Next"
                   >
-                    <FaStepForward className="text-xl" />
+                    <FaStepForward size={18} />
                   </button>
                 </div>
                 {/* Progress Bar */}
                 <div className="flex items-center gap-1 w-full">
-                  <span className="text-[10px] min-w-[28px]" style={{ color: `${themeColors.text}99` }}>
+                  <span className="text-xs min-w-[28px]" style={{ color: `${themeColors.text}99` }}>
                     {formatTime(time.currentTime.minute, time.currentTime.second)}
                   </span>
-                  <div className="relative w-full h-1 rounded-full overflow-hidden" style={{ backgroundColor: `${themeColors.text}30` }}>
+                  <div className="relative w-full h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: `${themeColors.text}30` }}>
                     {/* Buffering Progress Indicator */}
                     <div 
                       className="absolute top-0 left-0 h-full rounded-full"
@@ -1297,7 +1297,7 @@ const PremiumPlayer = () => {
                       onChange={handleSeek}
                       onTouchStart={handleProgressTouchStart}
                       onTouchEnd={handleProgressTouchEnd}
-                      className="w-full absolute top-0 left-0 h-1 cursor-pointer opacity-70 z-10"
+                      className="w-full absolute top-0 left-0 h-1.5 cursor-pointer opacity-70 z-10"
                       style={{ accentColor: themeColors.accent }}
                     />
                     {buffering && (
@@ -1306,7 +1306,7 @@ const PremiumPlayer = () => {
                       </div>
                     )}
                   </div>
-                  <span className="text-[10px] min-w-[28px]" style={{ color: `${themeColors.text}99` }}>
+                  <span className="text-xs min-w-[28px]" style={{ color: `${themeColors.text}99` }}>
                     {formatTime(time.totalTime.minute, time.totalTime.second)}
                   </span>
                 </div>
@@ -1354,48 +1354,48 @@ const PremiumPlayer = () => {
               <div className="flex items-center w-[30%] justify-end">
                 <button 
                   onClick={toggleInlineLyrics}
-                  className="text-base transition mr-2"
+                  className="text-base transition mr-3"
                   style={showInlineLyrics ? { color: themeColors.primary } : { color: `${themeColors.text}99` }}
                   title="Quick Lyrics"
                 >
-                  <MdOutlineLyrics size={18} />
+                  <MdOutlineLyrics size={20} />
                 </button>
                 <button 
                   onClick={toggleLyrics}
-                  className="text-base transition mr-2"
+                  className="text-base transition mr-3"
                   style={showLyrics ? { color: themeColors.primary } : { color: `${themeColors.text}99` }}
                   title="Full Lyrics"
                 >
-                  <MdOutlineLyrics size={18} />
+                  <MdOutlineLyrics size={20} />
                 </button>
                 <button 
                   onClick={() => toggleFavorite(track._id)}
-                  className="text-base transition"
+                  className="text-base transition mr-3"
                   style={isFavorite(track._id) ? { color: themeColors.accent } : { color: `${themeColors.text}99` }}
                   title="Like"
                 >
-                  <FaHeart />
+                  <FaHeart size={18} />
                 </button>
                 <button 
                   onClick={toggleQueue}
-                  className="text-base transition"
+                  className="text-base transition mr-3"
                   style={showQueue ? { color: themeColors.accent } : { color: `${themeColors.text}99` }}
                   title="Queue"
                 >
-                  <MdQueueMusic />
+                  <MdQueueMusic size={20} />
                 </button>
                 
                 {/* Separator */}
-                <div className="h-5 w-[1px] bg-white/20 mx-1"></div>
+                <div className="h-5 w-[1px] bg-white/20 mx-3"></div>
                 
                 {/* Audio controls */}
                 <button
                   onClick={handleMute}
-                  className="text-base transition"
+                  className="text-base transition mr-2"
                   style={{ color: `${themeColors.text}99` }}
                   title={isMuted ? "Unmute" : "Mute"}
                 >
-                  {isMuted || volume === 0 ? <FaVolumeMute /> : <FaVolumeUp />}
+                  {isMuted || volume === 0 ? <FaVolumeMute size={18} /> : <FaVolumeUp size={18} />}
                 </button>
                 <input
                   type="range"
@@ -1406,20 +1406,20 @@ const PremiumPlayer = () => {
                   onChange={(e) => setVolume(Number(e.target.value))}
                   onTouchStart={handleVolumeTouchStart}
                   onTouchEnd={handleVolumeTouchEnd}
-                  className="w-16 cursor-pointer h-1 volume-slider"
+                  className="w-16 cursor-pointer h-1 volume-slider mr-3"
                   style={{ accentColor: themeColors.accent }}
                   disabled={isMuted}
                 />
                 <button 
-                  className="text-base transition ml-1"
+                  className="text-base transition mr-3"
                   style={{ color: `${themeColors.text}99` }}
                   title="Devices"
                 >
-                  <MdDevices />
+                  <MdDevices size={20} />
                 </button>
                 
                 {/* Separator */}
-                <div className="h-5 w-[1px] bg-white/20 mx-1"></div>
+                <div className="h-5 w-[1px] bg-white/20 mx-3"></div>
                 
                 {/* More options button */}
                 <button 
@@ -1428,7 +1428,7 @@ const PremiumPlayer = () => {
                   style={{ color: `${themeColors.text}99` }}
                   title="More options"
                 >
-                  <MdMoreVert />
+                  <MdMoreVert size={20} />
                 </button>
                 
                 {/* More menu dropdown */}
