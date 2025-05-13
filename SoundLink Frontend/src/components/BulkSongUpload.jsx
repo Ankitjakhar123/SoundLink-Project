@@ -1,9 +1,53 @@
 import React, { useState, useEffect } from "react";
-import { MdMusicNote, MdFileUpload, MdEdit, MdImage } from "react-icons/md";
+import { MdMusicNote, MdFileUpload, MdEdit, MdImage, MdDownload } from "react-icons/md";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { parseBlob } from 'music-metadata-browser';
 const url = import.meta.env.VITE_BACKEND_URL;
+
+// Export functionality for LRC files
+const ExportLrcButton = ({ lyrics, songTitle }) => {
+  const handleExport = () => {
+    if (!lyrics) {
+      toast.warning("No lyrics to export");
+      return;
+    }
+    
+    // Create a blob with the lyrics content
+    const blob = new Blob([lyrics], { type: 'text/plain' });
+    
+    // Create a URL for the blob
+    const url = URL.createObjectURL(blob);
+    
+    // Create a download link
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${songTitle || 'lyrics'}.lrc`;
+    
+    // Trigger a click on the anchor element
+    document.body.appendChild(a);
+    a.click();
+    
+    // Cleanup
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 100);
+    
+    toast.success(`Exported lyrics for "${songTitle}"`);
+  };
+  
+  return (
+    <button
+      type="button"
+      onClick={handleExport}
+      className="text-xs flex items-center gap-1 px-2 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+    >
+      <MdDownload size={14} />
+      Export .lrc
+    </button>
+  );
+};
 
 const BulkSongUpload = () => {
   const [albums, setAlbums] = useState([]);
@@ -280,7 +324,47 @@ const BulkSongUpload = () => {
               
               {/* Lyrics Field - Full Width */}
               <div className="w-full mt-2">
-                <label className="block text-white text-sm mb-1">Lyrics</label>
+                <div className="flex justify-between items-center">
+                  <label className="block text-white text-sm mb-1">Lyrics</label>
+                  
+                  {uploadProgress[idx]?.status !== "success" && (
+                    <div className="flex gap-2">
+                      <input
+                        type="file"
+                        id={`lrc-file-${idx}`}
+                        accept=".lrc"
+                        hidden
+                        onChange={(e) => {
+                          if (e.target.files && e.target.files[0]) {
+                            const file = e.target.files[0];
+                            const reader = new FileReader();
+                            reader.onload = (event) => {
+                              if (event.target && event.target.result) {
+                                handleSongChange(idx, 'lyrics', event.target.result.toString());
+                                toast.success(`Imported lyrics for "${song.title}" from ${file.name}`);
+                              }
+                            };
+                            reader.onerror = () => {
+                              toast.error("Failed to read LRC file");
+                            };
+                            reader.readAsText(file);
+                          }
+                        }}
+                      />
+                      <label 
+                        htmlFor={`lrc-file-${idx}`}
+                        className="text-xs flex items-center gap-1 px-2 py-1 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors cursor-pointer"
+                      >
+                        <MdFileUpload size={14} />
+                        Import .lrc
+                      </label>
+                      
+                      {song.lyrics && (
+                        <ExportLrcButton lyrics={song.lyrics} songTitle={song.title} />
+                      )}
+                    </div>
+                  )}
+                </div>
                 <textarea 
                   value={song.lyrics || ''} 
                   onChange={e => handleSongChange(idx, 'lyrics', e.target.value)} 
@@ -288,6 +372,9 @@ const BulkSongUpload = () => {
                   placeholder="Enter song lyrics here..."
                   disabled={uploadProgress[idx]?.status === "success"}
                 />
+                <p className="mt-1 text-xs text-fuchsia-300/70">
+                  For time-synced lyrics that highlight during playback, use format: [mm:ss.xx]Lyrics text or import a .lrc file
+                </p>
               </div>
             </div>
           ))}

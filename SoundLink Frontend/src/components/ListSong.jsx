@@ -8,9 +8,12 @@ const url = import.meta.env.VITE_BACKEND_URL;
 const ListSong = () => {
   const [data, setData] = useState([]);
   const [editId, setEditId] = useState(null);
-  const [editData, setEditData] = useState({ name: '', album: '', lyrics: '' });
+  const [editData, setEditData] = useState({ name: '', album: '', lyrics: '', artist: '' });
   const [showLyrics, setShowLyrics] = useState(false);
   const [selectedSong, setSelectedSong] = useState(null);
+  const [artists, setArtists] = useState([]);
+  const [useCustomArtist, setUseCustomArtist] = useState(false);
+  const [customArtistName, setCustomArtistName] = useState('');
 
   // Fetch all songs
   const fetchSongs = async () => {
@@ -24,6 +27,21 @@ const ListSong = () => {
     } catch (error) {
       toast.error("Error fetching songs.");
       console.error("Failed to fetch songs:", error);
+    }
+  };
+
+  // Fetch all artists
+  const fetchArtists = async () => {
+    try {
+      const response = await axios.get(`${url}/api/artist/list`);
+      if (response.data.success) {
+        setArtists(response.data.artists);
+      } else {
+        toast.error("Failed to load artists.");
+      }
+    } catch (error) {
+      toast.error("Error fetching artists.");
+      console.error("Failed to fetch artists:", error);
     }
   };
 
@@ -47,7 +65,9 @@ const ListSong = () => {
   // Cancel editing
   const cancelEdit = () => {
     setEditId(null);
-    setEditData({ name: '', album: '', lyrics: '' });
+    setEditData({ name: '', album: '', lyrics: '', artist: '' });
+    setUseCustomArtist(false);
+    setCustomArtistName('');
   };
 
   // Save edited song
@@ -59,6 +79,15 @@ const ListSong = () => {
         album: editData.album,
         lyrics: editData.lyrics
       };
+      
+      // Handle artist data based on user selection
+      if (useCustomArtist) {
+        // Store custom artist name in the desc field
+        payload.desc = customArtistName;
+      } else if (editData.artist) {
+        // Use selected artist ID
+        payload.artist = editData.artist;
+      }
       
       const response = await axios.post(`${url}/api/song/edit`, payload);
       if (response.data.success) {
@@ -87,18 +116,37 @@ const ListSong = () => {
 
   useEffect(() => {
     fetchSongs();
+    fetchArtists();
   }, []);
+  
+  // Helper to get display text for artist column
+  const getArtistDisplay = (item) => {
+    // If artist is populated as an object, use its name directly
+    if (item.artist && typeof item.artist === 'object' && item.artist.name) {
+      return item.artist.name;
+    }
+    
+    // If artist is an ID, look it up
+    if (item.artist) {
+      const artist = artists.find(a => a._id === item.artist);
+      if (artist) return artist.name;
+    }
+    
+    // Default to using the description as artist name
+    return item.desc || "Unknown Artist";
+  };
 
   return (
     <div className="w-full max-w-7xl mx-auto rounded-3xl p-8 flex flex-col gap-6 bg-black/90 shadow-2xl">
       <p className="text-xl font-semibold mb-4">All Songs List</p>
 
       {/* Table header */}
-      <div className="sm:grid hidden grid-cols-[0.3fr_0.7fr_1fr_2fr_1fr_2fr] items-center gap-2.5 p-3 border border-gray-800 text-sm bg-black text-white font-medium rounded-t-lg">
+      <div className="sm:grid hidden grid-cols-[0.3fr_0.7fr_1fr_1fr_1fr_1fr_2fr] items-center gap-2.5 p-3 border border-gray-800 text-sm bg-black text-white font-medium rounded-t-lg">
         <span>#</span>
         <span>Image</span>
         <span>Name</span>
         <span>Album</span>
+        <span>Artist</span>
         <span>Duration</span>
         <span>Action</span>
       </div>
@@ -107,7 +155,7 @@ const ListSong = () => {
         data.map((item, index) => (
           <div
             key={item._id}
-            className="grid grid-cols-1 sm:grid-cols-[0.3fr_0.7fr_1fr_2fr_1fr_2fr] items-center gap-2.5 p-3 border border-gray-800 hover:bg-black/40 transition duration-300 rounded-md text-white"
+            className="grid grid-cols-1 sm:grid-cols-[0.3fr_0.7fr_1fr_1fr_1fr_1fr_2fr] items-center gap-2.5 p-3 border border-gray-800 hover:bg-black/40 transition duration-300 rounded-md text-white"
           >
             <span className="hidden sm:block">{index + 1}</span>
             <div className="w-14 h-14 rounded-lg overflow-hidden block">
@@ -134,6 +182,58 @@ const ListSong = () => {
               />
             ) : (
               <div className="opacity-80">{item.album}</div>
+            )}
+            {editId === item._id ? (
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-sm text-gray-400">Artist Type:</span>
+                  <label className="flex items-center cursor-pointer">
+                    <input
+                      type="radio"
+                      className="mr-1 accent-fuchsia-500"
+                      checked={!useCustomArtist}
+                      onChange={() => setUseCustomArtist(false)}
+                    />
+                    <span className="text-sm">Choose existing</span>
+                  </label>
+                  <label className="flex items-center cursor-pointer">
+                    <input
+                      type="radio"
+                      className="mr-1 accent-fuchsia-500"
+                      checked={useCustomArtist}
+                      onChange={() => setUseCustomArtist(true)}
+                    />
+                    <span className="text-sm">Write custom</span>
+                  </label>
+                </div>
+                
+                {useCustomArtist ? (
+                  <input
+                    type="text"
+                    className="p-2 bg-gray-900 border border-gray-700 rounded"
+                    value={customArtistName}
+                    onChange={(e) => setCustomArtistName(e.target.value)}
+                    placeholder="Enter artist name"
+                  />
+                ) : (
+                  <select
+                    className="p-2 bg-gray-900 border border-gray-700 rounded"
+                    value={editData.artist || ''}
+                    onChange={(e) => setEditData({ ...editData, artist: e.target.value })}
+                  >
+                    <option value="">-- Select Artist --</option>
+                    {artists.map(artist => (
+                      <option key={artist._id} value={artist._id}>
+                        {artist.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+            ) : (
+              <div className="opacity-80">
+                {getArtistDisplay(item)}
+              </div>
             )}
             <div className="opacity-80">{item.duration}</div>
             
@@ -165,11 +265,23 @@ const ListSong = () => {
                 <button
                   className="text-blue-500 bg-blue-100 hover:bg-blue-200 px-3 py-1.5 rounded font-semibold transition text-sm"
                   onClick={() => { 
+                    // Determine if we should use custom artist or dropdown
+                    const hasArtistId = item.artist && (typeof item.artist === 'object' || artists.some(a => a._id === item.artist));
+                    const artistDesc = item.desc || '';
+                    
+                    setUseCustomArtist(!hasArtistId);
+                    setCustomArtistName(hasArtistId ? '' : artistDesc);
+                    
+                    // Set edit mode and populate edit form
                     setEditId(item._id); 
                     setEditData({ 
                       name: item.name, 
                       album: item.album,
-                      lyrics: item.lyrics || "" 
+                      lyrics: item.lyrics || "",
+                      // For artist field, prioritize using the actual artist ID if available
+                      artist: item.artist && typeof item.artist === 'object' 
+                        ? item.artist._id 
+                        : (item.artist || "")
                     }); 
                   }}
                 >
@@ -214,11 +326,23 @@ const ListSong = () => {
               <button
                 className="text-blue-400 bg-blue-900/40 hover:bg-blue-800/60 px-4 py-2 rounded font-semibold transition mb-4"
                 onClick={() => { 
+                  // Determine if we should use custom artist or dropdown
+                  const hasArtistId = selectedSong.artist && (typeof selectedSong.artist === 'object' || 
+                      artists.some(a => a._id === selectedSong.artist));
+                  const artistDesc = selectedSong.desc || '';
+                  
+                  setUseCustomArtist(!hasArtistId);
+                  setCustomArtistName(hasArtistId ? '' : artistDesc);
+                  
                   setEditId(selectedSong._id); 
                   setEditData({ 
                     name: selectedSong.name, 
                     album: selectedSong.album,
-                    lyrics: selectedSong.lyrics || "" 
+                    lyrics: selectedSong.lyrics || "",
+                    // For artist field, prioritize using the actual artist ID if available
+                    artist: selectedSong.artist && typeof selectedSong.artist === 'object' 
+                      ? selectedSong.artist._id 
+                      : (selectedSong.artist || "")
                   });
                   closeLyricsModal();
                 }}

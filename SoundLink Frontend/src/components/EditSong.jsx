@@ -1,13 +1,62 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { MdMusicNote, MdFileUpload } from 'react-icons/md';
+import { MdMusicNote, MdFileUpload, MdOutlineLyrics, MdDownload } from 'react-icons/md';
 import axios from "axios";
 import { toast } from "react-toastify";
+import { PlayerContext } from "../context/PlayerContext";
 const url = import.meta.env.VITE_BACKEND_URL;
+
+// Add export functionality
+const ExportLrcFile = ({ lyrics, songName }) => {
+  const handleExport = () => {
+    if (!lyrics) {
+      toast.warning("No lyrics to export");
+      return;
+    }
+    
+    // Create file content
+    const content = lyrics;
+    
+    // Create a blob from the content
+    const blob = new Blob([content], { type: 'text/plain' });
+    
+    // Create a URL for the blob
+    const url = URL.createObjectURL(blob);
+    
+    // Create an anchor element for downloading
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${songName || 'lyrics'}.lrc`;
+    
+    // Trigger a click on the anchor element
+    document.body.appendChild(a);
+    a.click();
+    
+    // Cleanup
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 100);
+    
+    toast.success("Lyrics exported");
+  };
+  
+  return (
+    <button
+      type="button"
+      onClick={handleExport}
+      className="flex items-center gap-1 px-3 py-1 bg-green-600 text-white rounded-md text-sm hover:bg-green-700 transition-colors"
+    >
+      <MdDownload />
+      Export .lrc
+    </button>
+  );
+};
 
 const EditSong = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { formatLyricsWithTimestamps } = useContext(PlayerContext);
   const [image, setImage] = useState(null);
   const [song, setSong] = useState(null);
   const [name, setName] = useState("");
@@ -19,6 +68,7 @@ const EditSong = () => {
   const [loading, setLoading] = useState(true);
   const [currentImage, setCurrentImage] = useState("");
   const [currentAudio, setCurrentAudio] = useState("");
+  const [syncingLyrics, setSyncingLyrics] = useState(false);
 
   // Fetch song data and album list
   useEffect(() => {
@@ -221,13 +271,93 @@ const EditSong = () => {
 
       {/* Song Lyrics */}
       <div className="flex flex-col gap-2.5">
-        <p>Song Lyrics</p>
+        <div className="flex justify-between items-center">
+          <p>Song Lyrics</p>
+          <div className="flex gap-2">
+            <input
+              type="file"
+              id="lrcFile"
+              accept=".lrc"
+              hidden
+              onChange={(e) => {
+                if (e.target.files && e.target.files[0]) {
+                  const file = e.target.files[0];
+                  const reader = new FileReader();
+                  reader.onload = (event) => {
+                    if (event.target && event.target.result) {
+                      setLyrics(event.target.result.toString());
+                      toast.success(`Imported lyrics from ${file.name}`);
+                    }
+                  };
+                  reader.onerror = () => {
+                    toast.error("Failed to read LRC file");
+                  };
+                  reader.readAsText(file);
+                }
+              }}
+            />
+            <label 
+              htmlFor="lrcFile"
+              className="flex items-center gap-1 px-3 py-1 bg-indigo-600 text-white rounded-md text-sm hover:bg-indigo-700 transition-colors cursor-pointer"
+            >
+              <MdFileUpload />
+              Import .lrc
+            </label>
+            
+            {lyrics && <ExportLrcFile lyrics={lyrics} songName={name} />}
+            
+            <button
+              type="button"
+              onClick={() => {
+                if (!currentAudio) {
+                  toast.error("No audio file available to sync lyrics");
+                  return;
+                }
+                
+                setSyncingLyrics(true);
+                // Create a temporary audio element to get song duration
+                const tempAudio = new Audio(currentAudio);
+                
+                tempAudio.addEventListener('loadedmetadata', () => {
+                  try {
+                    const syncedLyrics = formatLyricsWithTimestamps(lyrics, tempAudio);
+                    setLyrics(syncedLyrics);
+                    toast.success("Lyrics synchronized with estimated timestamps");
+                  } catch (error) {
+                    toast.error("Failed to sync lyrics");
+                    console.error("Lyrics sync error:", error);
+                  } finally {
+                    setSyncingLyrics(false);
+                  }
+                });
+                
+                tempAudio.addEventListener('error', () => {
+                  toast.error("Could not load audio to sync lyrics");
+                  setSyncingLyrics(false);
+                });
+                
+                // Load audio to trigger metadata loading
+                tempAudio.load();
+              }}
+              disabled={syncingLyrics}
+              className="flex items-center gap-1 px-3 py-1 bg-fuchsia-700 text-white rounded-md text-sm hover:bg-fuchsia-800 transition-colors"
+            >
+              <MdOutlineLyrics />
+              {syncingLyrics ? "Syncing..." : "Auto-Sync"}
+            </button>
+          </div>
+        </div>
         <textarea
           placeholder="Enter song lyrics here..."
           value={lyrics}
           onChange={(e) => setLyrics(e.target.value)}
           className="bg-transparent outline-green-600 border-2 border-gray-400 p-2.5 w-[max(40vw,250px)] h-[200px]"
         />
+        <p className="mt-1 text-xs text-gray-600">
+          For time-synced lyrics that highlight during playback, use format: [mm:ss.xx]Lyrics text<br/>
+          Example: [00:05.45]This line will highlight at 5.45 seconds<br/>
+          You can also import a .lrc file with timestamps.
+        </p>
       </div>
 
       {/* Submit Button */}

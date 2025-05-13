@@ -598,7 +598,7 @@ const PremiumPlayer = () => {
                   <span 
                     className="text-xs px-2 py-1 rounded-full cursor-pointer"
                     style={{ color: themeColors.primary }}
-                  onClick={toggleLyrics}
+                    onClick={toggleLyrics}
                   >
                     Full screen
                   </span>
@@ -606,12 +606,83 @@ const PremiumPlayer = () => {
                 
                 <div className="space-y-6 text-sm">
                   {track.lyrics ? (
-                    // If track has lyrics, display them
-                    track.lyrics.split('\n').map((line, index) => (
-                      <p key={index} style={{ color: `${themeColors.text}${index % 2 === 0 ? 'ff' : '99'}` }}>
-                        {line}
-                      </p>
-                    ))
+                    // If track has lyrics, display them with timed highlighting
+                    (() => {
+                      // Parse the lyrics to find any time-synced lines
+                      const lines = track.lyrics.split('\n');
+                      const hasTimestamps = lines.some(line => /^\[\d{2}:\d{2}\.\d{2}\]/.test(line));
+                      const currentTimeInSeconds = (time.currentTime.minute * 60) + time.currentTime.second;
+                      
+                      // For time-synced lyrics
+                      if (hasTimestamps) {
+                        const parsedLines = lines.map((line, index) => {
+                          const timeMatch = line.match(/^\[(\d{2}):(\d{2})\.(\d{2})\](.*)/);
+                          if (timeMatch) {
+                            const minutes = parseInt(timeMatch[1], 10);
+                            const seconds = parseInt(timeMatch[2], 10);
+                            const hundredths = parseInt(timeMatch[3], 10);
+                            const timeInSeconds = minutes * 60 + seconds + hundredths / 100;
+                            const text = timeMatch[4].trim();
+                            return { timeInSeconds, text, index };
+                          }
+                          
+                          // For section headers
+                          const sectionMatch = line.match(/^\[(.*?)\]/);
+                          if (sectionMatch) {
+                            return { timeInSeconds: -1, text: line, isSectionHeader: true, index };
+                          }
+                          
+                          // For regular lines
+                          return { timeInSeconds: -1, text: line, index };
+                        });
+                        
+                        // Find current active line index
+                        let activeIndex = -1;
+                        const timedLines = parsedLines.filter(line => line.timeInSeconds >= 0);
+                        
+                        for (let i = timedLines.length - 1; i >= 0; i--) {
+                          if (timedLines[i].timeInSeconds <= currentTimeInSeconds) {
+                            activeIndex = timedLines[i].index;
+                            break;
+                          }
+                        }
+                        
+                        // Return the rendered lines
+                        return parsedLines.map((line) => {
+                          if (line.isSectionHeader) {
+                            return (
+                              <p key={line.index} style={{ color: `${themeColors.text}70` }}>
+                                {line.text}
+                              </p>
+                            );
+                          }
+                          
+                          const isActive = line.index === activeIndex;
+                          
+                          return (
+                            <p 
+                              key={line.index} 
+                              className="transition-all duration-300"
+                              style={{ 
+                                color: isActive ? themeColors.primary : `${themeColors.text}${line.index % 2 === 0 ? 'ff' : '99'}`,
+                                fontWeight: isActive ? 'bold' : 'normal',
+                                transform: isActive ? 'scale(1.05)' : 'scale(1)',
+                                transformOrigin: 'left center'
+                              }}
+                            >
+                              {line.text}
+                            </p>
+                          );
+                        });
+                      } else {
+                        // For non-timed lyrics, display normally
+                        return lines.map((line, index) => (
+                          <p key={index} style={{ color: `${themeColors.text}${index % 2 === 0 ? 'ff' : '99'}` }}>
+                            {line}
+                          </p>
+                        ));
+                      }
+                    })()
                   ) : (
                     // Default lyrics when not available
                     <>

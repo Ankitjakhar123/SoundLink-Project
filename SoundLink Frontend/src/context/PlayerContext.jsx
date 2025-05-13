@@ -38,6 +38,12 @@ export const PlayerContextProvider = ({ children }) => {
       return trackObj.artistName;
     }
     
+    // Use description field directly as artist name since that's where we store it
+    // in the bulk upload and custom artist input
+    if (trackObj.desc && typeof trackObj.desc === 'string') {
+      return trackObj.desc;
+    }
+    
     if (trackObj.metadata && trackObj.metadata.artist) {
       return trackObj.metadata.artist;
     }
@@ -52,15 +58,6 @@ export const PlayerContextProvider = ({ children }) => {
     
     if (trackObj.createdBy && trackObj.createdBy.name) {
       return trackObj.createdBy.name;
-    }
-    
-    // If we have a desc field that may contain artist info, try to extract it
-    if (trackObj.desc && typeof trackObj.desc === 'string') {
-      // Check if description contains "by [artist]" pattern
-      const byMatch = trackObj.desc.match(/by\s+([^,.]+)/i);
-      if (byMatch && byMatch[1]) {
-        return byMatch[1].trim();
-      }
     }
     
     return 'Unknown Artist';
@@ -1074,6 +1071,59 @@ export const PlayerContextProvider = ({ children }) => {
     }));
   };
 
+  // Utility function to convert lyrics to/from time-synced format
+  const formatLyricsWithTimestamps = (lyrics, audioElement) => {
+    // If no lyrics or audio element, return empty string
+    if (!lyrics || !audioElement) return '';
+    
+    // Check if lyrics already have timestamps
+    const hasTimestamps = lyrics.split('\n').some(line => /^\[\d{2}:\d{2}\.\d{2}\]/.test(line));
+    
+    // If already has timestamps, return original lyrics
+    if (hasTimestamps) return lyrics;
+    
+    // Estimate timestamps based on song duration and number of lyrics lines
+    const duration = audioElement.duration;
+    const lines = lyrics.split('\n').filter(line => line.trim() !== '');
+    
+    // Skip non-lyric lines like section headers [Verse], [Chorus], etc.
+    const actualLyricLines = lines.filter(line => !/^\[.*\]/.test(line));
+    
+    // If no actual lyrics or invalid duration, return original
+    if (actualLyricLines.length === 0 || !duration || duration === Infinity || isNaN(duration)) {
+      return lyrics;
+    }
+    
+    // Calculate approximate time per line
+    const timePerLine = duration / actualLyricLines.length;
+    
+    // Format timestamps and add to lyrics
+    let formattedLyrics = '';
+    let currentTime = 0;
+    
+    lines.forEach(line => {
+      // If it's a section header, add it without timestamp
+      if (/^\[.*\]/.test(line)) {
+        formattedLyrics += `${line}\n`;
+      } else {
+        // Format the timestamp
+        const minutes = Math.floor(currentTime / 60);
+        const seconds = Math.floor(currentTime % 60);
+        const hundredths = Math.floor((currentTime % 1) * 100);
+        
+        const timestamp = `[${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${hundredths.toString().padStart(2, '0')}]`;
+        
+        // Add line with timestamp
+        formattedLyrics += `${timestamp}${line}\n`;
+        
+        // Increment time for next line
+        currentTime += timePerLine;
+      }
+    });
+    
+    return formattedLyrics;
+  };
+
   // Add the new buffering states and functions to the context
   const contextValue = {
     audioRef,
@@ -1102,6 +1152,8 @@ export const PlayerContextProvider = ({ children }) => {
     // Helper functions for metadata extraction
     getArtistName,
     getAlbumName,
+    // Lyrics helper function
+    formatLyricsWithTimestamps,
     // Buffering and lazy loading related
     buffering,
     loadingProgress,

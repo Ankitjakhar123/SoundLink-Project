@@ -1,11 +1,96 @@
-import React, { useContext } from 'react';
+import React, { useContext, useEffect, useState, useRef } from 'react';
 import { PlayerContext } from '../context/PlayerContext';
 // eslint-disable-next-line no-unused-vars
 import { AnimatePresence, motion } from 'framer-motion';
 import { MdClose } from 'react-icons/md';
 
 const LyricsPanel = ({ isOpen, onClose }) => {
-  const { track, themeColors, getArtistName } = useContext(PlayerContext);
+  const { track, themeColors, getArtistName, time } = useContext(PlayerContext);
+  const [currentLineIndex, setCurrentLineIndex] = useState(0);
+  const [parsedLyrics, setParsedLyrics] = useState([]);
+  const lyricsContainerRef = useRef(null);
+  
+  // Parse the lyrics into a time-stamped format if they have timestamps
+  useEffect(() => {
+    if (!track || !track.lyrics) {
+      setParsedLyrics([]);
+      setCurrentLineIndex(0);
+      return;
+    }
+    
+    const lines = track.lyrics.split('\n');
+    const hasTimestamps = lines.some(line => /^\[\d{2}:\d{2}\.\d{2}\]/.test(line));
+    
+    if (hasTimestamps) {
+      // Parse lyrics with timestamps [mm:ss.xx]
+      const formattedLyrics = lines.map((line, index) => {
+        const timeMatch = line.match(/^\[(\d{2}):(\d{2})\.(\d{2})\](.*)/);
+        if (timeMatch) {
+          const minutes = parseInt(timeMatch[1], 10);
+          const seconds = parseInt(timeMatch[2], 10);
+          const hundredths = parseInt(timeMatch[3], 10);
+          const timeInSeconds = minutes * 60 + seconds + hundredths / 100;
+          const text = timeMatch[4].trim();
+          return { timeInSeconds, text, index };
+        }
+        // For section headers without timestamps
+        const sectionMatch = line.match(/^\[(.*?)\]/);
+        if (sectionMatch) {
+          return { timeInSeconds: -1, text: line, isSectionHeader: true, index };
+        }
+        // For lines without timestamps
+        return { timeInSeconds: -1, text: line, index };
+      });
+      
+      setParsedLyrics(formattedLyrics);
+    } else {
+      // For lyrics without timestamps, just show them normally
+      const formattedLyrics = lines.map((line, index) => {
+        const isSectionHeader = /^\[(.*?)\]/.test(line);
+        return { 
+          timeInSeconds: -1,
+          text: line, 
+          isSectionHeader, 
+          index 
+        };
+      });
+      setParsedLyrics(formattedLyrics);
+    }
+  }, [track]);
+  
+  // Update current line based on current playback time
+  useEffect(() => {
+    if (!parsedLyrics.length || !isOpen) return;
+    
+    const currentTimeInSeconds = time.currentTime.minute * 60 + time.currentTime.second;
+    
+    // Find the correct line based on current time
+    const timedLyrics = parsedLyrics.filter(line => line.timeInSeconds >= 0);
+    if (timedLyrics.length) {
+      // Find the last line whose timestamp is less than or equal to current time
+      for (let i = timedLyrics.length - 1; i >= 0; i--) {
+        if (timedLyrics[i].timeInSeconds <= currentTimeInSeconds) {
+          setCurrentLineIndex(timedLyrics[i].index);
+          break;
+        }
+      }
+    }
+  }, [time, parsedLyrics, isOpen]);
+  
+  // Scroll to the active line
+  useEffect(() => {
+    if (lyricsContainerRef.current && isOpen) {
+      const container = lyricsContainerRef.current;
+      const activeLine = container.querySelector(`.line-${currentLineIndex}`);
+      
+      if (activeLine) {
+        activeLine.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        });
+      }
+    }
+  }, [currentLineIndex, isOpen]);
   
   if (!isOpen) return null;
   
@@ -38,21 +123,40 @@ const LyricsPanel = ({ isOpen, onClose }) => {
           </div>
           
           {/* Lyrics content */}
-          <div className="flex-1 overflow-y-auto p-4">
-            <div className="max-w-2xl mx-auto space-y-6 py-8">
+          <div className="flex-1 overflow-y-auto p-4" ref={lyricsContainerRef}>
+            <div className="max-w-2xl mx-auto space-y-2 py-8">
               {track && track.lyrics ? (
-                // Display actual lyrics if available
-                track.lyrics.split('\n').map((line, index) => {
-                  // Check if the line is a section header like [Verse], [Chorus], etc.
-                  const isSectionHeader = /^\[(.*?)\]/.test(line);
+                // Display synchronized lyrics
+                parsedLyrics.map((line) => {
+                  // Different styling for section headers vs lines
+                  if (line.isSectionHeader) {
+                    return (
+                      <p 
+                        key={line.index} 
+                        className={`text-sm mt-6 mb-4 font-bold line-${line.index}`} 
+                        style={{ color: `${themeColors.text}70` }}
+                      >
+                        {line.text}
+                      </p>
+                    );
+                  }
                   
-                  return isSectionHeader ? (
-                    <p key={index} className="text-sm mt-6 mb-4 font-bold" style={{ color: `${themeColors.text}70` }}>
-                      {line}
-                    </p>
-                  ) : (
-                    <p key={index} className="text-lg mb-2" style={{ color: themeColors.text }}>
-                      {line || ' '} {/* Empty lines render as space */}
+                  // Style for the active line vs non-active lines
+                  const isActive = line.index === currentLineIndex;
+                  
+                  return (
+                    <p 
+                      key={line.index} 
+                      className={`text-lg mb-2 transition-all duration-300 line-${line.index}`}
+                      style={{ 
+                        color: isActive ? themeColors.primary : themeColors.text,
+                        fontSize: isActive ? '1.25rem' : '1rem',
+                        fontWeight: isActive ? 'bold' : 'normal',
+                        transform: isActive ? 'scale(1.05)' : 'scale(1)',
+                        transformOrigin: 'left center'
+                      }}
+                    >
+                      {line.text || ' '} {/* Empty lines render as space */}
                     </p>
                   );
                 })
