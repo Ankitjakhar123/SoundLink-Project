@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="public/icons/icon-192x192.svg" alt="SoundLink Logo" width="150px" height="150px">
+  <img src="SoundLink Frontend/public/icons/soundlink-icon-512.png" alt="SoundLink Logo" width="150px" height="150px">
   <h1>🎵 SoundLink</h1>
   <p><strong>Your music, anywhere, anytime.</strong></p>
   <p>A modern, responsive music streaming platform that works seamlessly across all your devices.</p>
@@ -225,9 +225,14 @@ SoundLink is built with a focus on user experience and accessibility. The dark-t
 ## 📸 App Screenshots
 
 <div align="center">
-  <img src="public/assets/screenshot1.png" alt="SoundLink Home Screen" width="30%">
-  <img src="public/assets/screenshot2.png" alt="SoundLink Player" width="30%">
-  <img src="public/assets/screenshot3.png" alt="SoundLink Library" width="30%">
+  <img src="https://via.placeholder.com/800x450?text=SoundLink+Home+Screen" alt="SoundLink Home Screen" width="30%">
+  <img src="https://via.placeholder.com/800x450?text=SoundLink+Premium+Player" alt="SoundLink Player" width="30%">
+  <img src="https://via.placeholder.com/800x450?text=SoundLink+Library" alt="SoundLink Library" width="30%">
+  
+  <p>
+    <img src="https://via.placeholder.com/800x450?text=SoundLink+Mobile+View" alt="SoundLink Mobile View" width="45%">
+    <img src="https://via.placeholder.com/800x450?text=SoundLink+Lyrics+Panel" alt="SoundLink Lyrics Panel" width="45%">
+  </p>
 </div>
 
 ## 📋 Recent Updates
