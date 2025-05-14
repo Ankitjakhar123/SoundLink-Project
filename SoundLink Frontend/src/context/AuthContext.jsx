@@ -131,19 +131,57 @@ export const AuthProvider = ({ children }) => {
         
         // Add a flag to localStorage to prevent infinite refresh loops
         const authAttemptCount = parseInt(localStorage.getItem('authAttemptCount') || '0');
+        const authStartTime = parseInt(localStorage.getItem('authStartTime') || '0');
+        const now = Date.now();
+        
+        // Reset counter if it's been more than 2 minutes since first attempt
+        if (authStartTime && (now - authStartTime) > 2 * 60 * 1000) {
+          localStorage.setItem('authAttemptCount', '0');
+          localStorage.setItem('authStartTime', now.toString());
+        }
+        
+        // If this is the first attempt in this session, record the start time
+        if (authAttemptCount === 0) {
+          localStorage.setItem('authStartTime', now.toString());
+        }
         
         // If we've tried to authenticate too many times in a short period, stop trying
-        if (authAttemptCount > 5) {
+        if (authAttemptCount > 3) {
           console.log("Too many auth attempts, stopping to prevent refresh loop");
+          localStorage.removeItem('token');
+          Cookies.remove('auth_token');
+          delete axios.defaults.headers.common["Authorization"];
           setUser(null);
-          saveTokenToStorage(""); // Clear invalid token
+          setToken("");
           setLoading(false);
           
-          // Reset the counter after a short delay
-          setTimeout(() => {
-            localStorage.setItem('authAttemptCount', '0');
-          }, 10000); // 10 seconds
+          // Tell the user what happened
+          if (typeof window !== 'undefined') {
+            // Create a toast-like message
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'fixed top-4 left-0 right-0 mx-auto w-max max-w-md bg-red-600 text-white p-4 rounded-lg shadow-lg z-50';
+            errorDiv.style.zIndex = '9999';
+            errorDiv.innerHTML = `
+              <p class="font-medium">Authentication error detected</p>
+              <p class="text-sm">The app has been reset to solve refresh issues.</p>
+              <button class="mt-2 bg-white text-red-600 px-3 py-1 rounded w-full">Reload app</button>
+            `;
+            document.body.appendChild(errorDiv);
+            
+            errorDiv.querySelector('button').addEventListener('click', () => {
+              window.location.href = '/';
+            });
+            
+            // Auto remove after 10 seconds
+            setTimeout(() => {
+              if (document.body.contains(errorDiv)) {
+                document.body.removeChild(errorDiv);
+              }
+            }, 10000);
+          }
           
+          // Reset the counter
+          localStorage.setItem('authAttemptCount', '0');
           return;
         }
         

@@ -19,13 +19,13 @@
     <!-- Prioritize PNG icons over SVG for better browser compatibility -->
     <link rel="icon" type="image/png" sizes="192x192" href="/icons/soundlink-icon-192.png?v=2" />
     <link rel="icon" type="image/png" sizes="512x512" href="/icons/soundlink-icon-512.png?v=2" />
-    <link rel="icon" type="image/svg+xml" href="/icons/soundlink-icon.svg?v=2" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+    <link rel="icon" type="image/svg+xml" href="/icons/soundlink-icon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>SoundLink</title>
     
     <!-- PWA Meta Tags -->
-    <meta name="theme-color" content="#1A1A1A" />
-    <meta name="description" content="SoundLink - A music streaming platform" />
+    <meta name="theme-color" content="#0F0F0F" />
+    <meta name="description" content="SoundLink - A premium music experience" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -50,6 +50,84 @@
     
     <!-- Load Google fonts with display=swap to prevent render blocking -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    
+    <!-- Failsafe script to fix refresh loop issues -->
+    <script>
+      // Detect if we're in a refresh loop
+      (function() {
+        // Get page load timestamp
+        const now = Date.now();
+        const lastLoad = parseInt(localStorage.getItem('lastPageLoad') || '0');
+        const reloadCount = parseInt(localStorage.getItem('pageReloadCount') || '0');
+        
+        // If page loaded within last 2 seconds, increment counter
+        if (lastLoad && (now - lastLoad) < 2000) {
+          localStorage.setItem('pageReloadCount', (reloadCount + 1).toString());
+        } else {
+          // Reset counter if it's been more than 2 seconds
+          localStorage.setItem('pageReloadCount', '1');
+        }
+        
+        // Store current load time
+        localStorage.setItem('lastPageLoad', now.toString());
+        
+        // If reloaded more than 3 times quickly, attempt emergency recovery
+        if (reloadCount >= 3) {
+          console.log('Emergency refresh loop recovery activated');
+          
+          // Clear auth tokens and counters
+          localStorage.removeItem('token');
+          localStorage.setItem('authAttemptCount', '0');
+          localStorage.setItem('pageReloadCount', '0');
+          localStorage.setItem('pageRefreshCount', '0');
+          
+          // Try to remove cookies
+          document.cookie = 'auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+          
+          // Unregister service workers
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+              for (let registration of registrations) {
+                registration.unregister();
+                console.log('Emergency service worker unregistration');
+              }
+            });
+          }
+          
+          // Clear caches
+          if ('caches' in window) {
+            caches.keys().then(function(cacheNames) {
+              cacheNames.forEach(function(cacheName) {
+                caches.delete(cacheName);
+                console.log('Emergency cache deletion: ', cacheName);
+              });
+            });
+          }
+          
+          // Show a message to the user after the page loads
+          window.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+              const div = document.createElement('div');
+              div.style.position = 'fixed';
+              div.style.top = '0';
+              div.style.left = '0';
+              div.style.right = '0';
+              div.style.backgroundColor = '#ef4444';
+              div.style.color = 'white';
+              div.style.padding = '10px';
+              div.style.textAlign = 'center';
+              div.style.zIndex = '9999';
+              div.innerHTML = 'Refresh loop detected and fixed. The app should now work properly.';
+              document.body.appendChild(div);
+              
+              setTimeout(function() {
+                div.style.display = 'none';
+              }, 5000);
+            }, 1000);
+          });
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
