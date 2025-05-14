@@ -21,10 +21,71 @@ export const getAuthHeaders = (token) => {
   };
 };
 
+// Auto-retry functionality for API requests
+export const fetchWithRetry = async (url, options = {}, maxRetries = 2) => {
+  let retries = 0;
+  let lastError = null;
+  
+  // Set a timeout by default
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), options.timeout || 15000);
+  
+  while (retries <= maxRetries) {
+    try {
+      // Add abort signal if not already present
+      const fetchOptions = { 
+        ...options,
+        signal: options.signal || controller.signal
+      };
+      
+      const response = await fetch(url, fetchOptions);
+      
+      // Clear the timeout since request completed
+      clearTimeout(timeoutId);
+      
+      // Return successful response
+      return response;
+    } catch (error) {
+      lastError = error;
+      
+      // Don't retry if request was aborted or timeout
+      if (error.name === 'AbortError') {
+        console.log(`Request to ${url} timed out or aborted`);
+        break;
+      }
+      
+      retries++;
+      
+      // Only retry on network errors or 5xx server errors
+      if (retries <= maxRetries) {
+        // Exponential backoff: 300ms, 900ms, 2700ms, etc.
+        const delay = Math.min(300 * Math.pow(3, retries - 1), 10000);
+        console.log(`Retrying request to ${url} (${retries}/${maxRetries}) after ${delay}ms`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+  
+  // Clear timeout if we broke out of the loop
+  clearTimeout(timeoutId);
+  
+  // All retries failed
+  throw lastError || new Error(`Failed to fetch ${url} after ${maxRetries} retries`);
+};
+
 // Example usage:
-// import { getApiUrl, getAuthHeaders } from '../utils/api';
+// import { getApiUrl, getAuthHeaders, fetchWithRetry } from '../utils/api';
 // const fetchData = async () => {
-//   const response = await axios.get(getApiUrl('api/song/list'), { 
-//     headers: getAuthHeaders(token) 
-//   });
+//   try {
+//     const response = await fetchWithRetry(
+//       getApiUrl('api/song/list'), 
+//       { headers: getAuthHeaders(token) }
+//     );
+//     if (response.ok) {
+//       const data = await response.json();
+//       return data;
+//     }
+//   } catch (error) {
+//     console.error('Error fetching data:', error);
+//   }
 // }; 

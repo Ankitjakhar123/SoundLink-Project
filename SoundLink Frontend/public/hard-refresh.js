@@ -18,23 +18,28 @@
     console.log('Force reload parameter detected and processed');
   }
   
-  // Version check for cache busting
+  // Version check for cache busting - now just clears cache without reloading
   const currentVersion = '1.0.2'; // Update this when deploying
   const lastVersion = localStorage.getItem('appVersion');
   
   if (lastVersion !== currentVersion) {
-    console.log(`Version changed from ${lastVersion || 'none'} to ${currentVersion}, refreshing resources`);
+    console.log(`Version changed from ${lastVersion || 'none'} to ${currentVersion}`);
     
-    // Clear cache for major version changes
+    // Just clear old caches silently without triggering reload
     if ('caches' in window) {
-      caches.keys().then(cacheNames => {
-        cacheNames.forEach(cacheName => {
-          if (cacheName.includes('soundlink-cache')) {
-            caches.delete(cacheName);
-            console.log(`Deleted cache: ${cacheName}`);
-          }
-        });
-      });
+      try {
+        caches.keys().then(cacheNames => {
+          cacheNames.forEach(cacheName => {
+            if (cacheName.includes('soundlink-cache')) {
+              caches.delete(cacheName)
+                .then(() => console.log(`Deleted cache: ${cacheName}`))
+                .catch(err => console.log(`Failed to delete cache: ${cacheName}`, err));
+            }
+          });
+        }).catch(e => console.log('Error managing caches:', e));
+      } catch (err) {
+        console.log('Cache API error:', err);
+      }
     }
     
     // Update stored version
