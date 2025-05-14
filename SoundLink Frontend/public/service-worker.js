@@ -66,6 +66,22 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   
+  // Special handling for auth requests - NEVER cache these to prevent refresh loops
+  if (url.pathname.includes('/api/auth/')) {
+    event.respondWith(
+      fetch(event.request)
+        .catch(() => {
+          // For auth endpoints, just return a failed response rather than using cached data
+          // to prevent authentication loops
+          return new Response(JSON.stringify({ success: false, message: 'Network error' }), {
+            headers: { 'Content-Type': 'application/json' },
+            status: 503
+          });
+        })
+    );
+    return;
+  }
+  
   // Special handling for API requests - network first with cache fallback
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(

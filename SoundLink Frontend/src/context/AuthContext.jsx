@@ -129,6 +129,27 @@ export const AuthProvider = ({ children }) => {
         // Ensure token is in axios headers
         axios.defaults.headers.common["Authorization"] = `Bearer ${currentToken}`;
         
+        // Add a flag to localStorage to prevent infinite refresh loops
+        const authAttemptCount = parseInt(localStorage.getItem('authAttemptCount') || '0');
+        
+        // If we've tried to authenticate too many times in a short period, stop trying
+        if (authAttemptCount > 5) {
+          console.log("Too many auth attempts, stopping to prevent refresh loop");
+          setUser(null);
+          saveTokenToStorage(""); // Clear invalid token
+          setLoading(false);
+          
+          // Reset the counter after a short delay
+          setTimeout(() => {
+            localStorage.setItem('authAttemptCount', '0');
+          }, 10000); // 10 seconds
+          
+          return;
+        }
+        
+        // Increment auth attempt counter
+        localStorage.setItem('authAttemptCount', (authAttemptCount + 1).toString());
+        
         const res = await axios.get(`${API_BASE_URL}/api/auth/me`);
         
         if (res.data.success) {
@@ -136,6 +157,9 @@ export const AuthProvider = ({ children }) => {
           setIsEmailVerified(res.data.user.isEmailVerified || false);
           // Process any pending actions
           processPendingActions();
+          
+          // Reset auth attempt counter on success
+          localStorage.setItem('authAttemptCount', '0');
         } else {
           console.log("Failed to load user data: Invalid response");
           setUser(null);
@@ -334,6 +358,9 @@ export const AuthProvider = ({ children }) => {
       Cookies.remove('auth_token');
       localStorage.removeItem("token");
     }
+    
+    // Reset auth attempt counter on logout
+    localStorage.setItem('authAttemptCount', '0');
     
     setToken("");
     setUser(null);
