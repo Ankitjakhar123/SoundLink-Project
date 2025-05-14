@@ -109,20 +109,15 @@ const Navbar = (props) => {
             return;
         }
         
-        // If on mobile or user presses Enter, redirect to the search page 
-        if ((window.innerWidth < 768 && showSearchBar) || e?.type === 'submit') {
-            navigate(`/search?q=${encodeURIComponent(search)}`);
-            setShowSearchBar(false);
-            return;
-        }
-        
+        // Always perform the search in the popup, never redirect
         setIsSearching(true);
         try {
             const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
             const response = await axios.get(`${backendUrl}/api/search?q=${encodeURIComponent(search)}`);
             
             if (response.data.success) {
-                setSearchResults(response.data);
+                // Initial search is not a full search
+                setSearchResults({...response.data, isFullSearch: false});
                 setShowSearchResults(true);
             } else {
                 setSearchResults(null);
@@ -135,8 +130,11 @@ const Navbar = (props) => {
         }
     };
 
+    // Handle keydown events for the search input
     const handleKeyDown = (e) => {
         if (e.key === 'Enter') {
+            // Prevent form submission and just trigger search
+            e.preventDefault();
             handleSearch();
         }
     };
@@ -238,7 +236,7 @@ const Navbar = (props) => {
 
     return (
         <>
-            <div className="w-full flex items-center justify-between py-2 px-2 md:py-3 md:px-8 bg-black sticky top-0 z-30 backdrop-blur-xl">
+            <div className="w-full flex items-center justify-between py-2 px-2 md:py-3 md:px-8 bg-black border-b border-neutral-900 sticky top-0 z-30 backdrop-blur-xl">
                 {/* Left: Mobile controls */}
                 <div className="flex items-center gap-2">
                     {/* Hamburger for mobile */}
@@ -260,7 +258,7 @@ const Navbar = (props) => {
                 <div className={`${showSearchBar ? 'absolute left-0 right-0 top-0 bottom-0 bg-black z-40 px-2 py-2' : 'hidden'} md:flex md:static md:bg-transparent md:flex-1 md:justify-center md:px-0 md:py-0 search-container`}>
                     <form 
                         onSubmit={handleSearch}
-                        className={`flex items-center gap-2 px-3 md:px-4 py-2 rounded-full bg-neutral-900/80 border border-neutral-800 transition-all duration-300 ring-0 focus-within:border-fuchsia-500 w-full max-w-md`}
+                        className={`flex items-center gap-2 px-3 md:px-4 py-2 rounded-full bg-black border border-neutral-800 transition-all duration-300 ring-0 w-full max-w-md`}
                     >
                         <FaSearch className="text-neutral-400 flex-shrink-0" size={16} />
                         <input
@@ -272,6 +270,7 @@ const Navbar = (props) => {
                             onFocus={() => search.trim() && setShowSearchResults(true)}
                             placeholder="Search for songs, albums, artists..."
                             className="bg-transparent outline-none border-none text-white flex-1 min-w-0 placeholder-neutral-500"
+                            style={{ outline: 'none' }}
                         />
                         {search && (
                             <button 
@@ -299,7 +298,8 @@ const Navbar = (props) => {
                     {showSearchResults && searchResults && (
                         <div 
                             ref={searchResultsRef}
-                            className="absolute top-full left-0 right-0 mt-2 mx-auto max-w-md z-50 bg-neutral-800 rounded-xl shadow-xl max-h-[80vh] overflow-y-auto border border-neutral-700"
+                            className={`${showSearchBar ? 'fixed mt-12 inset-4 rounded-xl' : 'absolute top-full'} left-0 right-0 mt-2 mx-auto max-w-3xl z-50 bg-neutral-800 shadow-xl max-h-[80vh] overflow-y-auto border border-neutral-700`}
+                            style={{maxHeight: showSearchBar ? 'calc(100vh - 100px)' : '80vh'}}
                         >
                             <div className="p-4">
                                 <SearchResults 
@@ -309,13 +309,29 @@ const Navbar = (props) => {
                                 <div className="mt-3 flex justify-center">
                                     <button 
                                         onClick={() => {
-                                            navigate(`/search?q=${encodeURIComponent(search)}`);
-                                            setShowSearchResults(false);
-                                            setShowSearchBar(false);
+                                            // Load more results instead of navigating
+                                            // This will expand the results shown in the popup
+                                            const loadMoreResults = async () => {
+                                                setIsSearching(true);
+                                                try {
+                                                    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
+                                                    const response = await axios.get(`${backendUrl}/api/search?q=${encodeURIComponent(search)}&full=true`);
+                                                    
+                                                    if (response.data.success) {
+                                                        // Mark this as a full search
+                                                        setSearchResults({...response.data, isFullSearch: true});
+                                                    }
+                                                } catch (error) {
+                                                    console.error('Error loading more results:', error);
+                                                } finally {
+                                                    setIsSearching(false);
+                                                }
+                                            };
+                                            loadMoreResults();
                                         }}
                                         className="text-fuchsia-400 hover:text-fuchsia-300 text-sm font-medium"
                                     >
-                                        See all results
+                                        {searchResults.isFullSearch ? 'All results loaded' : 'Load more results'}
                                     </button>
                                 </div>
                             </div>
@@ -478,7 +494,7 @@ const Navbar = (props) => {
 
             {/* Mobile Bottom Navigation Bar - Only visible on small screens when preferred and no keyboard */}
             <div 
-                className={`md:hidden fixed bottom-0 left-0 right-0 bg-black border-t border-neutral-800 py-1 px-3 z-[60] backdrop-blur-xl ${isKeyboardVisible || !showBottomNav ? 'hidden' : 'block'}`} 
+                className={`md:hidden fixed bottom-0 left-0 right-0 bg-black border-t border-neutral-900 py-1 px-3 z-[60] backdrop-blur-xl ${isKeyboardVisible || !showBottomNav ? 'hidden' : 'block'}`} 
             >
                 <div className="flex items-center justify-between">
                     {/* Home */}
@@ -586,41 +602,55 @@ const SearchResults = ({ results, onResultClick }) => {
         );
     }
     
+    // Function to determine how many items to show per category
+    const getItemsToShow = (items) => {
+        // If we have the full=true parameter in the response, show all items
+        // Otherwise, limit to 3 items for the initial search
+        if (results.isFullSearch) {
+            return items;
+        }
+        return items.slice(0, 3);
+    };
+    
     return (
-        <div className="grid gap-6">
+        <div className="grid gap-6 max-h-[70vh] overflow-y-auto">
             {results.songs && results.songs.length > 0 && (
                 <ResultSection 
                     title="Songs" 
-                    items={results.songs.slice(0, 3)} 
+                    items={getItemsToShow(results.songs)} 
                     type="song"
                     onResultClick={onResultClick}
+                    showAll={results.isFullSearch}
                 />
             )}
             
             {results.albums && results.albums.length > 0 && (
                 <ResultSection 
                     title="Albums" 
-                    items={results.albums.slice(0, 3)} 
+                    items={getItemsToShow(results.albums)} 
                     type="album"
                     onResultClick={onResultClick}
+                    showAll={results.isFullSearch}
                 />
             )}
             
             {results.artists && results.artists.length > 0 && (
                 <ResultSection 
                     title="Artists" 
-                    items={results.artists.slice(0, 3)} 
+                    items={getItemsToShow(results.artists)} 
                     type="artist"
                     onResultClick={onResultClick}
+                    showAll={results.isFullSearch}
                 />
             )}
             
             {results.users && results.users.length > 0 && (
                 <ResultSection 
                     title="Users" 
-                    items={results.users.slice(0, 3)} 
+                    items={getItemsToShow(results.users)} 
                     type="user"
                     onResultClick={onResultClick}
+                    showAll={results.isFullSearch}
                 />
             )}
         </div>
@@ -628,10 +658,12 @@ const SearchResults = ({ results, onResultClick }) => {
 };
 
 // Result Section Component
-const ResultSection = ({ title, items, type, onResultClick }) => {
+const ResultSection = ({ title, items, type, onResultClick, showAll }) => {
     return (
         <div>
-            <h3 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-2">{title}</h3>
+            <h3 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-2">
+                {title} {!showAll && items.length > 3 && <span>({items.length} total)</span>}
+            </h3>
             <div className="space-y-2">
                 {items.map(item => (
                     <div 

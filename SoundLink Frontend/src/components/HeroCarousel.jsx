@@ -2,6 +2,7 @@ import React from 'react';
 import Slider from 'react-slick';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
+import LazyImage from './LazyImage';
 
 const images = [
   // Replace these with your Cloudinary URLs or dynamic data
@@ -43,6 +44,8 @@ const HeroCarousel = () => {
         },
       },
     ],
+    // Optimize performance by only rendering a few slides at a time
+    lazyLoad: 'ondemand',
   };
 
   return (
@@ -54,10 +57,13 @@ const HeroCarousel = () => {
         <Slider {...settings}>
           {images.map((img, idx) => (
             <div key={idx} className="relative h-64 md:h-80 bg-black px-2 slick-slide-custom">
-              <img
+              <LazyImage
                 src={img}
                 alt={`Hero ${idx + 1}`}
                 className="w-full h-full object-cover object-center rounded-2xl shadow-xl border-2 border-black"
+                eager={idx === 0} // Load the first image eagerly
+                width="100%"
+                height="100%"
               />
               {/* Optional overlay text/button here */}
             </div>

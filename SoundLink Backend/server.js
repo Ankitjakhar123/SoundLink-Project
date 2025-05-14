@@ -16,6 +16,8 @@ import analyticsroute from './src/routes/analyticsroute.js';
 import userRouter from './src/routes/userroute.js';
 import movieAlbumRouter from './src/routes/movieAlbumRoutes.js';
 import artistRouter from './src/routes/artistRoutes.js';
+import playRouter from './src/routes/playroute.js';
+import keepAlive from './src/utils/keepAlive.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -74,6 +76,7 @@ app.use('/api/analytics', analyticsroute)
 app.use('/api/user', userRouter)
 app.use('/api/moviealbum', movieAlbumRouter)
 app.use('/api/artist', artistRouter)
+app.use('/api/play', playRouter)
 
 // Health check endpoint for Docker
 app.get('/api/health', (req, res) => {
@@ -82,4 +85,16 @@ app.get('/api/health', (req, res) => {
 
 app.get('/',(req,res)=> res.send("Api Working"))
 
-app.listen(port, () => console.log(`Server started on ${port}`));
+const server = app.listen(port, () => {
+  console.log(`Server started on ${port}`);
+  
+  // Determine the full URL for the server
+  const isProduction = process.env.NODE_ENV === 'production';
+  const serverUrl = isProduction 
+    ? process.env.SERVER_URL || 'https://your-render-app-url.onrender.com' 
+    : `http://localhost:${port}`;
+  
+  // Set up the keep-alive service to ping the health endpoint
+  // every 14 minutes (just under the 15-minute inactivity threshold)
+  keepAlive(`${serverUrl}/api/health`, 14);
+});

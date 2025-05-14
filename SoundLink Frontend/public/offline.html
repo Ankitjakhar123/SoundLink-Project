@@ -2,81 +2,159 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SoundLink - Offline</title>
-  <link rel="icon" type="image/svg+xml" href="/icons/soundlink-icon.svg?v=2" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <title>You're Offline - SoundLink</title>
+  <link rel="icon" type="image/png" sizes="192x192" href="/icons/soundlink-icon-192.png?v=2" />
   <style>
+    /* Minimal styles that work offline */
     body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background-color: #121212;
+      color: #ffffff;
       margin: 0;
       padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-      background: linear-gradient(to bottom right, #0f0f0f, #1f1f1f);
-      color: white;
-      height: 100vh;
       display: flex;
       flex-direction: column;
-      justify-content: center;
       align-items: center;
+      justify-content: center;
+      min-height: 100vh;
       text-align: center;
     }
+    
     .container {
-      max-width: 500px;
       padding: 2rem;
-      border-radius: 15px;
-      background-color: rgba(30, 30, 30, 0.7);
-      backdrop-filter: blur(10px);
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      max-width: 500px;
+      width: 100%;
     }
+    
     .logo {
-      width: 100px;
-      height: 100px;
-      margin-bottom: 1.5rem;
+      width: 120px;
+      height: 120px;
+      margin-bottom: 2rem;
     }
+    
     h1 {
       font-size: 2rem;
-      margin: 0 0 1rem 0;
-      background: linear-gradient(to right, #FF2C77, #7627EB);
-      -webkit-background-clip: text;
-      background-clip: text;
-      -webkit-text-fill-color: transparent;
+      margin-bottom: 1rem;
+      font-weight: 700;
+      color: #d946ef;
     }
+    
     p {
-      font-size: 1rem;
+      font-size: 1.1rem;
       line-height: 1.5;
+      color: #b4b4b4;
       margin-bottom: 1.5rem;
-      color: #ccc;
     }
-    .refresh-btn {
-      background: linear-gradient(to right, #FF2C77, #7627EB);
+    
+    .btn {
+      display: inline-block;
+      background-color: #d946ef;
       color: white;
-      border: none;
+      font-weight: 600;
       padding: 0.75rem 1.5rem;
-      border-radius: 50px;
-      font-size: 1rem;
-      font-weight: bold;
+      border-radius: 9999px;
+      text-decoration: none;
+      margin-top: 1rem;
+      border: none;
       cursor: pointer;
-      transition: all 0.2s ease;
+      font-size: 1rem;
+      transition: background-color 0.2s;
     }
-    .refresh-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(255, 44, 119, 0.3);
+    
+    .btn:hover {
+      background-color: #c026d3;
+    }
+    
+    .offline-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+    
+    .cached-content {
+      margin-top: 2rem;
+      border-top: 1px solid #333;
+      padding-top: 1.5rem;
+    }
+    
+    @media (prefers-color-scheme: light) {
+      body {
+        background-color: #f5f5f5;
+        color: #000;
+      }
+      
+      p {
+        color: #333;
+      }
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <img src="/icons/soundlink-icon.svg?v=2" alt="SoundLink Logo" class="logo">
+    <div class="offline-icon">📶</div>
     <h1>You're Offline</h1>
-    <p>Looks like you're not connected to the internet. Some features of SoundLink may not be available until you reconnect.</p>
-    <p>If you have music in your offline library, you can still listen to those tracks.</p>
-    <button class="refresh-btn" onclick="window.location.reload()">Try Again</button>
+    <p>It looks like you lost your internet connection. Some features might be limited until you're back online.</p>
+    
+    <button id="reload-btn" class="btn">Try Again</button>
+    
+    <div id="cached-content" class="cached-content" style="display: none;">
+      <h2>Available Offline</h2>
+      <p>Some previously viewed content may still be available.</p>
+      <div id="cached-items"></div>
+    </div>
   </div>
   
   <script>
-    // Check if we're back online
-    window.addEventListener('online', () => {
-      window.location.href = '/';
+    // Check if we're truly offline
+    function checkConnectivity() {
+      return fetch('/api/health', { method: 'GET', cache: 'no-store' })
+        .then(() => {
+          // We're online! Reload the page
+          window.location.reload();
+          return true;
+        })
+        .catch(() => {
+          // Still offline
+          return false;
+        });
+    }
+    
+    // Try to reconnect when the user clicks the button
+    document.getElementById('reload-btn').addEventListener('click', function() {
+      this.textContent = 'Checking...';
+      checkConnectivity().then(isOnline => {
+        if (!isOnline) {
+          this.textContent = 'Try Again';
+        }
+      });
     });
+    
+    // Check for cached content
+    if ('caches' in window) {
+      caches.open('soundlink-cache-v1').then(cache => {
+        cache.keys().then(keys => {
+          // Filter and show relevant cached content
+          const contentKeys = keys.filter(key => {
+            const url = new URL(key.url);
+            // Only show specific cached content like songs, albums, etc.
+            return url.pathname.includes('/api/songs') || 
+                   url.pathname.includes('/api/albums') ||
+                   url.pathname.includes('/api/artists');
+          });
+          
+          if (contentKeys.length > 0) {
+            document.getElementById('cached-content').style.display = 'block';
+            
+            // For simplicity, just show the number of cached items
+            document.getElementById('cached-items').textContent = 
+              `You have ${contentKeys.length} item(s) available offline.`;
+          }
+        });
+      });
+    }
+    
+    // Check connectivity status every 30 seconds
+    setInterval(checkConnectivity, 30000);
   </script>
 </body>
 </html> 

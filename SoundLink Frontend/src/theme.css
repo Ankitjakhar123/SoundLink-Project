@@ -154,4 +154,82 @@ progress::-webkit-progress-value,
 
 .hover\:from-fuchsia-600:hover, .hover\:to-purple-700:hover {
   /* Keep original values */
+}
+
+/* Accessibility improvements for color contrast */
+
+/* Improve text contrast on dark backgrounds */
+.text-neutral-400 {
+  color: #b4b4b4 !important; /* Increased from typical #9ca3af for better contrast */
+}
+
+.text-neutral-500 {
+  color: #a3a3a3 !important; /* Increased from typical #6b7280 for better contrast */
+}
+
+/* Ensure link text has sufficient contrast */
+a {
+  text-decoration: underline; /* Makes links more distinguishable without relying on color alone */
+}
+
+a:focus {
+  outline: 2px solid #d946ef; /* Focus indicator for keyboard navigation */
+  outline-offset: 2px;
+}
+
+/* Focus styles for interactive elements */
+button:focus,
+input:focus,
+select:focus,
+textarea:focus {
+  outline: 2px solid #d946ef;
+  outline-offset: 2px;
+}
+
+/* Skip to content link for keyboard users */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: #d946ef;
+  color: white;
+  padding: 8px;
+  z-index: 100;
+  transition: top 0.3s;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+/* Improved color contrast for input placeholders */
+::placeholder {
+  color: #a3a3a3 !important; /* Increased for better contrast */
+  opacity: 1;
+}
+
+/* High contrast mode adjustments */
+@media (forced-colors: active) {
+  /* Ensure elements remain visible in high contrast mode */
+  button, 
+  .button,
+  a {
+    forced-color-adjust: none;
+  }
+}
+
+/* Improved contrast for error messages */
+.text-red-500 {
+  color: #f05252 !important; /* Brighter red for better visibility on dark backgrounds */
+}
+
+/* Improved contrast for success messages */
+.text-green-500 {
+  color: #10b981 !important; /* Brighter green for better visibility on dark backgrounds */
+}
+
+/* Improved button state contrast */
+button:disabled,
+.button:disabled {
+  opacity: 0.6 !important; /* Increased from typical 0.5 for better visibility */
 } 

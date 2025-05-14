@@ -1,0 +1,20 @@
+# SoundLink robots.txt
+User-agent: *
+Allow: /
+
+# Block access to sensitive areas
+Disallow: /admin/
+Disallow: /api/
+Disallow: /config/
+
+# Allow access to main content
+Allow: /index.html
+Allow: /songs
+Allow: /albums
+Allow: /artists
+Allow: /player
+Allow: /playlists
+Allow: /search
+
+# Sitemap location
+Sitemap: https://your-app-url.com/sitemap.xml 

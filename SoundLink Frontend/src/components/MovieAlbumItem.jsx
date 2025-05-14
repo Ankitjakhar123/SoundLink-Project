@@ -1,6 +1,7 @@
 import React from 'react';
 import { MdMovie } from 'react-icons/md';
 import { Link } from 'react-router-dom';
+import LazyImage from './LazyImage';
 
 const MovieAlbumItem = ({ id, title, image }) => {
   return (
@@ -11,14 +12,11 @@ const MovieAlbumItem = ({ id, title, image }) => {
       >
         <div className="relative aspect-square overflow-hidden rounded-lg mb-2">
           {image ? (
-            <img 
+            <LazyImage 
               src={image} 
               alt={title} 
               className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-              onError={(e) => {
-                e.target.onerror = null;
-                e.target.src = '/default-album.png';
-              }}
+              fallbackSrc="/default-album.png"
             />
           ) : (
             <div className="w-full h-full bg-neutral-800 flex items-center justify-center text-fuchsia-500">

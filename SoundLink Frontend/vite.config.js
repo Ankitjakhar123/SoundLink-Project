@@ -77,12 +77,12 @@ export default defineConfig({
             }
           },
           {
-            urlPattern: /\.(?:png|jpg|jpeg)$/,
+            urlPattern: /\.(?:png|jpg|jpeg|webp|avif)$/,
             handler: 'CacheFirst',
             options: {
               cacheName: 'images-cache',
               expiration: {
-                maxEntries: 50,
+                maxEntries: 100, // Increased from 50
                 maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
               }
             }
@@ -121,4 +121,32 @@ export default defineConfig({
   server: {
     historyApiFallback: true, // 👈 this is the fix for white screen on refresh
   },
+  // Add build optimization configuration
+  build: {
+    target: 'esnext', // Modern browsers - better performance
+    outDir: 'dist',
+    minify: 'terser', // More aggressive minification
+    terserOptions: {
+      compress: {
+        drop_console: true, // Remove console statements in production
+        drop_debugger: true
+      }
+    },
+    // Code splitting and bundling strategy
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          ui: ['framer-motion', 'react-icons', 'react-slick', 'slick-carousel'],
+          player: ['react-extract-colors'],
+          utils: ['axios', 'js-cookie']
+        }
+      }
+    },
+    // Split chunks for better caching
+    chunkSizeWarningLimit: 1000, // Increase warning limit
+    cssCodeSplit: true,
+    sourcemap: false, // Disable sourcemaps in production for smaller files
+    reportCompressedSize: false, // Speed up build
+  }
 })

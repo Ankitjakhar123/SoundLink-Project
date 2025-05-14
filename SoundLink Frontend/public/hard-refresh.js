@@ -1,63 +1,62 @@
-// This script forces browsers and PWAs to update their caches
+/**
+ * hard-refresh.js - Script to ensure proper cache refreshes on app updates
+ * This helps avoid stale cache issues often seen in PWAs
+ */
+
+// Check if this is a new deployment by comparing build timestamps
 (function() {
-  // Set a version stamp to track updates
-  const APP_VERSION = '1.0.2'; // Increment this when making icon changes
+  const BUILD_TIMESTAMP = '2024-05-14T12:00:00Z'; // This value would be replaced by the build script
+  const lastBuildTimestamp = localStorage.getItem('build_timestamp');
   
-  // Check if we need to refresh the app
-  function checkForAppUpdate() {
-    const lastVersion = localStorage.getItem('app_version');
+  if (lastBuildTimestamp && lastBuildTimestamp !== BUILD_TIMESTAMP) {
+    // New deployment detected, clear caches
+    if ('caches' in window) {
+      caches.keys().then(cacheNames => {
+        cacheNames.forEach(cacheName => {
+          console.log('Clearing cache:', cacheName);
+          caches.delete(cacheName);
+        });
+      });
+    }
     
-    // If version has changed or doesn't exist, perform cleanup
-    if (lastVersion !== APP_VERSION) {
-      console.log(`App updated from ${lastVersion || 'initial'} to ${APP_VERSION}. Clearing caches...`);
-      
-      // Store the new version
-      localStorage.setItem('app_version', APP_VERSION);
-      
-      // Clear all local storage except the version
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key !== 'app_version') {
-          localStorage.removeItem(key);
-        }
+    // Clear certain localStorage items that might cause issues
+    const keysToKeep = ['auth_token', 'user_id', 'theme_preference', 'volume_level'];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!keysToKeep.includes(key) && !key.startsWith('persist:')) {
+        localStorage.removeItem(key);
       }
-      
-      // Clear cache API if available
-      if ('caches' in window) {
-        caches.keys().then(cacheNames => {
-          return Promise.all(
-            cacheNames.map(cacheName => {
-              console.log(`Deleting cache: ${cacheName}`);
-              return caches.delete(cacheName);
-            })
-          );
-        });
-      }
-      
-      // Clear session storage
-      sessionStorage.clear();
-      
-      // If it's a PWA and there's a service worker, update it
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(registrations => {
-          registrations.forEach(registration => {
-            registration.update();
-          });
-        });
-      }
-      
-      // Force reload after a brief delay to allow cache clearing
-      setTimeout(() => {
-        console.log('Forcing page reload to apply new version...');
-        window.location.reload(true);
-      }, 1000);
+    }
+    
+    // Force a hard reload if this isn't the first visit
+    if (sessionStorage.getItem('app_loaded_once')) {
+      console.log('New version detected. Reloading app...');
+      window.location.reload(true); // true forces a reload from server, not cache
     }
   }
   
-  // Run the check when the app loads
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', checkForAppUpdate);
-  } else {
-    checkForAppUpdate();
+  // Update the stored timestamp
+  localStorage.setItem('build_timestamp', BUILD_TIMESTAMP);
+  sessionStorage.setItem('app_loaded_once', 'true');
+  
+  // Listen for service worker updates
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      // New service worker activated
+      console.log('New service worker activated, refreshing...');
+      window.location.reload(true);
+    });
   }
+  
+  // Check for network connectivity changes
+  window.addEventListener('online', () => {
+    // When coming back online, check for updates
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistration().then(registration => {
+        if (registration) {
+          registration.update();
+        }
+      });
+    }
+  });
 })(); 

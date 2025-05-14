@@ -1315,7 +1315,7 @@ const PremiumPlayer = () => {
               </button>
               <button
                   onClick={handlePlayPause}
-                    className="rounded-full p-3 shadow-lg hover:scale-110 transition-transform border-2 text-lg"
+                    className="rounded-full p-1 shadow-lg hover:scale-110 transition-transform border-10 text-lg"
                 style={{ 
                   background: `linear-gradient(135deg, ${themeColors.primary}, ${themeColors.accent || themeColors.primary})`,
                   borderColor: `${themeColors.primary}80`,

@@ -34,6 +34,7 @@ import SearchPage from "./components/SearchPage";
 import Library from "./components/Library";
 import InstallPwaPrompt from "./components/InstallPwaPrompt";
 import InstallPWAButton from "./components/InstallPWAButton";
+import SkipToContent from './components/SkipToContent';
 
 // Protected route component that requires authentication
 const ProtectedRoute = ({ children }) => {
@@ -141,7 +142,8 @@ const App = () => {
   }
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-black via-neutral-900 to-black">
+    <div className="flex min-h-screen bg-black">
+      <SkipToContent />
       <DisclaimerPopup />
       <InstallPwaPrompt />
       <InstallPWAButton />
@@ -154,9 +156,9 @@ const App = () => {
       )}
       
       <Sidebar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
-      <div className={`flex-1 flex flex-col h-screen overflow-y-auto transition-all duration-300 w-full content-container touch-scroll ${mobileOpen ? 'opacity-30 pointer-events-none select-none' : ''} md:opacity-100 md:pointer-events-auto md:select-auto`}>
+      <div className={`flex-1 flex flex-col h-screen overflow-y-auto transition-all duration-300 w-full content-container bg-black touch-scroll ${mobileOpen ? 'opacity-30 pointer-events-none select-none' : ''} md:opacity-100 md:pointer-events-auto md:select-auto`}>
         <Navbar onHamburgerClick={() => setMobileOpen(true)} />
-        <div className="flex-1 overflow-y-auto pb-10">
+        <div id="main-content" tabIndex="-1" className="flex-1 overflow-y-auto pb-10">
           <Routes>
             {/* Auth page route */}
             <Route path="/auth" element={user ? <Navigate to="/" /> : <AuthPage />} />
@@ -168,7 +170,8 @@ const App = () => {
             <Route path="/artist/:id" element={<ArtistDetail />} />
             <Route path="/artists" element={<Artists />} />
             <Route path="/trending" element={<TrendingSongs />} />
-            <Route path="/search" element={<SearchPage />} />
+            {/* Redirect search to home since we're using popup search only */}
+            <Route path="/search" element={<Navigate to="/" />} />
             <Route path="/premium" element={<Premium />} />
             <Route path="/about" element={<About />} />
             <Route path="/terms" element={<Terms />} />
@@ -188,6 +191,10 @@ const App = () => {
             <Route path="/admin/albums" element={<ProtectedRoute><ListAlbum /></ProtectedRoute>} />
             <Route path="/admin/songs" element={<ProtectedRoute><ListSong /></ProtectedRoute>} />
             <Route path="/admin/artists" element={<ProtectedRoute><AdminArtists /></ProtectedRoute>} />
+            
+            {/* Login and Signup routes - redirect to AuthPage */}
+            <Route path="/login" element={<AuthPage />} />
+            <Route path="/signup" element={<AuthPage />} />
           </Routes>
         </div>
         <PremiumPlayer />

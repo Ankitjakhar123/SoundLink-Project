@@ -12,6 +12,7 @@ import { AuthContext } from "../context/AuthContext";
 import AddToPlaylistModal from "./AddToPlaylistModal";
 import { toast } from "react-toastify";
 import "./MobileStyles.css"; // Import mobile-specific styles
+import SEO from './SEO'; // Import SEO component
 
 const DisplayHome = () => {
   const navigate = useNavigate();
@@ -262,16 +263,15 @@ const DisplayHome = () => {
   }
 
   return (
-    <div 
-      ref={contentRef}
-      className="min-h-screen w-full flex flex-col justify-start items-center overflow-y-auto display-home-container"
-      style={{ overflowY: 'auto !important', WebkitOverflowScrolling: 'touch !important' }}
-    >
-      <div 
-        ref={topRef} 
-        className="min-h-screen w-full flex flex-col justify-start items-center bg-gradient-to-b from-black via-black to-neutral-900 pt-0 mt-[-5px] pb-0 px-2 md:px-8 content-container"
-        style={{ overflowY: 'auto !important', WebkitOverflowScrolling: 'touch !important', height: 'auto !important' }}
-      >
+    <div ref={contentRef} className="flex-1 flex flex-col min-h-screen bg-black">
+      {/* Add SEO component for better search engine visibility */}
+      <SEO 
+        title="SoundLink"
+        description="Discover and stream music with SoundLink, the premium music streaming platform with trending songs, albums, and artists."
+        keywords="music streaming, audio, trending songs, albums, artists, playlists"
+      />
+      
+      <div ref={topRef} className="pt-4 px-4 pb-16 flex-1 content-container bg-gradient-to-b from-black to-neutral-950">
         {/* Welcome Section */}
         <motion.div 
           initial={{ opacity: 0, y: -20 }} 
