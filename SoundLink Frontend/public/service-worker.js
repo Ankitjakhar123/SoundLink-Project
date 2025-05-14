@@ -58,7 +58,7 @@ self.addEventListener('activate', (event) => {
 });
 
 // Fetch event - DISABLED for troubleshooting refresh loops
-self.addEventListener('fetch', (event) => {
+self.addEventListener('fetch', () => {
   // Completely bypass service worker and use network
   // This ensures no caching affects the application while debugging
   return;

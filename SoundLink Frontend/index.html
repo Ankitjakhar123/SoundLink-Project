@@ -71,9 +71,17 @@
         // Store current load time
         localStorage.setItem('lastPageLoad', now.toString());
         
-        // If reloaded more than 3 times quickly, attempt emergency recovery
-        if (reloadCount >= 3) {
+        // Only run emergency recovery if:
+        // 1. We've reloaded 4+ times in quick succession (more conservative)
+        // 2. We haven't already recovered recently (avoid showing message repeatedly)
+        const lastRecovery = parseInt(localStorage.getItem('lastEmergencyRecovery') || '0');
+        const recoveryThreshold = 4; // Increased from 3 to 4 to be less aggressive
+        
+        if (reloadCount >= recoveryThreshold && (now - lastRecovery > 30000)) {
           console.log('Emergency refresh loop recovery activated');
+          
+          // Record this recovery to prevent multiple recoveries in short succession
+          localStorage.setItem('lastEmergencyRecovery', now.toString());
           
           // Clear auth tokens and counters
           localStorage.removeItem('token');
@@ -106,24 +114,36 @@
           
           // Show a message to the user after the page loads
           window.addEventListener('DOMContentLoaded', function() {
+            // Delay showing the notification to ensure the page has settled
             setTimeout(function() {
-              const div = document.createElement('div');
-              div.style.position = 'fixed';
-              div.style.top = '0';
-              div.style.left = '0';
-              div.style.right = '0';
-              div.style.backgroundColor = '#ef4444';
-              div.style.color = 'white';
-              div.style.padding = '10px';
-              div.style.textAlign = 'center';
-              div.style.zIndex = '9999';
-              div.innerHTML = 'Refresh loop detected and fixed. The app should now work properly.';
-              document.body.appendChild(div);
-              
-              setTimeout(function() {
-                div.style.display = 'none';
-              }, 5000);
-            }, 1000);
+              // Check if notification already exists to avoid duplicates
+              if (!document.getElementById('emergency-notification')) {
+                const div = document.createElement('div');
+                div.id = 'emergency-notification';
+                div.style.position = 'fixed';
+                div.style.top = '0';
+                div.style.left = '0';
+                div.style.right = '0';
+                div.style.backgroundColor = '#ef4444';
+                div.style.color = 'white';
+                div.style.padding = '10px';
+                div.style.textAlign = 'center';
+                div.style.zIndex = '9999';
+                div.style.transition = 'opacity 0.5s ease-in-out';
+                div.innerHTML = 'SoundLink has fixed a loading issue. If problems persist, please clear your browser cache.';
+                document.body.appendChild(div);
+                
+                // Fade out and remove after delay
+                setTimeout(function() {
+                  div.style.opacity = '0';
+                  setTimeout(() => {
+                    if (div.parentNode) {
+                      div.parentNode.removeChild(div);
+                    }
+                  }, 500);
+                }, 5000);
+              }
+            }, 1500);
           });
         }
       })();
