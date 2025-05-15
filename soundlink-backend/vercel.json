@@ -8,12 +8,32 @@
   ],
   "routes": [
     {
+      "src": "/",
+      "dest": "/api/simple.js"
+    },
+    {
+      "src": "/api",
+      "dest": "/api/simple.js"
+    },
+    {
+      "src": "/api/hello",
+      "dest": "/api/hello.js"
+    },
+    {
+      "src": "/api/health",
+      "dest": "/api/health.js"
+    },
+    {
+      "src": "/api/db-test",
+      "dest": "/api/db-test.js"
+    },
+    {
       "src": "/api/(.*)",
-      "dest": "/api/$1"
+      "dest": "/api/simple.js"
     },
     {
       "src": "/(.*)",
-      "dest": "/api/index.js"
+      "dest": "/api/simple.js"
     }
   ],
   "env": {

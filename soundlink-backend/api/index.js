@@ -9,7 +9,16 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// Simple health check endpoint
+// Root path - important for Vercel
+app.get('/', (req, res) => {
+  res.status(200).json({ 
+    status: 'ok', 
+    message: 'SoundLink API is running',
+    timestamp: new Date().toISOString() 
+  });
+});
+
+// API path
 app.get('/api', (req, res) => {
   res.status(200).json({ 
     status: 'ok', 
@@ -68,6 +77,14 @@ app.get('/api/env', (req, res) => {
   });
 });
 
+// Catch-all route for non-existent paths
+app.use('*', (req, res) => {
+  res.status(404).json({
+    status: 'error',
+    message: `Route not found: ${req.originalUrl}`
+  });
+});
+
 // Error handler
 app.use((err, req, res, next) => {
   console.error('API error:', err);
@@ -78,5 +95,12 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Export the Express API
-export default app; 
+// For direct import as a module
+export default app;
+
+// For Vercel serverless function handler
+export const config = {
+  api: {
+    bodyParser: true,
+  },
+}; 
