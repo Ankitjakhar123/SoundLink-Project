@@ -41,7 +41,8 @@ app.use(cors({
     const allowedOrigins = [
       'http://localhost:5173',    // Local development
       'http://localhost:3000',    // Alternative local port
-      'https://ankitsoundlink.netlify.app' // Netlify deployment
+      'https://ankitsoundlink.netlify.app', // Netlify deployment
+      'https://sound-link-backend.vercel.app' // Vercel deployment
     ];
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin || allowedOrigins.indexOf(origin) !== -1) {
@@ -90,11 +91,16 @@ const server = app.listen(port, () => {
   
   // Determine the full URL for the server
   const isProduction = process.env.NODE_ENV === 'production';
-  const serverUrl = isProduction 
-    ? process.env.SERVER_URL || 'https://your-render-app-url.onrender.com' 
-    : `http://localhost:${port}`;
+  const isVercel = process.env.VERCEL === '1';
   
-  // Set up the keep-alive service to ping the health endpoint
-  // every 14 minutes (just under the 15-minute inactivity threshold)
-  keepAlive(`${serverUrl}/api/health`, 14);
+  // Don't run keepAlive on Vercel as it uses a different serverless model
+  if (!isVercel) {
+    const serverUrl = isProduction 
+      ? process.env.SERVER_URL || 'https://your-render-app-url.onrender.com' 
+      : `http://localhost:${port}`;
+    
+    // Set up the keep-alive service to ping the health endpoint
+    // every 14 minutes (just under the 15-minute inactivity threshold)
+    keepAlive(`${serverUrl}/api/health`, 14);
+  }
 });
