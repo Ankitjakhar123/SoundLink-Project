@@ -227,7 +227,7 @@ const SearchPage = () => {
         {/* Results Tabs */}
         {!loading && query !== '' && getTotalResults() > 0 && (
           <div className="mb-6">
-            <div className="border-b border-neutral-800 mb-6">
+            <div className="border-b border-neutral-900 mb-6">
               <nav className="flex space-x-8">
                 <button
                   onClick={() => setActiveTab('all')}

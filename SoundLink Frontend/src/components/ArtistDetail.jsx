@@ -338,7 +338,7 @@ const ArtistDetail = () => {
           {artistSongs.length > 0 ? (
             <div className="bg-neutral-900/50 backdrop-blur-md rounded-xl overflow-hidden">
               {/* Desktop header - hidden on mobile */}
-              <div className="hidden md:grid grid-cols-4 p-4 border-b border-neutral-800 text-neutral-400 text-sm">
+              <div className="hidden md:grid grid-cols-4 p-4 border-b border-neutral-900 text-neutral-400 text-sm">
                 <div className="flex items-center"># TITLE</div>
                 <div className="hidden md:block">ALBUM</div>
                 <div className="hidden md:block">DURATION</div>

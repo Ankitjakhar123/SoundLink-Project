@@ -319,7 +319,7 @@ const MovieAlbumDetail = () => {
           
           {albumSongs.length > 0 ? (
             <div className="bg-black/30 rounded-xl overflow-hidden">
-              <div className="grid grid-cols-4 px-4 py-3 border-b border-neutral-800 text-neutral-400 text-sm">
+              <div className="grid grid-cols-4 px-4 py-3 border-b border-neutral-900 text-neutral-400 text-sm">
                 <div className="flex items-center"># TITLE</div>
                 <div className="hidden md:block">ALBUM</div>
                 <div className="hidden md:block">TIME</div>
@@ -330,7 +330,7 @@ const MovieAlbumDetail = () => {
                 <div 
                   key={song._id}
                   onClick={() => playWithId(song._id)}
-                  className={`grid grid-cols-4 px-4 py-3 hover:bg-white/5 cursor-pointer group border-b border-neutral-800/50 ${isPlaying(song._id) ? 'bg-white/10' : ''}`}
+                  className={`grid grid-cols-4 px-4 py-3 hover:bg-white/5 cursor-pointer group border-b border-neutral-900/50 ${isPlaying(song._id) ? 'bg-white/10' : ''}`}
                 >
                   <div className="flex items-center gap-4 col-span-3 sm:col-span-1">
                     <div className="w-6 min-w-6 text-neutral-400 flex items-center justify-center">

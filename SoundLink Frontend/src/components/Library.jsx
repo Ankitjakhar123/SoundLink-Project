@@ -131,14 +131,14 @@ const Library = () => {
     
     return (
       <div className="mt-6 bg-neutral-900/50 backdrop-blur-md rounded-xl overflow-hidden">
-        <div className="grid grid-cols-12 p-4 border-b border-neutral-800 text-neutral-400 text-sm">
+        <div className="grid grid-cols-12 p-4 border-b border-neutral-900 text-neutral-400 text-sm">
           <div className="col-span-7 md:col-span-6 flex items-center"># TITLE</div>
           <div className="hidden md:block md:col-span-3">ALBUM</div>
           <div className="col-span-3 md:col-span-2 text-right md:text-left">DURATION</div>
           <div className="col-span-2 md:col-span-1 text-right"></div>
         </div>
         
-        <div className="divide-y divide-neutral-800/50">
+        <div className="divide-y divide-neutral-900/50">
           {favorites.map((song, index) => (
             <div 
               key={song._id} 
@@ -340,7 +340,7 @@ const Library = () => {
           </h1>
           
           {/* Tabs */}
-          <div className="flex border-b border-neutral-800">
+          <div className="flex border-b border-neutral-900">
             <button
               className={`px-6 py-3 font-medium text-sm transition-colors ${
                 activeTab === 'favorites' 

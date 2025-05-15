@@ -229,7 +229,7 @@ const Settings = () => {
 
 // Helper Components
 const SettingsSection = ({ title, children }) => (
-  <section className="border-b border-neutral-800 pb-6">
+  <section className="border-b border-neutral-900 pb-6">
     <h2 className="text-xl font-semibold mb-4">{title}</h2>
     {children}
   </section>

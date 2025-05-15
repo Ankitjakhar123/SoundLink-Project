@@ -51,9 +51,10 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
         </button>
         {/* Logo */}
         <div 
-          className="flex items-center px-4 py-4 border-b border-neutral-800 cursor-pointer"
+          className="flex items-center px-4 py-4 cursor-pointer relative"
           onClick={() => handleNavigate('/')}
         >
+          <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-neutral-900 transform translate-y-[-6px]"></div>
           <img 
             src="/icons/soundlink-icon.svg?v=2" 
             alt="SoundLink Logo" 
