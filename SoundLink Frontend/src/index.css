@@ -77,6 +77,18 @@ footer {
   background-color: var(--content-background);
 }
 
+/* Content fade at bottom that sits above the player */
+.content-fade {
+  position: fixed;
+  bottom: var(--player-bottom-padding, 0);
+  left: 0;
+  right: 0;
+  height: 40px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0) 100%);
+  z-index: 39; /* One below the player z-index */
+  pointer-events: none; /* Allow clicks to pass through */
+}
+
 /* Responsive adjustments for small screens */
 @media (max-width: 768px) {
   body {
@@ -92,11 +104,15 @@ footer {
   }
   
   .content-container {
-    padding-bottom: 70px !important;
+    padding-bottom: 70px !important; /* Increased padding to prevent content hiding */
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
   }
   
+  .content-fade {
+    bottom: 50px; /* Match mobile player position */
+  }
+
   /* Playlists should appear above player */
   .playlist-container, 
   .queue-container,

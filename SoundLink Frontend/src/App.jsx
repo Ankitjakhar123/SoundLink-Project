@@ -197,6 +197,7 @@ const App = () => {
             <Route path="/signup" element={<AuthPage />} />
           </Routes>
         </div>
+        {track && <div className="content-fade"></div>}
         <PremiumPlayer />
         {track ? (
           <audio ref={audioRef} preload="auto">
