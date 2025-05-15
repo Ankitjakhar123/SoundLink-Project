@@ -630,28 +630,28 @@ const PremiumPlayer = () => {
               className="fixed inset-0 z-0 bg-cover bg-center" 
               style={{ 
                 backgroundImage: `url(${track.image})`,
-                filter: 'blur(60px) brightness(0.5)',
+                filter: 'blur(60px) brightness(0.6)', // Decreased brightness from 0.7 to 0.6
                 transform: 'scale(1.2)', // Prevent blur edges
               }}
             ></div>
             
             {/* Color overlay with gradient from album colors - fixed position */}
             <div 
-              className="fixed inset-0 z-0 opacity-90"
+              className="fixed inset-0 z-0 opacity-80" // Increased opacity from 70 to 80
               style={{ 
-                background: `linear-gradient(167deg, ${themeColors.primary}ee 0%, ${themeColors.secondary} 80%, ${themeColors.secondary} 100%)`,
-                mixBlendMode: 'color',
+                background: `linear-gradient(167deg, ${themeColors.primary}cc 0%, ${themeColors.secondary}ee 80%, ${themeColors.secondary} 100%)`,
+                mixBlendMode: 'color', // Changed back to color blend mode for stronger effect
               }}
             ></div>
             
             {/* Dark overlay with gradient - fixed position */}
-            <div className="fixed inset-0 bg-gradient-to-b from-black/70 via-black/40 to-black/80 z-0"></div>
+            <div className="fixed inset-0 bg-gradient-to-b from-black/50 via-black/30 to-black/60 z-0"></div> {/* Increased opacity values */}
             
             {/* Additional color boost at top - fixed position */}
             <div 
               className="fixed top-0 left-0 right-0 h-32 z-0"
               style={{ 
-                background: `linear-gradient(to bottom, ${themeColors.primary}80 0%, transparent 100%)`,
+                background: `linear-gradient(to bottom, ${themeColors.primary}60 0%, transparent 100%)`,
                 opacity: 0.7,
               }}
             ></div>
@@ -1226,7 +1226,7 @@ const PremiumPlayer = () => {
         <div 
           className={`flex flex-col justify-between px-2 sm:px-4 py-2 border-t backdrop-blur-xl ${hidePlayer ? 'compact-player' : ''}`}
           style={{ 
-            background: `linear-gradient(180deg, ${themeColors.secondary}dd, ${themeColors.secondary})`,
+            background: `linear-gradient(180deg, ${themeColors.secondary}cc, ${themeColors.secondary}dd)`,
             borderColor: `${themeColors.text}20`
           }}
         >

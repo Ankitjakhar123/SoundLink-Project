@@ -344,6 +344,27 @@ export const PlayerContextProvider = ({ children }) => {
     return (r * 299 + g * 587 + b * 114) / 1000;
   };
 
+  // Helper function to lighten a color
+  const lightenColor = (hex, amount) => {
+    try {
+      // Convert hex to RGB
+      const r = parseInt(hex.slice(1, 3), 16);
+      const g = parseInt(hex.slice(3, 5), 16);
+      const b = parseInt(hex.slice(5, 7), 16);
+      
+      // Increase RGB values
+      const newR = Math.min(255, r + amount);
+      const newG = Math.min(255, g + amount);
+      const newB = Math.min(255, b + amount);
+      
+      // Convert back to hex
+      return `#${newR.toString(16).padStart(2, '0')}${newG.toString(16).padStart(2, '0')}${newB.toString(16).padStart(2, '0')}`;
+    } catch (error) {
+      console.error('Error lightening color:', error);
+      return hex;
+    }
+  };
+
   // Extract color theme from track for UI theming
   const extractColorsFromTrack = async (trackObj) => {
     if (!trackObj || !trackObj.image) {
@@ -374,22 +395,27 @@ export const PlayerContextProvider = ({ children }) => {
           return bVibrance - aVibrance;
         });
         
-        const primary = sortedByVibrance[0].hex;
+        // Get primary color and make it brighter
+        let primary = sortedByVibrance[0].hex;
+        primary = lightenColor(primary, 20); // Reduced from 40 to 20
         
         // Get a darker color for background/secondary
         const sortedByDarkness = [...colors].sort((a, b) => {
           return a.lightness - b.lightness;
         });
         
-        const secondary = sortedByDarkness[0].hex;
+        // Get secondary color and lighten it substantially
+        let secondary = sortedByDarkness[0].hex;
+        secondary = lightenColor(secondary, 25); // Reduced from 60 to 25 for a darker background
         
         // Determine text color based on background
-        const textColor = getBrightness(primary) > 170 ? '#000000' : '#ffffff';
+        const textColor = getBrightness(secondary) > 170 ? '#000000' : '#ffffff';
         
         return {
           primary,
           secondary,
-          text: textColor
+          text: textColor,
+          accent: lightenColor(primary, 15) // Reduced from 30 to 15
         };
       }
     } catch (error) {
@@ -400,7 +426,8 @@ export const PlayerContextProvider = ({ children }) => {
     return {
       primary: '#8b5cf6',
       secondary: '#0f172a',
-      text: '#ffffff'
+      text: '#ffffff',
+      accent: '#ec4899'
     };
   };
 
