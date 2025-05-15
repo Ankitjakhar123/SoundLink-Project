@@ -14,7 +14,7 @@
   "description": "Production-ready backend for SoundLink music platform with authentication, playlists, and more.",
   "dependencies": {
     "bcryptjs": "^2.4.3",
-    "cloudinary": "^2.6.0",
+    "cloudinary": "^1.41.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^5.1.0",

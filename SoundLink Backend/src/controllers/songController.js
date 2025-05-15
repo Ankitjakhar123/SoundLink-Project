@@ -1,4 +1,4 @@
-import { v2 as cloudinary } from "cloudinary";
+import cloudinary from "cloudinary";
 import songModel from "../models/songModel.js";
 
 const addSong = async (req, res) => {
