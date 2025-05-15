@@ -21,6 +21,8 @@ html {
   position: relative !important;
   overflow-y: auto !important;
   -webkit-overflow-scrolling: touch !important; /* Enhanced smooth scrolling for iOS */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;  /* IE and Edge */
 }
 
 body {
@@ -32,14 +34,28 @@ body {
   min-height: 100vh !important;
   height: auto !important;
   position: relative !important;
-  overflow-y: auto !important;
+  overflow-y: scroll !important;
   -webkit-overflow-scrolling: touch !important; /* Enhanced smooth scrolling for iOS */
   padding-bottom: var(--player-bottom-padding, 0);
 }
 
-::-webkit-scrollbar{
-    width: 4px;
-    height: 4px;
+::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #333;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
 }
 
 /* Add class for extra small screens */
@@ -70,7 +86,7 @@ footer {
 
 /* Ensure content containers have space - reduced */
 .content-container {
-  padding-bottom: var(--player-bottom-padding, 0);
+  padding-bottom: 100px !important; /* Increased padding to prevent content hiding */
   overflow-y: auto !important;
   -webkit-overflow-scrolling: touch !important;
   position: relative;
@@ -80,11 +96,11 @@ footer {
 /* Content fade at bottom that sits above the player */
 .content-fade {
   position: fixed;
-  bottom: var(--player-bottom-padding, 0);
+  bottom: 60px;
   left: 0;
   right: 0;
-  height: 40px;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0) 100%);
+  height: 80px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.8) 40%, rgba(0, 0, 0, 0) 100%);
   z-index: 39; /* One below the player z-index */
   pointer-events: none; /* Allow clicks to pass through */
 }
@@ -104,13 +120,14 @@ footer {
   }
   
   .content-container {
-    padding-bottom: 70px !important; /* Increased padding to prevent content hiding */
+    padding-bottom: 100px !important; /* Increased padding to prevent content hiding */
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
   }
   
   .content-fade {
-    bottom: 50px; /* Match mobile player position */
+    bottom: 100px; /* Match mobile player position */
+    height: 100px; /* Larger fade area for mobile */
   }
 
   /* Playlists should appear above player */
@@ -150,9 +167,9 @@ footer {
   
   /* Make scrollbars thinner for touch */
   ::-webkit-scrollbar {
-    width: 4px;
-    height: 4px;
-    display: initial;
+    width: 0;
+    height: 0;
+    display: none;
   }
   
   /* Adjust font sizes for better readability */
@@ -399,5 +416,17 @@ input:checked + .slider:before {
   footer {
     margin-bottom: calc(var(--player-bottom-padding, 0) + 1rem) !important; 
   }
+}
+
+/* Hide scrollbars but maintain scrolling functionality */
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
+  width: 0;
+  height: 0;
 }
 
