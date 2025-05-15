@@ -26,17 +26,29 @@ import mongoose from 'mongoose';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-//app config
-const app=express();
-const port= process.env.PORT || 4000;
-connectDB();
-connectCloudinary();
+// Initialize Express app
+const app = express();
+const port = process.env.PORT || 4000;
 
+// Create database connections when needed, not at startup
+let isDbConnected = false;
+const ensureDbConnection = async () => {
+  if (!isDbConnected) {
+    try {
+      await connectDB();
+      await connectCloudinary();
+      isDbConnected = true;
+    } catch (error) {
+      console.error("Error connecting to databases:", error);
+    }
+  }
+  return isDbConnected;
+};
 
-//middelewares
-
+// Middleware
 app.use(express.json());
-// Configure CORS to allow credentials
+
+// Configure CORS
 app.use(cors({
   origin: function(origin, callback) {
     const allowedOrigins = [
@@ -58,37 +70,49 @@ app.use(cors({
   credentials: true
 }));
 
-// Serve static files from the uploads directory
+// Serve static files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// Logging middleware
 app.use(morgan('dev'));
+
+// Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 10000, // limit each IP to 10000 requests per windowMs
 });
 app.use(limiter);
 
-//initializing routes
+// Connect DB middleware - ensures DB connection for all routes
+app.use(async (req, res, next) => {
+  try {
+    await ensureDbConnection();
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
 
-app.use("/api/song",songRouter)
-app.use('/api/album',albumRouter)
-app.use('/api/auth', authRouter)
-app.use('/api/favorite', favoriteRouter)
-app.use('/api/comment', commentRouter)
-app.use('/api/search', searchRouter)
-app.use('/api/playlist', playlistroute)
-app.use('/api/analytics', analyticsroute)
-app.use('/api/user', userRouter)
-app.use('/api/moviealbum', movieAlbumRouter)
-app.use('/api/artist', artistRouter)
-app.use('/api/play', playRouter)
+// Routes
+app.use("/api/song", songRouter);
+app.use('/api/album', albumRouter);
+app.use('/api/auth', authRouter);
+app.use('/api/favorite', favoriteRouter);
+app.use('/api/comment', commentRouter);
+app.use('/api/search', searchRouter);
+app.use('/api/playlist', playlistroute);
+app.use('/api/analytics', analyticsroute);
+app.use('/api/user', userRouter);
+app.use('/api/moviealbum', movieAlbumRouter);
+app.use('/api/artist', artistRouter);
+app.use('/api/play', playRouter);
 
-// Health check endpoint for Docker
+// Health check endpoint
 app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'ok', message: 'Server is running' });
 });
 
-// Diagnostic route for checking environment variables
+// Diagnostic route
 app.get('/api/diagnostics', (req, res) => {
   try {
     const mongoDbMasked = process.env.MONGODB_URI 
@@ -137,14 +161,7 @@ app.get('/api/diagnostics', (req, res) => {
 // MongoDB test route
 app.get('/api/test-mongodb', async (req, res) => {
   try {
-    // Test MongoDB connection
-    if (mongoose.connection.readyState !== 1) {
-      // Connection is not established, try to connect
-      console.log("MongoDB not connected, attempting to connect...");
-      await mongoose.connect(process.env.MONGODB_URI, {
-        serverSelectionTimeoutMS: 5000
-      });
-    }
+    await ensureDbConnection();
     
     // Try to perform a simple operation
     const collections = await mongoose.connection.db.listCollections().toArray();
@@ -166,7 +183,10 @@ app.get('/api/test-mongodb', async (req, res) => {
   }
 });
 
-app.get('/',(req,res)=> res.send("Api Working"))
+// Root route
+app.get('/', (req, res) => {
+  res.send("SoundLink API Working");
+});
 
 // Global error handler
 app.use((err, req, res, next) => {
@@ -178,21 +198,21 @@ app.use((err, req, res, next) => {
   });
 });
 
-const server = app.listen(port, () => {
-  console.log(`Server started on ${port}`);
-  
-  // Determine the full URL for the server
-  const isProduction = process.env.NODE_ENV === 'production';
-  const isVercel = process.env.VERCEL === '1';
-  
-  // Don't run keepAlive on Vercel as it uses a different serverless model
-  if (!isVercel) {
+// For regular Node.js environments (not serverless)
+if (!process.env.VERCEL) {
+  const server = app.listen(port, () => {
+    console.log(`Server started on ${port}`);
+    
+    // Keep-alive for Render (not needed for Vercel)
+    const isProduction = process.env.NODE_ENV === 'production';
     const serverUrl = isProduction 
       ? process.env.SERVER_URL || 'https://your-render-app-url.onrender.com' 
       : `http://localhost:${port}`;
     
-    // Set up the keep-alive service to ping the health endpoint
-    // every 14 minutes (just under the 15-minute inactivity threshold)
+    // Set up the keep-alive service
     keepAlive(`${serverUrl}/api/health`, 14);
-  }
-});
+  });
+}
+
+// Export the app for serverless environments
+export default app;
