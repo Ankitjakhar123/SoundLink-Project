@@ -8,6 +8,10 @@
   ],
   "routes": [
     {
+      "src": "/api/debug",
+      "dest": "/api/debug.js"
+    },
+    {
       "src": "/api/song/list",
       "dest": "/api/song.js"
     },
