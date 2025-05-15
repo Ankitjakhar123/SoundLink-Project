@@ -84,7 +84,36 @@ app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'ok', message: 'Server is running' });
 });
 
+// Diagnostic route for checking environment variables
+app.get('/api/diagnostics', (req, res) => {
+  const diagnostics = {
+    environment: process.env.NODE_ENV || 'not set',
+    mongoDbConfigured: Boolean(process.env.MONGODB_URI),
+    cloudinaryConfigured: Boolean(process.env.CLOUDINARY_NAME && 
+                               process.env.CLOUDINARY_API_KEY && 
+                               process.env.CLOUDINARY_SECRET_KEY),
+    vercelDeployment: Boolean(process.env.VERCEL),
+    platform: process.platform,
+    nodeVersion: process.version
+  };
+  
+  res.status(200).json({ 
+    status: 'ok', 
+    diagnostics 
+  });
+});
+
 app.get('/',(req,res)=> res.send("Api Working"))
+
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error('Global error handler caught:', err);
+  res.status(500).json({
+    success: false,
+    message: 'Internal server error',
+    error: process.env.NODE_ENV === 'production' ? 'Server error' : err.message
+  });
+});
 
 const server = app.listen(port, () => {
   console.log(`Server started on ${port}`);
