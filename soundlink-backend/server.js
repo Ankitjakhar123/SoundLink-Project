@@ -20,6 +20,7 @@ import playRouter from './src/routes/playroute.js';
 import keepAlive from './src/utils/keepAlive.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import mongoose from 'mongoose';
 
 // Get current directory
 const __filename = fileURLToPath(import.meta.url);
@@ -42,7 +43,10 @@ app.use(cors({
       'http://localhost:5173',    // Local development
       'http://localhost:3000',    // Alternative local port
       'https://ankitsoundlink.netlify.app', // Netlify deployment
-      'https://sound-link-backend.vercel.app' // Vercel deployment
+      'https://sound-link-backend.vercel.app', // Vercel deployment
+      'https://sound-link-backend-git-main-ankitjakhar123s-projects.vercel.app', // Vercel preview
+      'https://sound-link-backend-668cyje4n-ankitjakhar123s-projects.vercel.app', // Vercel unique deploy URL
+      'https://soundlink-backend.vercel.app' // Potential renamed Vercel URL
     ];
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin || allowedOrigins.indexOf(origin) !== -1) {
@@ -86,21 +90,80 @@ app.get('/api/health', (req, res) => {
 
 // Diagnostic route for checking environment variables
 app.get('/api/diagnostics', (req, res) => {
-  const diagnostics = {
-    environment: process.env.NODE_ENV || 'not set',
-    mongoDbConfigured: Boolean(process.env.MONGODB_URI),
-    cloudinaryConfigured: Boolean(process.env.CLOUDINARY_NAME && 
-                               process.env.CLOUDINARY_API_KEY && 
-                               process.env.CLOUDINARY_SECRET_KEY),
-    vercelDeployment: Boolean(process.env.VERCEL),
-    platform: process.platform,
-    nodeVersion: process.version
-  };
-  
-  res.status(200).json({ 
-    status: 'ok', 
-    diagnostics 
-  });
+  try {
+    const mongoDbMasked = process.env.MONGODB_URI 
+      ? process.env.MONGODB_URI.replace(/mongodb(\+srv)?:\/\/([^:]+):([^@]+)@/, 'mongodb$1://*****:*****@')
+      : 'not set';
+      
+    const diagnostics = {
+      environment: process.env.NODE_ENV || 'not set',
+      mongoDb: {
+        configured: Boolean(process.env.MONGODB_URI),
+        uri: mongoDbMasked,
+        connectionState: mongoose.connection.readyState === 1 ? 'connected' : 
+                         mongoose.connection.readyState === 2 ? 'connecting' : 
+                         mongoose.connection.readyState === 3 ? 'disconnecting' : 'disconnected'
+      },
+      cloudinary: {
+        configured: Boolean(process.env.CLOUDINARY_NAME && 
+                          process.env.CLOUDINARY_API_KEY && 
+                          process.env.CLOUDINARY_SECRET_KEY),
+        cloudName: process.env.CLOUDINARY_NAME ? 'set' : 'not set',
+        apiKey: process.env.CLOUDINARY_API_KEY ? 'set' : 'not set',
+        secretKey: process.env.CLOUDINARY_SECRET_KEY ? 'set' : 'not set'
+      },
+      deployment: {
+        vercel: Boolean(process.env.VERCEL),
+        platform: process.platform,
+        nodeVersion: process.version,
+        memoryUsage: process.memoryUsage()
+      },
+      timestamp: new Date().toISOString()
+    };
+    
+    res.status(200).json({ 
+      status: 'ok', 
+      diagnostics 
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      message: 'Error generating diagnostics',
+      error: error.message
+    });
+  }
+});
+
+// MongoDB test route
+app.get('/api/test-mongodb', async (req, res) => {
+  try {
+    // Test MongoDB connection
+    if (mongoose.connection.readyState !== 1) {
+      // Connection is not established, try to connect
+      console.log("MongoDB not connected, attempting to connect...");
+      await mongoose.connect(process.env.MONGODB_URI, {
+        serverSelectionTimeoutMS: 5000
+      });
+    }
+    
+    // Try to perform a simple operation
+    const collections = await mongoose.connection.db.listCollections().toArray();
+    const collectionNames = collections.map(c => c.name);
+    
+    res.status(200).json({
+      status: 'ok',
+      message: 'MongoDB connection successful',
+      collections: collectionNames,
+      readyState: mongoose.connection.readyState
+    });
+  } catch (error) {
+    console.error("MongoDB test failed:", error);
+    res.status(500).json({
+      status: 'error',
+      message: 'MongoDB connection test failed',
+      error: error.message
+    });
+  }
 });
 
 app.get('/',(req,res)=> res.send("Api Working"))

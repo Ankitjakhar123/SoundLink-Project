@@ -20,9 +20,9 @@ const connectDB = async () => {
       throw new Error("MONGODB_URI environment variable is not defined");
     }
 
-    // Connect to MongoDB
-    console.log(`Attempting to connect to MongoDB at: ${process.env.MONGODB_URI.replace(/\/\/[^:]+:[^@]+@/, '//****:****@')}/SoundLive`);
-    await mongoose.connect(`${process.env.MONGODB_URI}/SoundLive`, {
+    // Connect to MongoDB - Use the URI directly without appending database name
+    console.log(`Attempting to connect to MongoDB with configured URI`);
+    await mongoose.connect(process.env.MONGODB_URI, {
       serverSelectionTimeoutMS: 5000, // 5 seconds timeout for server selection
     });
   } catch (error) {
