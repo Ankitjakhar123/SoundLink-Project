@@ -633,9 +633,10 @@ const PremiumPlayer = () => {
         {/* Mobile Player (full controls) */}
         {isSmallScreen && showExtraControls && !hidePlayer && (
           <div 
-            className="fixed inset-0 bottom-[50px] z-40 mobile-player-overlay overflow-y-auto"
+            className="fixed inset-0 bottom-[50px] z-40 mobile-player-overlay overflow-y-auto pt-safe"
             style={{ 
               color: themeColors.text,
+              paddingTop: 'env(safe-area-inset-top)',
             }}
           >
             {/* Album art background with blur - fixed position */}
