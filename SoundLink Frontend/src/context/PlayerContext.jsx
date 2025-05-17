@@ -108,7 +108,7 @@ export const PlayerContextProvider = ({ children }) => {
   const [buffering, setBuffering] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [prefetchedTracks, setPrefetchedTracks] = useState({});
-  const [bufferingStrategy, setBufferingStrategy] = useState('auto'); // 'auto', 'aggressive', 'conservative'
+  const [bufferingStrategy, setBufferingStrategy] = useState('conservative'); // Changed to conservative by default
   const [loading, setLoading] = useState({
     songs: true,
     albums: true,
@@ -1077,6 +1077,11 @@ export const PlayerContextProvider = ({ children }) => {
   useEffect(() => {
     if (firstLoad && track) {
       setFirstLoad(false);
+      // Don't automatically play the track on first load
+      if (audioRef.current) {
+        audioRef.current.pause();
+        setPlayStatus(false);
+      }
     }
   }, [track, firstLoad]);
 
