@@ -271,7 +271,7 @@ const DisplayHome = () => {
         keywords="music streaming, audio, trending songs, albums, artists, playlists"
       />
       
-      <div ref={topRef} className="pt-4 px-4 pb-16 flex-1 content-container bg-gradient-to-b from-black to-neutral-950">
+      <div ref={topRef} className="pt-safe px-4 pb-16 flex-1 content-container bg-black">
         {/* Welcome Section */}
         <motion.div 
           initial={{ opacity: 0, y: -20 }} 

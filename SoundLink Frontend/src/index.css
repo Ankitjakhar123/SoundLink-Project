@@ -37,6 +37,10 @@ body {
   overflow-y: scroll !important;
   -webkit-overflow-scrolling: touch !important; /* Enhanced smooth scrolling for iOS */
   padding-bottom: var(--player-bottom-padding, 0);
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
 }
 
 ::-webkit-scrollbar {
@@ -468,5 +472,32 @@ a, a:hover, a:focus, a:active, a:visited {
   .player-hidden-mobile .content-fade {
     bottom: 50px;
   }
+}
+
+/* Safe area utility classes */
+.pt-safe {
+  padding-top: max(1rem, env(safe-area-inset-top));
+}
+
+.pb-safe {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+.pl-safe {
+  padding-left: max(1rem, env(safe-area-inset-left));
+}
+
+.pr-safe {
+  padding-right: max(1rem, env(safe-area-inset-right));
+}
+
+.px-safe {
+  padding-left: max(1rem, env(safe-area-inset-left));
+  padding-right: max(1rem, env(safe-area-inset-right));
+}
+
+.py-safe {
+  padding-top: max(1rem, env(safe-area-inset-top));
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
 }
 
