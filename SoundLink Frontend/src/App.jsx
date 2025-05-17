@@ -141,7 +141,7 @@ const App = () => {
   }
 
   return (
-    <div className="app-main-container bg-black">
+    <div className="flex min-h-screen bg-black">
       <DisclaimerPopup />
       <InstallPwaPrompt />
       <InstallPWAButton />
