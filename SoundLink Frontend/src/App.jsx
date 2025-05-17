@@ -34,7 +34,6 @@ import SearchPage from "./components/SearchPage";
 import Library from "./components/Library";
 import InstallPwaPrompt from "./components/InstallPwaPrompt";
 import InstallPWAButton from "./components/InstallPWAButton";
-import SkipToContent from './components/SkipToContent';
 
 // Protected route component that requires authentication
 const ProtectedRoute = ({ children }) => {
@@ -143,7 +142,6 @@ const App = () => {
 
   return (
     <div className="flex min-h-screen bg-black">
-      <SkipToContent />
       <DisclaimerPopup />
       <InstallPwaPrompt />
       <InstallPWAButton />
