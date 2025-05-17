@@ -237,11 +237,16 @@ const Navbar = (props) => {
     return (
         <>
             <div className="w-full flex items-center justify-between py-2 px-2 md:py-3 md:px-8 bg-black fixed top-0 left-0 right-0 z-40 backdrop-blur-xl shadow-sm">
+                {/* Logo and company name for large screens */}
+                <div className="hidden md:flex items-center cursor-pointer" onClick={() => navigate('/')}> 
+                    <img src="/icons/soundlink-icon.svg?v=2" alt="SoundLink Logo" className="h-10 w-10 mr-3" />
+                    <span className="text-xl font-bold text-white">SoundLink</span>
+                </div>
                 <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-neutral-900"></div>
                 {/* Left: Mobile controls */}
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 md:hidden">
                     {/* Hamburger for mobile */}
-                    <button className="md:hidden flex items-center justify-center w-10 h-10 rounded-full bg-neutral-900 hover:bg-neutral-800 transition text-white border border-neutral-800" onClick={props.onHamburgerClick}>
+                    <button className="flex items-center justify-center w-10 h-10 rounded-full bg-neutral-900 hover:bg-neutral-800 transition text-white border border-neutral-800" onClick={props.onHamburgerClick}>
                         <FaBars className="w-5 h-5" />
                     </button>
                     
