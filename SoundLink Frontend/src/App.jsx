@@ -158,7 +158,7 @@ const App = () => {
       <Sidebar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
       <div className={`flex-1 flex flex-col h-screen overflow-y-auto transition-all duration-300 w-full content-container bg-black touch-scroll no-scrollbar ${mobileOpen ? 'opacity-30 pointer-events-none select-none' : ''} md:opacity-100 md:pointer-events-auto md:select-auto`}>
         <Navbar onHamburgerClick={() => setMobileOpen(true)} />
-        <div id="main-content" tabIndex="-1" className="flex-1 pb-10">
+        <div id="main-content" tabIndex="-1" className="flex-1 pb-10 pt-16 md:pt-20">
           <Routes>
             {/* Auth page route */}
             <Route path="/auth" element={user ? <Navigate to="/" /> : <AuthPage />} />

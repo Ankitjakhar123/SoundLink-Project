@@ -236,7 +236,7 @@ const Navbar = (props) => {
 
     return (
         <>
-            <div className="w-full flex items-center justify-between py-2 px-2 md:py-3 md:px-8 bg-black sticky top-0 z-30 backdrop-blur-xl relative">
+            <div className="w-full flex items-center justify-between py-2 px-2 md:py-3 md:px-8 bg-black fixed top-0 left-0 right-0 z-40 backdrop-blur-xl shadow-sm">
                 <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-neutral-900"></div>
                 {/* Left: Mobile controls */}
                 <div className="flex items-center gap-2">
