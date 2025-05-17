@@ -435,3 +435,38 @@ a, a:hover, a:focus, a:active, a:visited {
   text-decoration: none !important;
 }
 
+/* Player hidden on mobile styles */
+.player-hidden-mobile .bottom-navigation {
+  background: linear-gradient(180deg, var(--theme-secondary)cc, var(--theme-secondary)dd) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease-in-out;
+}
+
+/* Smooth transitions for player and navigation */
+.player-container,
+.bottom-navigation {
+  transition: all 0.3s ease-in-out;
+}
+
+/* Ensure proper z-index layering */
+.player-container {
+  z-index: 40;
+}
+
+.bottom-navigation {
+  z-index: 50;
+}
+
+/* Adjust content padding when player is hidden on mobile */
+@media (max-width: 768px) {
+  .player-hidden-mobile .content-container {
+    padding-bottom: 50px !important;
+  }
+  
+  .player-hidden-mobile .content-fade {
+    bottom: 50px;
+  }
+}
+

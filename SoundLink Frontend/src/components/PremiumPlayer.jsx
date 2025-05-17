@@ -259,9 +259,17 @@ const PremiumPlayer = () => {
       // Use CSS variables for styling
       document.documentElement.style.setProperty('--player-bottom-padding', totalPadding);
       
+      // Add a class to body when player is hidden on small screens
+      if (isSmallScreen && hidePlayer) {
+        document.body.classList.add('player-hidden-mobile');
+      } else {
+        document.body.classList.remove('player-hidden-mobile');
+      }
+      
       // Cleanup function
       return () => {
         document.documentElement.style.removeProperty('--player-bottom-padding');
+        document.body.classList.remove('player-hidden-mobile');
       };
     }
   }, [track, isSmallScreen, hidePlayer]);
@@ -614,7 +622,12 @@ const PremiumPlayer = () => {
     <AnimatePresence>
       <div 
         className="fixed left-0 w-full z-40 player-container"
-        style={{ bottom: isSmallScreen ? '50px' : '0', display: isSmallScreen && hidePlayer ? 'none' : 'block' }}
+        style={{ 
+          bottom: isSmallScreen ? '50px' : '0', 
+          display: isSmallScreen && hidePlayer ? 'none' : 'block',
+          opacity: isSmallScreen && hidePlayer ? 0 : 1,
+          transition: 'opacity 0.3s ease-in-out'
+        }}
         ref={playerRef}
       >
         {/* Mobile Player (full controls) */}
