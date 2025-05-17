@@ -14,6 +14,17 @@ import { toast } from "react-toastify";
 import "./MobileStyles.css"; // Import mobile-specific styles
 import SEO from './SEO'; // Import SEO component
 
+// Cache for storing fetched data
+let cachedData = {
+  songs: null,
+  movieAlbums: null,
+  artists: null,
+  trendingSongs: null,
+  lastFetch: null
+};
+
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
+
 const DisplayHome = () => {
   const navigate = useNavigate();
   const { 
@@ -97,6 +108,18 @@ const DisplayHome = () => {
 
   const fetchData = async () => {
     try {
+      // Check if we have valid cached data
+      const now = Date.now();
+      if (cachedData.lastFetch && (now - cachedData.lastFetch < CACHE_DURATION)) {
+        // Use cached data
+        setSongsData(cachedData.songs || []);
+        setMovieAlbums(cachedData.movieAlbums || []);
+        setArtists(cachedData.artists || []);
+        setTrendingSongs(cachedData.trendingSongs || []);
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
       
@@ -104,18 +127,21 @@ const DisplayHome = () => {
       const movieRes = await axios.get(`${backendUrl}/api/moviealbum/list`);
       if (movieRes.data.success) {
         setMovieAlbums(movieRes.data.movieAlbums);
+        cachedData.movieAlbums = movieRes.data.movieAlbums;
       }
       
       // Fetch songs with pagination
       const songsRes = await axios.get(`${backendUrl}/api/song/list?all=true`);
       if (songsRes.data.success) {
         setSongsData(songsRes.data.songs);
+        cachedData.songs = songsRes.data.songs;
         
         // Create trending songs
         if (songsRes.data.songs && songsRes.data.songs.length) {
           // Sort by some criteria to simulate trending
           const sorted = [...songsRes.data.songs].sort(() => Math.random() - 0.5).slice(0, 10);
           setTrendingSongs(sorted);
+          cachedData.trendingSongs = sorted;
         }
         
         // Log the total count of songs for debugging
@@ -126,11 +152,15 @@ const DisplayHome = () => {
       const artistsRes = await axios.get(`${backendUrl}/api/artist/list`);
       if (artistsRes.data.success) {
         setArtists(artistsRes.data.artists);
+        cachedData.artists = artistsRes.data.artists;
       }
       
       // Set a random vibrant color for the UI
       const colors = ['#8E24AA', '#1E88E5', '#43A047', '#FB8C00', '#E53935', '#3949AB'];
       setMainColor(colors[Math.floor(Math.random() * colors.length)]);
+      
+      // Update cache timestamp
+      cachedData.lastFetch = now;
       
     } catch (error) {
       console.error("Error fetching data:", error);

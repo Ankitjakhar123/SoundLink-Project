@@ -35,7 +35,8 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
   // Sidebar classes for mobile/desktop
   const sidebarClass = `fixed top-0 left-0 h-screen w-64 bg-black text-white flex flex-col shadow-lg z-40 transition-transform duration-300
     ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
-    md:translate-x-0 md:static md:h-auto md:max-h-screen md:overflow-hidden`;
+    md:translate-x-0 md:static md:h-auto md:max-h-screen md:overflow-hidden
+    pt-safe`;
 
   return (
     <>
@@ -46,13 +47,15 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
           className="md:hidden absolute top-4 right-4 z-50 bg-black/80 p-2 rounded-full border border-neutral-800"
           onClick={() => setMobileOpen(false)}
           aria-label="Close sidebar"
+          style={{ top: 'calc(env(safe-area-inset-top) + 1rem)' }}
         >
           <FaTimes size={22} />
         </button>
         {/* Logo */}
         <div 
-          className="flex items-center px-4 py-4 cursor-pointer relative"
+          className="flex items-center px-4 py-4 cursor-pointer relative md:hidden"
           onClick={() => handleNavigate('/')}
+          style={{ paddingTop: 'calc(env(safe-area-inset-top) + 1rem)' }}
         >
           <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-neutral-900 transform translate-y-[-6px]"></div>
           <img 
@@ -62,6 +65,8 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
           />
           <span className="text-xl font-bold text-white">SoundLink</span>
         </div>
+        {/* Spacer for large screens */}
+        <div className="hidden md:block" style={{ height: '56px' }}></div>
         {/* Menu */}
         <nav className="flex-1 px-4 py-4 overflow-y-auto">
           <div className="mb-4">
