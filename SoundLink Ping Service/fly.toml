@@ -2,6 +2,8 @@ app = "soundlink-ping-service"
 primary_region = "dfw"  # Change this to your preferred region
 
 [build]
+  # Specify the directory where your source code is located
+  dockerfile = "Dockerfile"
 
 [http_service]
   internal_port = 3000

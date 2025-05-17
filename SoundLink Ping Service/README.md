@@ -49,6 +49,11 @@ fly auth login
    - Say no to PostgreSQL and Redis
    - Say yes to deploying now
 
+   **For monorepo deployment (if your code is in a subdirectory):**
+   ```bash
+   fly launch --path ./path/to/your/service
+   ```
+
 3. Set the environment variable for your Render backend URL:
    ```bash
    fly secrets set TARGET_URL=https://your-soundlink-backend.onrender.com
@@ -57,6 +62,11 @@ fly auth login
 4. For subsequent deployments:
    ```bash
    fly deploy
+   ```
+
+   **For monorepo deployment:**
+   ```bash
+   fly deploy --config ./path/to/your/service/fly.toml
    ```
 
 ### 4. Verify the Deployment
