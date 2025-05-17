@@ -785,13 +785,21 @@ const PremiumPlayer = () => {
                 </button>
                 <button
                   onClick={handlePlayPause}
-                    className="w-14 h-14 flex items-center justify-center text-white rounded-full shadow-lg"
-                    style={{ 
-                      background: `linear-gradient(135deg, ${themeColors.primary}, ${themeColors.accent || themeColors.primary})`,
-                      boxShadow: `0 4px 10px ${themeColors.primary}80`
-                    }}
-                  >
-                    {playStatus ? <FaPause className="text-xl" /> : <FaPlay className="text-xl ml-1" />}
+                    className="rounded-full p-1 shadow-lg hover:scale-110 transition-transform border-10 text-lg relative overflow-hidden"
+                style={{ 
+                  background: `linear-gradient(135deg, ${themeColors.primary}, ${themeColors.accent || themeColors.primary})`,
+                  borderColor: `${themeColors.primary}80`,
+                }}
+                title={playStatus ? "Pause" : "Play"}
+              >
+                    <div className="absolute inset-0 bg-black/50 rounded-full"></div>
+                    <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-black/40 rounded-full"></div>
+                    <div className="relative z-10 flex items-center justify-center">
+                      {playStatus ? 
+                        <FaPause className="text-xl text-white drop-shadow-lg" /> : 
+                        <FaPlay className="relative ml-0.5 text-xl text-white drop-shadow-lg" />
+                      }
+                    </div>
                 </button>
                 <button 
                   onClick={Next}
@@ -1328,15 +1336,21 @@ const PremiumPlayer = () => {
               </button>
               <button
                   onClick={handlePlayPause}
-                    className="rounded-full p-1 shadow-lg hover:scale-110 transition-transform border-10 text-lg"
+                    className="rounded-full p-1 shadow-lg hover:scale-110 transition-transform border-10 text-lg relative overflow-hidden"
                 style={{ 
                   background: `linear-gradient(135deg, ${themeColors.primary}, ${themeColors.accent || themeColors.primary})`,
                   borderColor: `${themeColors.primary}80`,
-                  color: themeColors.text
                 }}
                 title={playStatus ? "Pause" : "Play"}
               >
-                    {playStatus ? <FaPause className="text-xl" /> : <FaPlay className="relative ml-0.5" size={20} />}
+                    <div className="absolute inset-0 bg-black/50 rounded-full"></div>
+                    <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-black/40 rounded-full"></div>
+                    <div className="relative z-10 flex items-center justify-center">
+                      {playStatus ? 
+                        <FaPause className="text-xl text-white drop-shadow-lg" /> : 
+                        <FaPlay className="relative ml-0.5 text-xl text-white drop-shadow-lg" />
+                      }
+                    </div>
               </button>
               <button 
                 onClick={Next} 
@@ -1393,10 +1407,17 @@ const PremiumPlayer = () => {
                   e.stopPropagation();
                   handlePlayPause();
                 }}
-                className="rounded-full p-2 shadow-md flex items-center justify-center w-8 h-8"
+                className="rounded-full p-2 shadow-md flex items-center justify-center w-8 h-8 relative overflow-hidden"
                 style={{ background: `linear-gradient(135deg, ${themeColors.primary}, ${themeColors.accent})` }}
               >
-                {playStatus ? <FaPause className="text-sm" /> : <FaPlay className="text-sm ml-0.5" />}
+                <div className="absolute inset-0 bg-black/50 rounded-full"></div>
+                <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-black/40 rounded-full"></div>
+                <div className="relative z-10 flex items-center justify-center">
+                  {playStatus ? 
+                    <FaPause className="text-sm text-white drop-shadow-lg" /> : 
+                    <FaPlay className="text-sm ml-0.5 text-white drop-shadow-lg" />
+                  }
+                </div>
               </button>
               <button 
                 onClick={(e) => {
