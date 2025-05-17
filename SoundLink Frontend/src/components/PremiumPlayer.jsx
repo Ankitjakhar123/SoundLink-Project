@@ -201,6 +201,7 @@ const PremiumPlayer = () => {
     songsData,
     getArtistName,
     getAlbumName,
+    playWithId,
   } = useContext(PlayerContext);
   
   const [volume, setVolume] = useState(0.7);
@@ -311,7 +312,37 @@ const PremiumPlayer = () => {
   const currentSec = (time.currentTime.minute * 60) + time.currentTime.second;
   const handleSeek = (e) => {
     const val = Number(e.target.value);
-    if (audioRef.current) audioRef.current.currentTime = val;
+    if (audioRef.current) {
+      try {
+        // For mobile, ensure the seek happens immediately
+        if (isSmallScreen) {
+          audioRef.current.currentTime = val;
+        } else {
+          // For desktop, use normal seek
+          audioRef.current.currentTime = val;
+        }
+        
+        // Force UI update for more responsive feel on touch devices
+        if (e.type === 'touchmove' || e.type === 'touchend' || e.type === 'touchstart') {
+          // For touch events, force immediate feedback
+          // Update any local UI that might be dependent on time
+          if (progressBarRef.current) {
+            progressBarRef.current.value = val;
+          }
+          
+          // Try to play immediately if paused (improves mobile experience)
+          if (!playStatus && isSmallScreen) {
+            try {
+              play();
+            } catch (playErr) {
+              console.log('Could not auto-play after seek:', playErr);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error setting audio time:', err);
+      }
+    }
   };
 
   // Toggle autoplay - commented out to fix linter errors
@@ -476,10 +507,23 @@ const PremiumPlayer = () => {
   }, []);
 
   // Progress bar functions
-  const handleProgressTouchStart = () => {};
-  const handleProgressTouchEnd = () => {};
-  const handleVolumeTouchStart = () => {};
-  const handleVolumeTouchEnd = () => {};
+  const handleProgressTouchStart = () => {
+    // Prevent scroll events while seeking
+    document.body.style.overflow = 'hidden';
+  };
+  
+  const handleProgressTouchEnd = () => {
+    // Re-enable scrolling
+    document.body.style.overflow = '';
+  };
+  
+  const handleVolumeTouchStart = () => {
+    document.body.style.overflow = 'hidden';
+  };
+  
+  const handleVolumeTouchEnd = () => {
+    document.body.style.overflow = '';
+  };
 
   // Add styles for better touch interaction on mobile
   useEffect(() => {
@@ -490,31 +534,63 @@ const PremiumPlayer = () => {
       /* Increase touch target sizes on small screens */
       @media (max-width: 768px) {
         input[type="range"] {
-          height: 10px !important;
-          margin: 8px 0;
-          background: rgba(50, 50, 50, 0.3);
+          height: 20px !important;
+          margin: 0;
+          background: transparent;
           border-radius: 8px;
           -webkit-appearance: none;
+          position: absolute;
+          z-index: 10;
+          cursor: pointer;
+          top: 50%;
+          transform: translateY(-50%);
         }
         
         input[type="range"]::-webkit-slider-thumb {
           -webkit-appearance: none;
-          width: 18px;
-          height: 18px;
+          width: 16px;
+          height: 16px;
           background: #a855f7;
           border-radius: 50%;
           cursor: pointer;
-          border: 2px solid #222;
+          border: 1px solid #222;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+          margin-top: 0;
+          position: relative;
+          z-index: 20;
+        }
+        
+        input[type="range"]::-moz-range-thumb {
+          width: 16px;
+          height: 16px;
+          background: #a855f7;
+          border-radius: 50%;
+          cursor: pointer;
+          border: 1px solid #222;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        /* Progress bar container adjustments */
+        .mobile-player-overlay .relative.w-full.h-1 {
+          height: 4px !important;
+          position: relative;
+          display: flex;
+          align-items: center;
         }
         
         /* Fix volume slider */
         .volume-slider {
           width: 60px !important;
           -webkit-appearance: none;
-          height: 4px !important;
+          height: 12px !important;
           background: rgba(50, 50, 50, 0.6);
           border-radius: 4px;
           margin: 0 8px;
+        }
+        
+        /* Fix opacity for better visibility */
+        .mobile-player-overlay input[type="range"] {
+          opacity: 0.8 !important;
         }
       }
     `;
@@ -673,7 +749,7 @@ const PremiumPlayer = () => {
             {/* Content container - now a single scrollable area */}
             <div className="relative z-10 min-h-full pb-20">
               {/* Top navigation row - sticky at top */}
-              <div className="sticky top-0 flex justify-between items-center p-5 mb-2 z-20 backdrop-blur-sm bg-black/30">
+              <div className="sticky flex justify-between items-center p-5 mb-2 z-20 backdrop-blur-sm bg-black/70" style={{ top: 'env(safe-area-inset-top)' }}>
               <button 
                   className="w-8 h-8 flex items-center justify-center"
                   style={{ color: themeColors.text }}
@@ -741,10 +817,10 @@ const PremiumPlayer = () => {
               <div className="px-5 mb-8">
             {/* Progress bar */}
                 <div className="w-full mb-4">
-                  <div className="relative w-full h-1 bg-white/20 rounded-full overflow-hidden">
+                  <div className="relative w-full h-1 bg-white/20 rounded-full overflow-hidden flex items-center">
                 {/* Buffering Progress Indicator */}
                 <div 
-                      className="absolute top-0 left-0 h-full rounded-full"
+                      className="absolute top-0 left-0 h-full rounded-full pointer-events-none"
                       style={{ width: `${loadingProgress}%`, backgroundColor: `${themeColors.text}40` }}
                 ></div>
                 {/* Playback Progress */}
@@ -758,8 +834,9 @@ const PremiumPlayer = () => {
                   onChange={handleSeek}
                   onTouchStart={handleProgressTouchStart}
                   onTouchEnd={handleProgressTouchEnd}
-                      className="w-full absolute top-0 left-0 h-1 cursor-pointer opacity-70 z-10"
-                      style={{ accentColor: themeColors.primary }}
+                  onTouchMove={handleSeek}
+                  className="w-full absolute top-0 left-0 h-1 cursor-pointer opacity-70 z-10 mobile-progress-bar"
+                  style={{ accentColor: themeColors.primary }}
                 />
               </div>
                   <div className="flex items-center justify-between text-xs mt-1" style={{ color: `${themeColors.text}99` }}>
@@ -1069,11 +1146,7 @@ const PremiumPlayer = () => {
                         style={{ background: index === 0 ? `${themeColors.primary}15` : 'transparent' }}
                         onClick={() => {
                           // Play the selected song
-                          const newTrack = songsData.find(s => s._id === song._id);
-                          if (newTrack) {
-                            audioRef.current.src = newTrack.file;
-                            audioRef.current.play();
-                          }
+                          playWithId(song._id);
                         }}
                       >
                         <div className="w-10 h-10 rounded overflow-hidden mr-3">
@@ -1135,11 +1208,7 @@ const PremiumPlayer = () => {
                         style={{ background: index === 0 ? `${themeColors.primary}15` : 'transparent' }}
                         onClick={() => {
                           // Play the selected song
-                          const newTrack = songsData.find(s => s._id === song._id);
-                          if (newTrack) {
-                            audioRef.current.src = newTrack.file;
-                            audioRef.current.play();
-                          }
+                          playWithId(song._id);
                         }}
                       >
                         <div className="w-10 h-10 rounded overflow-hidden mr-3">
@@ -1190,11 +1259,7 @@ const PremiumPlayer = () => {
                         className="min-w-[120px] cursor-pointer relative group"
                         onClick={() => {
                           // Play the selected song
-                          const newTrack = songsData.find(s => s._id === song._id);
-                          if (newTrack) {
-                            audioRef.current.src = newTrack.file;
-                            audioRef.current.play();
-                          }
+                          playWithId(song._id);
                         }}
                       >
                         <div className="w-[120px] h-[120px] rounded-md overflow-hidden mb-2 border relative" 
@@ -1367,11 +1432,11 @@ const PremiumPlayer = () => {
                   <span className="text-xs min-w-[28px]" style={{ color: `${themeColors.text}99` }}>
                 {formatTime(time.currentTime.minute, time.currentTime.second)}
               </span>
-                  <div className="relative w-full h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: `${themeColors.text}30` }}>
+                  <div className="relative w-full h-1.5 rounded-full overflow-hidden flex items-center" style={{ backgroundColor: `${themeColors.text}30` }}>
                 {/* Buffering Progress Indicator */}
                 <div 
-                  className="absolute top-0 left-0 h-full rounded-full"
-                  style={{ width: `${loadingProgress}%`, backgroundColor: `${themeColors.text}50` }}
+                  className="absolute top-0 left-0 h-full rounded-full pointer-events-none"
+                  style={{ width: `${loadingProgress}%`, backgroundColor: `${themeColors.text}40` }}
                   title="Buffered amount"
                 ></div>
                 {/* Playback Progress */}
@@ -1384,7 +1449,8 @@ const PremiumPlayer = () => {
                   onChange={handleSeek}
                   onTouchStart={handleProgressTouchStart}
                   onTouchEnd={handleProgressTouchEnd}
-                      className="w-full absolute top-0 left-0 h-1.5 cursor-pointer opacity-70 z-10"
+                  onTouchMove={handleSeek}
+                  className="w-full absolute top-0 left-0 h-1.5 cursor-pointer opacity-70 z-10"
                   style={{ accentColor: themeColors.accent }}
                 />
                 {buffering && (
