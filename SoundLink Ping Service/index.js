@@ -61,18 +61,12 @@ app.get('/', (req, res) => {
 });
 
 // Start the service
-if (process.env.NODE_ENV !== 'production') {
-  // Only start the server if not in production (Vercel)
-  app.listen(port, () => {
-    console.log(`Ping service running on port ${port}`);
-    
-    // Initial ping
-    pingServer();
-    
-    // Set up the interval
-    setInterval(pingServer, pingInterval);
-  });
-}
-
-// For Vercel serverless functions
-export default app; 
+app.listen(port, () => {
+  console.log(`Ping service running on port ${port}`);
+  
+  // Initial ping
+  pingServer();
+  
+  // Set up the interval
+  setInterval(pingServer, pingInterval);
+}); 
