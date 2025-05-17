@@ -6,8 +6,7 @@
   "scripts": {
     "test": "jest --runInBand",
     "start": "node server.js",
-    "server": "nodemon server.js",
-    "vercel-build": "echo 'Build step completed'"
+    "server": "nodemon server.js"
   },
   "author": "",
   "license": "ISC",
