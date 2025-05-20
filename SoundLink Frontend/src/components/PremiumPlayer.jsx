@@ -711,16 +711,12 @@ const PremiumPlayer = () => {
           <div 
             className="fixed inset-0 bottom-[50px] z-40 mobile-player-overlay overflow-y-auto pt-safe"
             style={{ 
-              color: themeColors.text,
+              color: themeColors.text
             }}
           >
             {/* Status bar background */}
             <div 
-              className="fixed top-0 left-0 right-0 z-50"
-              style={{ 
-                height: 'var(--safe-area-top)',
-                backgroundColor: '#000000',
-              }}
+              className="status-bar-bg"
             ></div>
             
             <div 
@@ -756,11 +752,12 @@ const PremiumPlayer = () => {
             {/* Content container - now a single scrollable area */}
             <div className="relative z-10 min-h-full pb-20">
               {/* Top navigation row - sticky at top */}
-              <div className="sticky flex justify-between items-center px-5 z-20 bg-black" 
+              <div className="sticky flex justify-between items-center p-5 mb-2 z-20 pt-safe backdrop-blur-xl" 
                 style={{ 
                   top: 0,
-                  paddingTop: 'calc(var(--safe-area-top) + 1rem)',
-                  paddingBottom: '1rem',
+                  boxShadow: `0 4px 12px rgba(0, 0, 0, 0.3), 0 1px 3px ${themeColors.primary}30`,
+                  background: `linear-gradient(to bottom, ${themeColors.secondary}ee, ${themeColors.secondary}f8)`,
+                  borderBottom: `1px solid ${themeColors.primary}30`
                 }}
               >
               <button 
@@ -773,7 +770,13 @@ const PremiumPlayer = () => {
                   </svg>
                 </button>
                 <div className="text-center">
-                  <h3 className="font-bold text-sm opacity-80" style={{ color: themeColors.text }}>
+                  <h3 className="font-bold text-sm" style={{ 
+                    background: `linear-gradient(135deg, ${themeColors.text}, ${themeColors.primary})`,
+                    backgroundClip: 'text',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)'
+                  }}>
                     {track?.album || "Now Playing"}
                   </h3>
                 </div>
