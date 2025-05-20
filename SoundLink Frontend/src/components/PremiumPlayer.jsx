@@ -716,7 +716,11 @@ const PremiumPlayer = () => {
           >
             {/* Status bar background */}
             <div 
-              className="status-bar-bg"
+              className="fixed top-0 left-0 right-0 z-50"
+              style={{ 
+                height: 'var(--safe-area-top)',
+                backgroundColor: '#000000',
+              }}
             ></div>
             
             <div 
@@ -752,9 +756,11 @@ const PremiumPlayer = () => {
             {/* Content container - now a single scrollable area */}
             <div className="relative z-10 min-h-full pb-20">
               {/* Top navigation row - sticky at top */}
-              <div className="sticky flex justify-between items-center p-5 mb-2 z-20 backdrop-blur-sm bg-black/70" 
+              <div className="sticky flex justify-between items-center px-5 z-20 bg-black" 
                 style={{ 
-                  top: 'var(--safe-area-top)',
+                  top: 0,
+                  paddingTop: 'calc(var(--safe-area-top) + 1rem)',
+                  paddingBottom: '1rem',
                 }}
               >
               <button 
