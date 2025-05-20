@@ -27,6 +27,8 @@ html {
   -webkit-overflow-scrolling: touch !important; /* Enhanced smooth scrolling for iOS */
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none;  /* IE and Edge */
+  overscroll-behavior-y: none;
+  touch-action: pan-y;
 }
 
 body {
@@ -426,6 +428,7 @@ input:checked + .slider:before {
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
     position: relative !important;
+    overscroll-behavior: none;
   }
   
   .content-container {
@@ -433,6 +436,7 @@ input:checked + .slider:before {
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
     height: auto !important;
+    overscroll-behavior: none;
   }
 }
 
@@ -445,6 +449,7 @@ input:checked + .slider:before {
     width: 100%;
     height: auto !important;
     min-height: 100% !important;
+    overscroll-behavior: none !important;
   }
   
   .min-h-screen {
@@ -452,6 +457,7 @@ input:checked + .slider:before {
     height: auto !important;
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior: none !important;
   }
   
   .content-container {
@@ -459,6 +465,7 @@ input:checked + .slider:before {
     height: auto !important;
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior: none !important;
   }
   
   /* Fix for modals in PWA mode */
@@ -564,6 +571,32 @@ a, a:hover, a:focus, a:active, a:visited {
   
   .player-hidden-mobile .content-fade {
     bottom: 50px;
+  }
+}
+
+/* Fix for rubber band/elastic scrolling effect on iOS PWA */
+@supports (-webkit-touch-callout: none) {
+  @media all and (display-mode: standalone), all and (display-mode: fullscreen) {
+    body {
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+    
+    #root {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    .content-container {
+      padding-bottom: 150px !important;
+    }
   }
 }
 
