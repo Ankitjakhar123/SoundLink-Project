@@ -236,7 +236,7 @@ const Navbar = (props) => {
 
     return (
         <>
-            <div className="w-full flex items-center justify-between py-2 px-2 md:py-3 md:px-8 bg-black fixed top-0 left-0 right-0 z-40 backdrop-blur-xl shadow-sm pt-safe">
+            <div className="w-full flex items-center justify-between py-2 px-2 md:py-3 md:px-8 bg-black fixed top-0 left-0 right-0 z-40 backdrop-blur-xl shadow-sm pt-safe-plus">
                 {/* Logo and company name for large screens */}
                 <div className="hidden md:flex items-center cursor-pointer" onClick={() => navigate('/')}> 
                     <img src="/icons/soundlink-icon.svg?v=2" alt="SoundLink Logo" className="h-10 w-10 mr-3" />

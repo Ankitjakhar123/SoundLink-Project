@@ -712,10 +712,13 @@ const PremiumPlayer = () => {
             className="fixed inset-0 bottom-[50px] z-40 mobile-player-overlay overflow-y-auto pt-safe"
             style={{ 
               color: themeColors.text,
-              paddingTop: 'env(safe-area-inset-top)',
             }}
           >
-            {/* Album art background with blur - fixed position */}
+            {/* Status bar background */}
+            <div 
+              className="status-bar-bg"
+            ></div>
+            
             <div 
               className="fixed inset-0 z-0 bg-cover bg-center" 
               style={{ 
@@ -749,7 +752,11 @@ const PremiumPlayer = () => {
             {/* Content container - now a single scrollable area */}
             <div className="relative z-10 min-h-full pb-20">
               {/* Top navigation row - sticky at top */}
-              <div className="sticky flex justify-between items-center p-5 mb-2 z-20 backdrop-blur-sm bg-black/70" style={{ top: 'env(safe-area-inset-top)' }}>
+              <div className="sticky flex justify-between items-center p-5 mb-2 z-20 backdrop-blur-sm bg-black/70" 
+                style={{ 
+                  top: 'var(--safe-area-top)',
+                }}
+              >
               <button 
                   className="w-8 h-8 flex items-center justify-center"
                   style={{ color: themeColors.text }}

@@ -8,7 +8,11 @@ import { PlayerContextProvider } from "./context/PlayerContext.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { initializeDeviceStyles } from "./utils/deviceUtils.js";
 // import { registerSW } from 'virtual:pwa-register';
+
+// Initialize device-specific styles for notches and safe areas
+initializeDeviceStyles();
 
 // TEMPORARY: Disable service workers to troubleshoot refresh loop issue
 console.log('Service workers have been temporarily disabled to troubleshoot refresh issues');

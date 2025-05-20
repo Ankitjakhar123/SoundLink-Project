@@ -36,7 +36,7 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
   const sidebarClass = `fixed top-0 left-0 h-screen w-64 bg-black text-white flex flex-col shadow-lg z-40 transition-transform duration-300
     ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
     md:translate-x-0 md:static md:h-auto md:max-h-screen md:overflow-hidden
-    pt-safe`;
+    pt-safe-plus`;
 
   return (
     <>
@@ -44,18 +44,17 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
       <aside className={sidebarClass}>
         {/* Close button for mobile */}
         <button
-          className="md:hidden absolute top-4 right-4 z-50 bg-black/80 p-2 rounded-full border border-neutral-800"
+          className="md:hidden absolute right-4 z-50 bg-black/80 p-2 rounded-full border border-neutral-800 mt-safe"
           onClick={() => setMobileOpen(false)}
           aria-label="Close sidebar"
-          style={{ top: 'calc(env(safe-area-inset-top) + 1rem)' }}
+          style={{ top: 'calc(1rem)' }}
         >
           <FaTimes size={22} />
         </button>
         {/* Logo */}
         <div 
-          className="flex items-center px-4 py-4 cursor-pointer relative md:hidden"
+          className="flex items-center px-4 py-4 cursor-pointer relative md:hidden pt-safe-plus"
           onClick={() => handleNavigate('/')}
-          style={{ paddingTop: 'calc(env(safe-area-inset-top) + 1rem)' }}
         >
           <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-neutral-900 transform translate-y-[-6px]"></div>
           <img 
