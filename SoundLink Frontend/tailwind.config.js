@@ -15,6 +15,22 @@ module.exports = {
         accent: "#f472b6",
         "accent-dark": "#a21caf",
       },
+      keyframes: {
+        'gradient-shift': {
+          '0%, 100%': {
+            'background-position': '0% 50%'
+          },
+          '50%': {
+            'background-position': '100% 50%'
+          }
+        }
+      },
+      animation: {
+        'gradient-shift': 'gradient-shift 15s ease infinite',
+      },
+      backgroundSize: {
+        'gradient-shift': '200% 200%',
+      }
     },
   },
   plugins: [],

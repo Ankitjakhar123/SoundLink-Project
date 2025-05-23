@@ -225,19 +225,92 @@ const DisplayHome = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex justify-center items-center bg-black text-white">
-        <div className="animate-pulse text-fuchsia-500 text-xl">Loading...</div>
+      <div className="min-h-screen bg-black text-white">
+        <div className="p-4 md:p-8">
+          {/* Trending Songs Skeleton */}
+          <div className="mb-12">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-8 h-8 bg-neutral-800 rounded animate-pulse"></div>
+              <div className="h-8 w-48 bg-neutral-800 rounded animate-pulse"></div>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="bg-neutral-900/50 rounded-lg overflow-hidden">
+                  <div className="aspect-square bg-neutral-800 animate-pulse"></div>
+                  <div className="p-3">
+                    <div className="h-4 bg-neutral-800 rounded w-3/4 mb-2 animate-pulse"></div>
+                    <div className="h-3 bg-neutral-800 rounded w-1/2 animate-pulse"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Albums Skeleton */}
+          <div className="mb-12">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-8 h-8 bg-neutral-800 rounded animate-pulse"></div>
+              <div className="h-8 w-48 bg-neutral-800 rounded animate-pulse"></div>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="bg-neutral-900/50 rounded-lg overflow-hidden">
+                  <div className="aspect-square bg-neutral-800 animate-pulse"></div>
+                  <div className="p-3">
+                    <div className="h-4 bg-neutral-800 rounded w-3/4 mb-2 animate-pulse"></div>
+                    <div className="h-3 bg-neutral-800 rounded w-1/2 animate-pulse"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Artists Skeleton */}
+          <div className="mb-12">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-8 h-8 bg-neutral-800 rounded animate-pulse"></div>
+              <div className="h-8 w-48 bg-neutral-800 rounded animate-pulse"></div>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="bg-neutral-900/50 rounded-lg overflow-hidden">
+                  <div className="aspect-square bg-neutral-800 rounded-full animate-pulse"></div>
+                  <div className="p-3 text-center">
+                    <div className="h-4 bg-neutral-800 rounded w-3/4 mx-auto animate-pulse"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Movie Albums Skeleton */}
+          <div className="mb-12">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-8 h-8 bg-neutral-800 rounded animate-pulse"></div>
+              <div className="h-8 w-48 bg-neutral-800 rounded animate-pulse"></div>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="bg-neutral-900/50 rounded-lg overflow-hidden">
+                  <div className="aspect-[16/9] bg-neutral-800 animate-pulse"></div>
+                  <div className="p-3">
+                    <div className="h-4 bg-neutral-800 rounded w-3/4 mb-2 animate-pulse"></div>
+                    <div className="h-3 bg-neutral-800 rounded w-1/2 animate-pulse"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-black text-white">
-      {/* Add SEO component for better search engine visibility */}
       <SEO 
-        title="SoundLink"
-        description="Discover and stream music with SoundLink, the premium music streaming platform with trending songs, albums, and artists."
-        keywords="music streaming, audio, trending songs, albums, artists, playlists"
+        title="SoundLink - Your Premium Music Streaming Experience"
+        description="Discover and enjoy high-quality music streaming with SoundLink. Access trending songs, albums, and artists."
       />
       
       <div ref={topRef} className="pt-safe px-4 pb-16 flex-1 content-container bg-black">

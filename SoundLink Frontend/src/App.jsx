@@ -34,6 +34,7 @@ import SearchPage from "./components/SearchPage";
 import Library from "./components/Library";
 import InstallPwaPrompt from "./components/InstallPwaPrompt";
 import InstallPWAButton from "./components/InstallPWAButton";
+import PremiumLoading from './components/PremiumLoading';
 
 // Protected route component that requires authentication
 const ProtectedRoute = ({ children }) => {
@@ -53,6 +54,11 @@ const App = () => {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [backendStatus, setBackendStatus] = useState('checking');
+  const [retryCount, setRetryCount] = useState(0);
+  const MAX_RETRIES = 5;
+  const INITIAL_DELAY = 5000;
+  const RETRY_DELAY = 3000;
 
   // Handle online/offline status
   useEffect(() => {
@@ -126,6 +132,47 @@ const App = () => {
     }
   };
 
+  // Add this useEffect to check backend status with retries
+  useEffect(() => {
+    let timeoutId;
+
+    const checkBackendStatus = async () => {
+      try {
+        const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
+        const response = await fetch(`${backendUrl}/api/health`);
+        if (response.ok) {
+          setBackendStatus('ready');
+          setRetryCount(0); // Reset retry count on success
+        } else {
+          throw new Error('Backend health check failed');
+        }
+      } catch (error) {
+        console.error('Backend health check failed:', error);
+        if (retryCount < MAX_RETRIES) {
+          // Retry after delay
+          timeoutId = setTimeout(() => {
+            setRetryCount(prev => prev + 1);
+          }, retryCount === 0 ? INITIAL_DELAY : RETRY_DELAY);
+        } else {
+          setBackendStatus('error');
+        }
+      }
+    };
+
+    // Initial delay before first check
+    if (retryCount === 0) {
+      timeoutId = setTimeout(checkBackendStatus, INITIAL_DELAY);
+    } else {
+      checkBackendStatus();
+    }
+
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [retryCount]); // Retry when retryCount changes
+
   // If on /admin, render AdminDashboard as a full page (no sidebar, no player)
   if (location.pathname === "/admin") {
     // Admin routes should require login
@@ -157,43 +204,63 @@ const App = () => {
       <div className={`flex-1 flex flex-col h-screen overflow-y-auto transition-all duration-300 w-full content-container bg-black touch-scroll no-scrollbar ${mobileOpen ? 'opacity-30 pointer-events-none select-none' : ''} md:opacity-100 md:pointer-events-auto md:select-auto`}>
         <Navbar onHamburgerClick={() => setMobileOpen(true)} />
         <div id="main-content" tabIndex="-1" className="flex-1 pb-10 pt-16 md:pt-13">
-          <Routes>
-            {/* Auth page route */}
-            <Route path="/auth" element={user ? <Navigate to="/" /> : <AuthPage />} />
-            
-            {/* Public routes - no login required */}
-            <Route path="/" element={songsData.length !== 0 ? <DisplayHome /> : <div className="text-white p-4">Loading songs...</div>} />
-            <Route path="/album/:id" element={<DisplayAlbum />} />
-            <Route path="/movie/:id" element={<MovieAlbumDetail onEnterFullscreen={lockOrientation} />} />
-            <Route path="/artist/:id" element={<ArtistDetail />} />
-            <Route path="/artists" element={<Artists />} />
-            <Route path="/trending" element={<TrendingSongs />} />
-            {/* Redirect search to home since we're using popup search only */}
-            <Route path="/search" element={<Navigate to="/" />} />
-            <Route path="/premium" element={<Premium />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/terms" element={<Terms />} />
-            <Route path="/privacy" element={<Privacy />} />
-            <Route path="/contact" element={<Contact />} />
-            
-            {/* Protected routes - login required */}
-            <Route path="/playlists" element={<ProtectedRoute><PlaylistsPage /></ProtectedRoute>} />
-            <Route path="/playlist/:id" element={<ProtectedRoute><PlaylistView /></ProtectedRoute>} />
-            <Route path="/favorites" element={<ProtectedRoute><Favorites /></ProtectedRoute>} />
-            <Route path="/library" element={<ProtectedRoute><Library /></ProtectedRoute>} />
-            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-            
-            {/* Admin routes - login required */}
-            <Route path="/admin" element={<ProtectedRoute><AdminDashboard token={localStorage.getItem('token')} /></ProtectedRoute>} />
-            <Route path="/admin/albums" element={<ProtectedRoute><ListAlbum /></ProtectedRoute>} />
-            <Route path="/admin/songs" element={<ProtectedRoute><ListSong /></ProtectedRoute>} />
-            <Route path="/admin/artists" element={<ProtectedRoute><AdminArtists /></ProtectedRoute>} />
-            
-            {/* Login and Signup routes - redirect to AuthPage */}
-            <Route path="/login" element={<AuthPage />} />
-            <Route path="/signup" element={<AuthPage />} />
-          </Routes>
+          {backendStatus === 'checking' ? (
+            <PremiumLoading />
+          ) : backendStatus === 'error' ? (
+            <div className="min-h-screen flex flex-col items-center justify-center p-4 text-center">
+              <h2 className="text-2xl font-bold text-red-500 mb-4">Connection Error</h2>
+              <p className="text-neutral-400 mb-6">
+                Unable to connect to the server. Please check your internet connection and try again.
+              </p>
+              <button
+                onClick={() => {
+                  setBackendStatus('checking');
+                  setRetryCount(0);
+                }}
+                className="bg-fuchsia-600 hover:bg-fuchsia-700 text-white px-6 py-3 rounded-lg transition-colors"
+              >
+                Retry Connection
+              </button>
+            </div>
+          ) : (
+            <Routes>
+              {/* Auth page route */}
+              <Route path="/auth" element={user ? <Navigate to="/" /> : <AuthPage />} />
+              
+              {/* Public routes - no login required */}
+              <Route path="/" element={<DisplayHome />} />
+              <Route path="/album/:id" element={<DisplayAlbum />} />
+              <Route path="/movie/:id" element={<MovieAlbumDetail onEnterFullscreen={lockOrientation} />} />
+              <Route path="/artist/:id" element={<ArtistDetail />} />
+              <Route path="/artists" element={<Artists />} />
+              <Route path="/trending" element={<TrendingSongs />} />
+              {/* Redirect search to home since we're using popup search only */}
+              <Route path="/search" element={<Navigate to="/" />} />
+              <Route path="/premium" element={<Premium />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/contact" element={<Contact />} />
+              
+              {/* Protected routes - login required */}
+              <Route path="/playlists" element={<ProtectedRoute><PlaylistsPage /></ProtectedRoute>} />
+              <Route path="/playlist/:id" element={<ProtectedRoute><PlaylistView /></ProtectedRoute>} />
+              <Route path="/favorites" element={<ProtectedRoute><Favorites /></ProtectedRoute>} />
+              <Route path="/library" element={<ProtectedRoute><Library /></ProtectedRoute>} />
+              <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+              
+              {/* Admin routes - login required */}
+              <Route path="/admin" element={<ProtectedRoute><AdminDashboard token={localStorage.getItem('token')} /></ProtectedRoute>} />
+              <Route path="/admin/albums" element={<ProtectedRoute><ListAlbum /></ProtectedRoute>} />
+              <Route path="/admin/songs" element={<ProtectedRoute><ListSong /></ProtectedRoute>} />
+              <Route path="/admin/artists" element={<ProtectedRoute><AdminArtists /></ProtectedRoute>} />
+              
+              {/* Login and Signup routes - redirect to AuthPage */}
+              <Route path="/login" element={<AuthPage />} />
+              <Route path="/signup" element={<AuthPage />} />
+            </Routes>
+          )}
         </div>
         {track && <div className="content-fade"></div>}
         <PremiumPlayer />
@@ -201,9 +268,7 @@ const App = () => {
           <audio ref={audioRef} preload="auto">
             <source src={track.file} type="audio/mp3" />
           </audio>
-        ) : (
-          <div className="text-white p-4">Please select a track to play.</div>
-        )}
+        ) : null}
       </div>
       {/* Add bottom navigation for mobile screens */}
       <div className="md:hidden">
