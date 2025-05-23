@@ -1,18 +1,26 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { MdPlayArrow, MdPause, MdRadio, MdMusicNote, MdExpandMore, MdChevronRight, MdSearch } from 'react-icons/md';
+import { MdPlayArrow, MdPause, MdRadio, MdMusicNote, MdExpandMore, MdChevronRight, MdSearch, MdLanguage, MdWeb, MdSpeed, MdCode } from 'react-icons/md';
+import { PlayerContext } from '../context/PlayerContext';
 
 const RadioStations = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentStation, setCurrentStation] = useState(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const audioRef = useRef(null);
   const [groupedStations, setGroupedStations] = useState({});
   const [expandedGenres, setExpandedGenres] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedStations, setExpandedStations] = useState({});
+  const [isPlaying, setIsPlaying] = useState(false);
   const STATIONS_PER_PAGE = 10;
+
+  // Get player context
+  const { 
+    pause,
+    audioRef: playerAudioRef,
+    playRadioStation,
+    playStatus: contextPlayStatus
+  } = useContext(PlayerContext);
 
   useEffect(() => {
     fetchStations();
@@ -20,76 +28,28 @@ const RadioStations = () => {
 
   // Effect to handle playback when currentStation changes
   useEffect(() => {
-    if (audioRef.current && currentStation) {
-      audioRef.current.src = currentStation.url;
-      audioRef.current.load();
+    if (currentStation) {
+      // Add a small delay to ensure state is updated
+      const timer = setTimeout(() => {
+        playRadioStation(currentStation);
+      }, 100);
 
-      const onCanPlay = () => {
-        const playPromise = audioRef.current.play();
-        if (playPromise !== undefined) {
-          playPromise.catch(error => {
-            console.error('Playback failed:', error);
-            setIsPlaying(false);
-            setError('Failed to play station. Please try again.');
-          });
-        } else {
-          setIsPlaying(true);
+      return () => {
+        clearTimeout(timer);
+        if (playerAudioRef.current) {
+          playerAudioRef.current.pause();
+          playerAudioRef.current.src = '';
         }
       };
-
-      audioRef.current.addEventListener('canplay', onCanPlay);
-      return () => {
-        audioRef.current?.removeEventListener('canplay', onCanPlay);
-      };
-    } else if (audioRef.current && !currentStation) {
-      audioRef.current.pause();
-      audioRef.current.src = '';
     }
   }, [currentStation]);
 
+  // Effect to sync with player context's play status
   useEffect(() => {
-    if (audioRef.current) {
-      if (isPlaying) {
-        if (audioRef.current.paused) {
-          audioRef.current.play().catch(error => {
-            console.error('Playback failed on resume:', error);
-            setIsPlaying(false);
-            setError('Failed to resume playback.');
-          });
-        }
-      } else {
-        if (!audioRef.current.paused) {
-          audioRef.current.pause();
-        }
-      }
+    if (contextPlayStatus !== isPlaying) {
+      setIsPlaying(contextPlayStatus);
     }
-  }, [isPlaying]);
-
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    const handlePlay = () => { console.log('Audio playing'); setIsPlaying(true); };
-    const handlePause = () => { console.log('Audio paused'); setIsPlaying(false); };
-    const handleEnded = () => { console.log('Audio ended'); setIsPlaying(false); };
-    const handleError = () => {
-      console.error('Audio error');
-      setIsPlaying(false);
-      setError('An audio error occurred. Please try another station.');
-    };
-
-    audio.addEventListener('play', handlePlay);
-    audio.addEventListener('pause', handlePause);
-    audio.addEventListener('ended', handleEnded);
-    audio.addEventListener('error', handleError);
-
-    return () => {
-      audio.removeEventListener('play', handlePlay);
-      audio.removeEventListener('pause', handlePause);
-      audio.removeEventListener('ended', handleError);
-      audio.removeEventListener('error', handleError);
-    };
-  }, []);
+  }, [contextPlayStatus]);
 
   const fetchStations = async () => {
     try {
@@ -178,21 +138,57 @@ const RadioStations = () => {
   };
 
   const handlePlayStation = (station) => {
-    if (currentStation && currentStation.stationuuid === station.stationuuid) {
-      setIsPlaying(!isPlaying);
-    } else {
-      setCurrentStation(station);
+    try {
+      if (currentStation && currentStation.stationuuid === station.stationuuid) {
+        // If it's the same station, toggle play/pause
+        if (isPlaying) {
+          pause();
+          setIsPlaying(false);
+        } else {
+          // Resume the same station
+          if (playerAudioRef.current) {
+            playerAudioRef.current.src = station.url_resolved || station.url;
+            playerAudioRef.current.load();
+            playerAudioRef.current.play()
+              .then(() => {
+                setIsPlaying(true);
+              })
+              .catch(err => {
+                console.error('Error resuming station:', err);
+                setIsPlaying(false);
+              });
+          }
+        }
+      } else {
+        // If it's a new station, stop current playback and start new one
+        if (playerAudioRef.current) {
+          playerAudioRef.current.pause();
+          playerAudioRef.current.src = '';
+        }
+        
+        // Set the current station first
+        setCurrentStation(station);
+        setIsPlaying(true);
+        
+        // Call playRadioStation directly
+        playRadioStation(station);
+      }
+    } catch (error) {
+      console.error('Error in handlePlayStation:', error);
+      setIsPlaying(false);
     }
   };
 
-  const handleAudioEnded = () => {
-    setIsPlaying(false);
-  };
-
-  const handleAudioError = () => {
-    setIsPlaying(false);
-    setError('Failed to play station');
-  };
+  // Add cleanup effect
+  useEffect(() => {
+    return () => {
+      // Don't stop playback when leaving the page
+      // Just ensure the state is properly maintained
+      if (currentStation && isPlaying) {
+        setIsPlaying(true);
+      }
+    };
+  }, [currentStation, isPlaying]);
 
   const filterStations = (stations) => {
     if (!searchQuery) return stations;
@@ -297,16 +293,67 @@ const RadioStations = () => {
                               onClick={() => handlePlayStation(station)}
                             >
                               <div className="flex items-start gap-4">
-                                <div className="w-12 h-12 bg-fuchsia-600/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                                  <MdMusicNote className="text-fuchsia-500" size={24} />
+                                <div className="w-12 h-12 bg-fuchsia-600/20 rounded-lg flex items-center justify-center flex-shrink-0 relative">
+                                  {currentStation?.stationuuid === station.stationuuid && isPlaying ? (
+                                    <>
+                                      <div className="w-full h-full flex items-center justify-center bg-fuchsia-600/20 rounded-lg">
+                                        <MdMusicNote className="text-fuchsia-500" size={24} />
+                                      </div>
+                                      <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full animate-pulse">
+                                        LIVE
+                                      </div>
+                                    </>
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center bg-fuchsia-600/20 rounded-lg">
+                                      <MdMusicNote className="text-fuchsia-500" size={24} />
+                                    </div>
+                                  )}
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <h3 className="font-semibold text-white truncate">{station.name}</h3>
                                   {station.genre && (
                                     <p className="text-sm text-neutral-400 truncate">{station.genre}</p>
                                   )}
+                                  
+                                  {/* Station Metadata */}
+                                  <div className="mt-2 space-y-1">
+                                    {station.language && (
+                                      <div className="flex items-center gap-1 text-xs text-neutral-400">
+                                        <MdLanguage size={14} />
+                                        <span>{station.language}</span>
+                                      </div>
+                                    )}
+                                    {station.bitrate && (
+                                      <div className="flex items-center gap-1 text-xs text-neutral-400">
+                                        <MdSpeed size={14} />
+                                        <span>{station.bitrate}kbps</span>
+                                      </div>
+                                    )}
+                                    {station.codec && (
+                                      <div className="flex items-center gap-1 text-xs text-neutral-400">
+                                        <MdCode size={14} />
+                                        <span>{station.codec}</span>
+                                      </div>
+                                    )}
+                                    {station.homepage && (
+                                      <div className="flex items-center gap-1 text-xs text-neutral-400">
+                                        <MdWeb size={14} />
+                                        <a 
+                                          href={station.homepage} 
+                                          target="_blank" 
+                                          rel="noopener noreferrer"
+                                          className="hover:text-fuchsia-500 truncate"
+                                          onClick={(e) => e.stopPropagation()}
+                                        >
+                                          {new URL(station.homepage).hostname}
+                                        </a>
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {/* Tags */}
                                   {station.tags && (
-                                    <div className="flex flex-wrap gap-1 mt-1">
+                                    <div className="flex flex-wrap gap-1 mt-2">
                                       {station.tags.split(',').slice(0, 3).map((tag, index) => (
                                         <span 
                                           key={index}
@@ -359,14 +406,6 @@ const RadioStations = () => {
             })
           }
         </AnimatePresence>
-
-        {/* Audio Player */}
-        <audio
-          ref={audioRef}
-          onEnded={handleAudioEnded}
-          onError={handleAudioError}
-          className="hidden"
-        />
       </div>
     </div>
   );

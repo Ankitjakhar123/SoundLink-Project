@@ -1168,6 +1168,83 @@ export const PlayerContextProvider = ({ children }) => {
     return formattedLyrics;
   };
 
+  const playRadioStation = (station) => {
+    // Initialize audio context first
+    initAudioContext();
+
+    // Create a radio track object
+    const radioTrack = {
+      _id: `radio-${station.stationuuid}`,
+      name: station.name,
+      file: station.url_resolved || station.url,
+      image: station.favicon || 'https://via.placeholder.com/150',
+      artist: station.name,
+      album: 'Radio Station',
+      metadata: {
+        bitrate: station.bitrate,
+        codec: station.codec,
+        language: station.language,
+        country: station.country,
+        homepage: station.homepage,
+        lastcheckok: station.lastcheckoktime
+      }
+    };
+
+    // Set the track in state
+    setTrack(radioTrack);
+    setPlayStatus(true);
+
+    // Update audio source and play
+    if (audioRef.current) {
+      try {
+        // Stop any current playback
+        audioRef.current.pause();
+        
+        // Set new source with CORS
+        audioRef.current.crossOrigin = "anonymous";
+        audioRef.current.src = radioTrack.file;
+        audioRef.current.load();
+        
+        // Start playback
+        const playPromise = audioRef.current.play();
+        
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => {
+              console.log('Radio playback started successfully');
+              setPlayStatus(true);
+            })
+            .catch(error => {
+              console.error('Error playing radio station:', error);
+              setPlayStatus(false);
+              
+              // Try to resume audio context if it was suspended
+              if (window._audioContext && window._audioContext.state === 'suspended') {
+                window._audioContext.resume()
+                  .then(() => {
+                    // Try playing again after resuming context
+                    audioRef.current.play()
+                      .then(() => {
+                        console.log('Playback resumed after context resume');
+                        setPlayStatus(true);
+                      })
+                      .catch(err => {
+                        console.error('Failed to play after context resume:', err);
+                      });
+                  })
+                  .catch(err => {
+                    console.error('Failed to resume audio context:', err);
+                  });
+              }
+            });
+        }
+      } catch (error) {
+        console.error('Error in playRadioStation:', error);
+        setPlayStatus(false);
+      }
+    }
+  };
+
   // Add the new buffering states and functions to the context
   const contextValue = {
     audioRef,
@@ -1180,6 +1257,7 @@ export const PlayerContextProvider = ({ children }) => {
     play,
     pause,
     playWithId,
+    playRadioStation,
     Previous,
     Next,
     seekSong,

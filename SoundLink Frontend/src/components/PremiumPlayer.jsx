@@ -3,7 +3,7 @@ import { PlayerContext } from "../context/PlayerContext";
 // eslint-disable-next-line no-unused-vars
 import { AnimatePresence, motion } from "framer-motion";
 import { FaPlay, FaPause, FaStepForward, FaStepBackward, FaVolumeUp, FaVolumeMute, FaHeart } from "react-icons/fa";
-import { MdQueueMusic, MdDevices, MdShuffle, MdRepeat, MdOutlineLyrics, MdMoreVert } from "react-icons/md";
+import { MdQueueMusic, MdDevices, MdShuffle, MdRepeat, MdOutlineLyrics, MdMoreVert, MdRadio } from "react-icons/md";
 import QueueComponent from "./QueueComponent";
 import LyricsPanel from "./LyricsPanel";
 import ArtistExplorer from "./ArtistExplorer";
@@ -179,6 +179,7 @@ const PremiumPlayer = () => {
   const {
     track,
     playStatus,
+    setPlayStatus,
     play,
     pause,
     Next,
@@ -367,7 +368,17 @@ const PremiumPlayer = () => {
   const handlePlayPause = () => {
     // First handle the pause case which doesn't need special handling
     if (playStatus) {
-      pause();
+      // For radio stations, we need to handle pause differently
+      if (track && track._id?.startsWith('radio-')) {
+        if (audioRef.current) {
+          audioRef.current.pause();
+          setPlayStatus(false);
+          // Keep the source but pause playback
+          audioRef.current.currentTime = 0;
+        }
+      } else {
+        pause();
+      }
       return;
     }
     
@@ -388,122 +399,71 @@ const PremiumPlayer = () => {
     // Check audio reference and source
     if (!audioRef.current) {
       console.error('Audio reference not available');
-      
-      // Attempt to get the track started anyway
-      if (track) {
-        setTimeout(() => play(), 100);
-      }
       return;
     }
     
-    if (!audioRef.current.src && track && track.file) {
+    // For radio stations, ensure we have the correct source
+    if (track && track._id?.startsWith('radio-')) {
+      // Always reload the source for radio stations to ensure fresh connection
       audioRef.current.src = track.file;
       audioRef.current.load();
+      
+      // Set crossOrigin for radio streams
+      audioRef.current.crossOrigin = "anonymous";
+      
+      // Try to play immediately
+      const playPromise = audioRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            console.log('Radio playback started successfully');
+            setPlayStatus(true);
+          })
+          .catch(error => {
+            console.error('Error playing radio station:', error);
+            setPlayStatus(false);
+            
+            // Try to resume audio context if it was suspended
+            if (window._audioContext && window._audioContext.state === 'suspended') {
+              window._audioContext.resume()
+                .then(() => {
+                  // Try playing again after resuming context
+                  audioRef.current.play()
+                    .then(() => {
+                      console.log('Playback resumed after context resume');
+                      setPlayStatus(true);
+                    })
+                    .catch(err => {
+                      console.error('Failed to play after context resume:', err);
+                    });
+                })
+                .catch(err => {
+                  console.error('Failed to resume audio context:', err);
+                });
+            }
+          });
+      }
+    } else if (!audioRef.current.src && track && track.file) {
+      audioRef.current.src = track.file;
+      audioRef.current.load();
+      play();
     } else if (!audioRef.current.src) {
       console.error('No audio source available and no track.file to use');
       return;
-    }
-    
-    // Special handling for mobile browsers and Safari
-    if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || 
-        /^((?!chrome|android).)*safari/i.test(navigator.userAgent)) {
-      unlockAudio();
     } else {
-      // For desktop browsers, just attempt to play
+      // For regular tracks, just play
       play();
     }
   };
   
   // Create a silent audio element to help unlock audio on mobile devices
-  const unlockAudio = () => {
-    const silent = document.createElement('audio');
-    silent.src = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjMyLjEwNAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAACWQBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGD/////////////////////////////////////////AAAAAExhdmM1OC41OQAAAAAAAAAAAAAAACQCRgAAAAAAAAJZFiHN3gAAAAAAAAAAAAAAAAAAAAAA';
-    document.body.appendChild(silent);
-    silent.volume = 0.001;
-    
-    try {
-      silent.play().then(() => {
-        setTimeout(() => {
-          silent.pause();
-          document.body.removeChild(silent);
-          
-          // Now try to play the actual audio
-          play();
-        }, 20);
-      }).catch(() => {
-        document.body.removeChild(silent);
-        
-        // Try direct play anyway
-        play();
-      });
-    } catch {
-      // For browsers that don't support promises on play
-      try {
-        document.body.removeChild(silent);
-      } catch (removeError) {
-        console.error('Error removing silent audio element:', removeError);
-      }
-      
-      // Try direct play anyway
-      play();
-    }
-  };
+  // const unlockAudio = () => { ... };
+  // const unlockAudioOnFirstInteraction = () => { ... };
 
   // Add event listeners to help with autoplay restrictions
   useEffect(() => {
-    // Create one-time unlock function for first user interaction
-    const unlockAudioOnFirstInteraction = () => {
-      // Create and play a silent audio element to unlock audio playback
-      const unlockElement = document.createElement('audio');
-      unlockElement.src = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjMyLjEwNAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAACWQBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGD/////////////////////////////////////////AAAAAExhdmM1OC41OQAAAAAAAAAAAAAAACQCRgAAAAAAAAJZFiHN3gAAAAAAAAAAAAAAAAAAAAAA';
-      unlockElement.volume = 0.001;
-      
-      try {
-        // Resume any existing audio context
-        if (window._audioContext && window._audioContext.state === 'suspended') {
-          window._audioContext.resume().catch(err => console.error('Failed to resume audio context:', err));
-        }
-        
-        // Create a new audio context if none exists
-        if (!window._audioContext && window.AudioContext) {
-          window._audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        }
-        
-        // Play the silent sound to unlock audio
-        unlockElement.play()
-          .then(() => {
-            setTimeout(() => {
-              unlockElement.pause();
-              unlockElement.remove();
-              
-              // Remove the event listeners as they're no longer needed
-              events.forEach(eventType => {
-                document.documentElement.removeEventListener(eventType, unlockAudioOnFirstInteraction);
-              });
-              
-              console.log('Audio playback capability unlocked successfully');
-            }, 10);
-          })
-          .catch(err => {
-            console.error('Failed to unlock audio:', err);
-            unlockElement.remove();
-          });
-      } catch (error) {
-        console.error('Error during audio unlock:', error);
-      }
-    };
-
-    // Listen for user interaction to unlock audio
-    const events = ['touchstart', 'touchend', 'mousedown', 'click', 'keydown'];
-    events.forEach(event => {
-      document.documentElement.addEventListener(event, unlockAudioOnFirstInteraction, { once: true });
-    });
-
-    return () => {
-      events.forEach(event => {
-        document.documentElement.removeEventListener(event, unlockAudioOnFirstInteraction);
-      });
-    };
+    // We now handle audio context initialization directly in handlePlayPause
+    // No need for separate unlock function and event listeners
   }, []);
 
   // Progress bar functions
@@ -807,11 +767,20 @@ const PremiumPlayer = () => {
               {/* Album art */}
               <div className="px-5">
                 <div className="relative w-[85vw] h-[85vw] max-w-[350px] max-h-[350px] mx-auto rounded-lg overflow-hidden shadow-2xl border border-white/10 mb-4">
+                  {track._id?.startsWith('radio-') ? (
+                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-fuchsia-600/20 to-purple-600/20">
+                      <div className="text-center">
+                        <MdRadio className="text-fuchsia-500 mx-auto mb-2" size={48} />
+                        <div className="text-fuchsia-500 font-semibold">LIVE RADIO</div>
+                      </div>
+                    </div>
+                  ) : (
                 <img 
                   src={track.image} 
                   alt={track.name} 
                   className="w-full h-full object-cover"
                 />
+                  )}
                 {buffering && (
                   <div className="absolute inset-0 flex items-center justify-center bg-black/30">
                       <div className="w-10 h-10 border-4 border-t-transparent rounded-full animate-spin" 
@@ -1354,12 +1323,18 @@ const PremiumPlayer = () => {
             onClick={() => isSmallScreen && setShowExtraControls(true)}
           >
             <div className="relative">
+              {track._id?.startsWith('radio-') ? (
+                <div className="w-10 h-10 rounded bg-gradient-to-br from-fuchsia-600/20 to-purple-600/20 flex items-center justify-center border" style={{ borderColor: `${themeColors.text}30` }}>
+                  <MdRadio className="text-fuchsia-500" size={20} />
+                </div>
+              ) : (
               <img
                 src={track.image}
                 alt={track.name}
                 className="w-10 h-10 rounded object-cover border"
                 style={{ borderColor: `${themeColors.text}30` }}
               />
+              )}
               {buffering && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded">
                   <div className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin"
