@@ -110,8 +110,26 @@ export const initializeDeviceStyles = () => {
   
   // Update CSS variables with computed safe area values
   const insets = getSafeAreaInsets();
-  document.documentElement.style.setProperty('--computed-safe-area-top', `${insets.top}px`);
-  document.documentElement.style.setProperty('--computed-safe-area-right', `${insets.right}px`);
-  document.documentElement.style.setProperty('--computed-safe-area-bottom', `${insets.bottom}px`);
-  document.documentElement.style.setProperty('--computed-safe-area-left', `${insets.left}px`);
+  document.documentElement.style.setProperty('--safe-area-top', `${insets.top}px`);
+  document.documentElement.style.setProperty('--safe-area-right', `${insets.right}px`);
+  document.documentElement.style.setProperty('--safe-area-bottom', `${insets.bottom}px`);
+  document.documentElement.style.setProperty('--safe-area-left', `${insets.left}px`);
+  
+  // Add status bar background for notched devices
+  if (hasNotch && !document.querySelector('.status-bar-bg')) {
+    const statusBar = document.createElement('div');
+    statusBar.className = 'status-bar-bg';
+    document.body.appendChild(statusBar);
+  }
+  
+  // Listen for orientation changes to update safe areas
+  window.addEventListener('orientationchange', () => {
+    setTimeout(() => {
+      const newInsets = getSafeAreaInsets();
+      document.documentElement.style.setProperty('--safe-area-top', `${newInsets.top}px`);
+      document.documentElement.style.setProperty('--safe-area-right', `${newInsets.right}px`);
+      document.documentElement.style.setProperty('--safe-area-bottom', `${newInsets.bottom}px`);
+      document.documentElement.style.setProperty('--safe-area-left', `${newInsets.left}px`);
+    }, 100); // Small delay to ensure orientation change is complete
+  });
 }; 
