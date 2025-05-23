@@ -168,9 +168,20 @@ body {
 }
 
 /* Styles for devices with notches */
+body.has-notch {
+  padding-top: var(--safe-area-top) !important;
+  padding-bottom: var(--safe-area-bottom) !important;
+  padding-left: var(--safe-area-left) !important;
+  padding-right: var(--safe-area-right) !important;
+}
+
 body.has-notch .app-header,
 body.has-notch .fixed-header {
   padding-top: var(--safe-area-top);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background-color: var(--app-background);
 }
 
 body.has-notch .mobile-player-overlay {
@@ -185,22 +196,72 @@ body.has-notch .modal-content {
 /* Ensure content doesn't get hidden behind notch */
 body.has-notch .content-container {
   padding-top: var(--safe-area-top);
+  position: relative;
+  z-index: 1;
 }
 
 /* Fix for bottom navigation with notch */
 body.has-notch .bottom-navigation {
   padding-bottom: var(--safe-area-bottom);
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  background-color: var(--app-background);
 }
 
 /* Fix for modals with notch */
 body.has-notch .modal {
   padding-top: var(--safe-area-top);
   padding-bottom: var(--safe-area-bottom);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
 }
 
 /* Fix for bottom sheets with notch */
 body.has-notch .bottom-sheet {
   padding-bottom: var(--safe-area-bottom);
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+}
+
+/* Ensure root element respects safe areas */
+#root {
+  padding-top: var(--safe-area-top);
+  padding-bottom: var(--safe-area-bottom);
+  padding-left: var(--safe-area-left);
+  padding-right: var(--safe-area-right);
+  min-height: 100vh;
+  position: relative;
+}
+
+/* Fix for iPhone 13 and newer specific styles */
+@supports (padding: max(0px)) {
+  body.has-notch {
+    padding-top: max(var(--safe-area-top), 47px);
+    padding-bottom: max(var(--safe-area-bottom), 34px);
+  }
+  
+  body.has-notch .app-header,
+  body.has-notch .fixed-header {
+    padding-top: max(var(--safe-area-top), 47px);
+  }
+  
+  body.has-notch .content-container {
+    padding-top: max(var(--safe-area-top), 47px);
+  }
+  
+  body.has-notch .bottom-navigation {
+    padding-bottom: max(var(--safe-area-bottom), 34px);
+  }
 }
 
 /* Responsive adjustments for small screens */

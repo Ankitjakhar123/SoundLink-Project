@@ -7,9 +7,16 @@
  * @returns {boolean} True if the device likely has a notch
  */
 export const hasNotchOrCutout = () => {
-  // iOS devices with notch
+  // iOS devices with notch - updated for newer iPhone models
   const isiPhoneWithNotch = /iPhone/.test(navigator.userAgent) && 
-    window.screen.height >= 812 && window.devicePixelRatio >= 2;
+    (
+      // iPhone X and newer (height >= 812)
+      window.screen.height >= 812 || 
+      // iPhone 12/13 mini (height >= 780)
+      window.screen.height >= 780 ||
+      // iPhone 12/13 Pro Max (height >= 926)
+      window.screen.height >= 926
+    );
   
   // Check if CSS environment variables are supported and have non-zero values
   const hasSafeAreaInsets = () => {
@@ -110,9 +117,14 @@ export const initializeDeviceStyles = () => {
   
   // Update CSS variables with computed safe area values
   const insets = getSafeAreaInsets();
-  document.documentElement.style.setProperty('--safe-area-top', `${insets.top}px`);
+  
+  // Ensure minimum safe area values for newer iPhones
+  const minTopInset = /iPhone/.test(navigator.userAgent) ? 47 : 0; // iPhone 13 and newer have larger notch
+  const minBottomInset = /iPhone/.test(navigator.userAgent) ? 34 : 0; // iPhone X and newer have home indicator
+  
+  document.documentElement.style.setProperty('--safe-area-top', `${Math.max(insets.top, minTopInset)}px`);
   document.documentElement.style.setProperty('--safe-area-right', `${insets.right}px`);
-  document.documentElement.style.setProperty('--safe-area-bottom', `${insets.bottom}px`);
+  document.documentElement.style.setProperty('--safe-area-bottom', `${Math.max(insets.bottom, minBottomInset)}px`);
   document.documentElement.style.setProperty('--safe-area-left', `${insets.left}px`);
   
   // Add status bar background for notched devices
@@ -126,9 +138,9 @@ export const initializeDeviceStyles = () => {
   window.addEventListener('orientationchange', () => {
     setTimeout(() => {
       const newInsets = getSafeAreaInsets();
-      document.documentElement.style.setProperty('--safe-area-top', `${newInsets.top}px`);
+      document.documentElement.style.setProperty('--safe-area-top', `${Math.max(newInsets.top, minTopInset)}px`);
       document.documentElement.style.setProperty('--safe-area-right', `${newInsets.right}px`);
-      document.documentElement.style.setProperty('--safe-area-bottom', `${newInsets.bottom}px`);
+      document.documentElement.style.setProperty('--safe-area-bottom', `${Math.max(newInsets.bottom, minBottomInset)}px`);
       document.documentElement.style.setProperty('--safe-area-left', `${newInsets.left}px`);
     }, 100); // Small delay to ensure orientation change is complete
   });
