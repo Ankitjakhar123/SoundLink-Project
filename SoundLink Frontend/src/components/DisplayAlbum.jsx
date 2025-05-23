@@ -135,7 +135,7 @@ const DisplayAlbum = () => {
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
-        className="rounded text-white transition-all duration-500 shadow-2xl p-4 md:p-8 w-full mx-auto flex flex-col gap-6 mt-[-15px] content-container pb-32 mb-8"
+        className="rounded text-white transition-all duration-500 shadow-2xl p-4 md:p-8 w-full mx-auto flex flex-col gap-6 mt-[-15px] content-container pb-40 mb-8"
       >
         {/* <Link to="/" className="inline-flex items-center text-white/80 hover:text-white py-4">
           <MdArrowBack /> Back to Home
@@ -197,13 +197,13 @@ const DisplayAlbum = () => {
                     )}
                     
                     {/* Play overlay */}
-                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-200">
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-200">
                       {isPlaying(song._id) ? (
-                        <div className="bg-fuchsia-500 rounded-full p-3">
+                        <div className="bg-fuchsia-500 rounded-full p-3 shadow-lg transform scale-110">
                           <MdPause className="text-white" size={30} />
                         </div>
                       ) : (
-                        <div className="bg-fuchsia-500 rounded-full p-3">
+                        <div className="bg-fuchsia-500 rounded-full p-3 shadow-lg transform scale-110">
                           <MdPlayArrow className="text-white" size={30} />
                         </div>
                       )}
@@ -223,6 +223,9 @@ const DisplayAlbum = () => {
                   
                   <div className="p-3">
                     <h3 className={`font-bold truncate ${isPlaying(song._id) ? 'text-fuchsia-500' : 'text-white'}`}>
+                      {isPlaying(song._id) && (
+                        <span className="inline-block w-2 h-2 bg-fuchsia-500 rounded-full mr-2 animate-pulse"></span>
+                      )}
                       {song.name}
                     </h3>
                     <p className="text-xs text-neutral-400 truncate mt-1">{song.desc}</p>
@@ -292,9 +295,15 @@ const DisplayAlbum = () => {
                     onClick={() => playWithId(song._id)}
                   >
                     <div className="flex-shrink-0 w-8 text-center text-neutral-500">
-                      {index + 1}
+                      {isPlaying(song._id) ? (
+                        <div className="bg-fuchsia-500 rounded-full p-1">
+                          <MdPause className="text-white" size={16} />
+                        </div>
+                      ) : (
+                        index + 1
+                      )}
                     </div>
-                    <div className="bg-neutral-800 w-12 h-12 rounded flex items-center justify-center relative">
+                    <div className="bg-neutral-800 w-12 h-12 rounded flex items-center justify-center relative group-hover:bg-neutral-700 transition-colors">
                       {song.image ? (
                         <img 
                           src={song.image} 
@@ -302,26 +311,25 @@ const DisplayAlbum = () => {
                           className="w-full h-full object-cover rounded"
                         />
                       ) : (
-                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-200"
-                             style={{
-                               background: dominantColor ? 
-                                 `linear-gradient(135deg, ${getBackgroundColor(dominantColor, 0.4)}, ${getBackgroundColor(darkerColor, 0.3)})` : 
-                                 'rgba(0, 0, 0, 0.6)'
-                             }}>
-                          {isPlaying(song._id) ? (
-                            <div className="bg-fuchsia-500 rounded-full p-1">
-                              <MdPause className="text-white" size={24} />
-                            </div>
-                          ) : (
-                            <div className="bg-fuchsia-500 rounded-full p-1">
-                              <MdPlayArrow className="text-white" size={24} />
-                            </div>
-                          )}
+                        <div className="w-full h-full flex items-center justify-center">
+                          <MdPlayArrow className="text-fuchsia-500" size={24} />
+                        </div>
+                      )}
+                      {isPlaying(song._id) && (
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                          <div className="bg-fuchsia-500 rounded-full p-1">
+                            <MdPause className="text-white" size={24} />
+                          </div>
                         </div>
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold truncate text-white">{song.name}</h3>
+                      <h3 className={`font-semibold truncate ${isPlaying(song._id) ? 'text-fuchsia-500' : 'text-white'}`}>
+                        {isPlaying(song._id) && (
+                          <span className="inline-block w-2 h-2 bg-fuchsia-500 rounded-full mr-2 animate-pulse"></span>
+                        )}
+                        {song.name}
+                      </h3>
                       <p className="text-sm text-neutral-400 truncate">{song.desc}</p>
                     </div>
                     <div className="flex items-center gap-3">
