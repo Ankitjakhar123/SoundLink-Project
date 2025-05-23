@@ -8,10 +8,10 @@
   --fuchsia-dark: #86198f;
   --app-background: #000000;
   --content-background: #050505;
-  --safe-area-top: env(safe-area-inset-top);
-  --safe-area-bottom: env(safe-area-inset-bottom);
-  --safe-area-left: env(safe-area-inset-left);
-  --safe-area-right: env(safe-area-inset-right);
+  --safe-area-top: 0px;
+  --safe-area-bottom: 0px;
+  --safe-area-left: 0px;
+  --safe-area-right: 0px;
 }
 
 * {
@@ -29,6 +29,8 @@ html {
   -ms-overflow-style: none;  /* IE and Edge */
   overscroll-behavior-y: none;
   touch-action: pan-y;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
 }
 
 body {
@@ -43,10 +45,14 @@ body {
   overflow-y: scroll !important;
   -webkit-overflow-scrolling: touch !important; /* Enhanced smooth scrolling for iOS */
   padding-bottom: var(--player-bottom-padding, 0);
-  padding-top: var(--safe-area-top);
-  padding-bottom: var(--safe-area-bottom);
-  padding-left: var(--safe-area-left);
-  padding-right: var(--safe-area-right);
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 0;
+  padding-right: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  position: relative;
+  min-height: 100vh;
 }
 
 ::-webkit-scrollbar {
@@ -96,62 +102,82 @@ footer {
 
 /* Global safe area insets - add at root level */
 :root {
-  --safe-area-top: env(safe-area-inset-top);
-  --safe-area-bottom: env(safe-area-inset-bottom);
-  --safe-area-left: env(safe-area-inset-left);
-  --safe-area-right: env(safe-area-inset-right);
+  --safe-area-top: 0px;
+  --safe-area-bottom: 0px;
+  --safe-area-left: 0px;
+  --safe-area-right: 0px;
 }
 
 /* Apply safe area padding to the body */
 body {
-  padding-top: var(--safe-area-top);
-  padding-bottom: var(--safe-area-bottom);
-  padding-left: var(--safe-area-left);
-  padding-right: var(--safe-area-right);
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 0;
+  padding-right: 0;
 }
 
-/* Safe area utility classes */
+/* Remove utility classes for safe area usage */
 .pt-safe {
-  padding-top: var(--safe-area-top) !important;
+  padding-top: 0 !important;
 }
 
 .pt-safe-plus {
-  padding-top: calc(var(--safe-area-top) + 1rem) !important;
+  padding-top: 0 !important;
 }
 
 .pb-safe {
-  padding-bottom: var(--safe-area-bottom) !important;
+  padding-bottom: 0 !important;
 }
 
 .pl-safe {
-  padding-left: var(--safe-area-left) !important;
+  padding-left: 0 !important;
 }
 
 .pr-safe {
-  padding-right: var(--safe-area-right) !important;
+  padding-right: 0 !important;
 }
 
 .mt-safe {
-  margin-top: var(--safe-area-top) !important;
+  margin-top: 0 !important;
 }
 
 .mb-safe {
-  margin-bottom: var(--safe-area-bottom) !important;
+  margin-bottom: 0 !important;
 }
 
-/* Combined safe area padding classes */
+/* Remove combined safe area padding classes */
 .px-safe {
-  padding-left: var(--safe-area-left) !important;
-  padding-right: var(--safe-area-right) !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
 }
 
 .py-safe {
-  padding-top: var(--safe-area-top) !important;
-  padding-bottom: var(--safe-area-bottom) !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
 }
 
 .p-safe {
-  padding: var(--safe-area-top) var(--safe-area-right) var(--safe-area-bottom) var(--safe-area-left) !important;
+  padding: 0 !important;
+}
+
+/* Ensure content containers have space - reduced */
+.content-container {
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  position: relative;
+  background-color: var(--content-background);
+}
+
+/* Content fade at bottom that sits above the player */
+.content-fade {
+  position: fixed;
+  bottom: 60px;
+  left: 0;
+  right: 0;
+  height: 80px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.8) 40%, rgba(0, 0, 0, 0) 100%);
+  z-index: 39; /* One below the player z-index */
+  pointer-events: none; /* Allow clicks to pass through */
 }
 
 /* Status bar background for notched devices */
@@ -168,20 +194,9 @@ body {
 }
 
 /* Styles for devices with notches */
-body.has-notch {
-  padding-top: var(--safe-area-top) !important;
-  padding-bottom: var(--safe-area-bottom) !important;
-  padding-left: var(--safe-area-left) !important;
-  padding-right: var(--safe-area-right) !important;
-}
-
 body.has-notch .app-header,
 body.has-notch .fixed-header {
   padding-top: var(--safe-area-top);
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  background-color: var(--app-background);
 }
 
 body.has-notch .mobile-player-overlay {
@@ -191,77 +206,6 @@ body.has-notch .mobile-player-overlay {
 body.has-notch .side-panel,
 body.has-notch .modal-content {
   padding-top: var(--safe-area-top);
-}
-
-/* Ensure content doesn't get hidden behind notch */
-body.has-notch .content-container {
-  padding-top: var(--safe-area-top);
-  position: relative;
-  z-index: 1;
-}
-
-/* Fix for bottom navigation with notch */
-body.has-notch .bottom-navigation {
-  padding-bottom: var(--safe-area-bottom);
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 50;
-  background-color: var(--app-background);
-}
-
-/* Fix for modals with notch */
-body.has-notch .modal {
-  padding-top: var(--safe-area-top);
-  padding-bottom: var(--safe-area-bottom);
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 1000;
-}
-
-/* Fix for bottom sheets with notch */
-body.has-notch .bottom-sheet {
-  padding-bottom: var(--safe-area-bottom);
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 1000;
-}
-
-/* Ensure root element respects safe areas */
-#root {
-  padding-top: var(--safe-area-top);
-  padding-bottom: var(--safe-area-bottom);
-  padding-left: var(--safe-area-left);
-  padding-right: var(--safe-area-right);
-  min-height: 100vh;
-  position: relative;
-}
-
-/* Fix for iPhone 13 and newer specific styles */
-@supports (padding: max(0px)) {
-  body.has-notch {
-    padding-top: max(var(--safe-area-top), 47px);
-    padding-bottom: max(var(--safe-area-bottom), 34px);
-  }
-  
-  body.has-notch .app-header,
-  body.has-notch .fixed-header {
-    padding-top: max(var(--safe-area-top), 47px);
-  }
-  
-  body.has-notch .content-container {
-    padding-top: max(var(--safe-area-top), 47px);
-  }
-  
-  body.has-notch .bottom-navigation {
-    padding-bottom: max(var(--safe-area-bottom), 34px);
-  }
 }
 
 /* Responsive adjustments for small screens */
@@ -473,20 +417,21 @@ input:checked + .slider:before {
   flex-direction: column;
   overflow-y: auto !important;
   -webkit-overflow-scrolling: touch !important;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Mobile-specific scrolling styles */
 @media (max-width: 576px) {
-  #root,
-  .min-h-screen,
-  body,
-  html {
-    min-height: 100% !important;
+  html, body, #root {
     height: auto !important;
+    min-height: 100% !important;
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
     position: relative !important;
-    overscroll-behavior: none;
   }
   
   .content-container {
@@ -494,28 +439,18 @@ input:checked + .slider:before {
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
     height: auto !important;
-    overscroll-behavior: none;
+    min-height: 100vh !important;
   }
 }
 
 /* PWA specific fixes - make PWA behave like website */
 @media all and (display-mode: standalone), all and (display-mode: fullscreen) {
-  body, html, #root {
+  html, body, #root {
     position: relative !important;
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
-    width: 100%;
     height: auto !important;
     min-height: 100% !important;
-    overscroll-behavior: none !important;
-  }
-  
-  .min-h-screen {
-    min-height: 100vh !important;
-    height: auto !important;
-    overflow-y: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    overscroll-behavior: none !important;
   }
   
   .content-container {
@@ -523,12 +458,7 @@ input:checked + .slider:before {
     height: auto !important;
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
-    overscroll-behavior: none !important;
-  }
-  
-  /* Fix for modals in PWA mode */
-  .modal, .bottom-sheet {
-    position: fixed !important;
+    padding-bottom: 150px !important;
   }
 }
 
@@ -545,7 +475,7 @@ input:checked + .slider:before {
 .display-home-container {
   height: auto !important;
   min-height: 100vh !important;
-  overflow-y: visible !important;
+  overflow-y: auto !important;
   position: relative !important;
   -webkit-overflow-scrolling: touch !important;
 }

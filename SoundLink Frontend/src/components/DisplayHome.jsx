@@ -169,10 +169,43 @@ const DisplayHome = () => {
     }
   };
   
-  // Pagination logic
+  // Scroll to top handler
+  const scrollToTop = () => {
+    // Use a more reliable method for scrolling
+    const scrollOptions = {
+      top: 0,
+      left: 0,
+      behavior: 'smooth'
+    };
+    
+    // Try to scroll the document first
+    document.documentElement.scrollTo(scrollOptions);
+    
+    // Fallback to window scroll
+    window.scrollTo(scrollOptions);
+    
+    // If ref exists, try that as well
+    if (topRef.current) {
+      topRef.current.scrollIntoView(scrollOptions);
+    }
+  };
+
+  // Add scroll restoration effect
+  useEffect(() => {
+    // Scroll to top when component mounts
+    scrollToTop();
+    
+    // Cleanup function
+    return () => {
+      // Reset scroll position when component unmounts
+      window.scrollTo(0, 0);
+    };
+  }, []);
+
+  // Update pagination to use the same scroll method
   const paginate = (pageNumber) => {
     setCurrentPage(pageNumber);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    scrollToTop();
   };
 
   // Check if a song is in favorites
@@ -214,13 +247,6 @@ const DisplayHome = () => {
   // Handler for artist click
   const handleArtistClick = (artistId) => {
     navigate(`/artist/${artistId}`);
-  };
-
-  // Scroll to top handler
-  const scrollToTop = () => {
-    topRef.current?.scrollIntoView({ behavior: 'smooth' });
-    // Fallback if ref doesn't work
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   if (loading) {
