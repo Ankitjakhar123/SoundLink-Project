@@ -49,7 +49,7 @@ const ProtectedRoute = ({ children }) => {
 };
 
 const App = () => {
-  const { audioRef, track, songsData, play, pause, playStatus, Next, Previous } = useContext(PlayerContext);
+  const { audioRef, track, play, pause, playStatus, Next, Previous } = useContext(PlayerContext);
   const { user } = useContext(AuthContext);
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -217,22 +217,6 @@ const App = () => {
         <div id="main-content" tabIndex="-1" className="flex-1 pt-[calc(56px+env(safe-area-inset-top))] md:pt-[calc(56px+env(safe-area-inset-top))]">
           {backendStatus === 'checking' && isInitialLoad ? (
             <PremiumLoading />
-          ) : backendStatus === 'error' ? (
-            <div className="min-h-screen flex flex-col items-center justify-center p-4 text-center">
-              <h2 className="text-2xl font-bold text-red-500 mb-4">Connection Error</h2>
-              <p className="text-neutral-400 mb-6">
-                Unable to connect to the server. Please check your internet connection and try again.
-              </p>
-              <button
-                onClick={() => {
-                  setBackendStatus('checking');
-                  setRetryCount(0);
-                }}
-                className="bg-fuchsia-600 hover:bg-fuchsia-700 text-white px-6 py-3 rounded-lg transition-colors"
-              >
-                Retry Connection
-              </button>
-            </div>
           ) : (
             <Routes>
               {/* Auth page route */}
