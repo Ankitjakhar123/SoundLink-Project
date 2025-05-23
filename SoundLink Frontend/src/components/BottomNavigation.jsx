@@ -2,7 +2,7 @@ import React, { useContext } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { PlayerContext } from '../context/PlayerContext';
 import { AiFillHome, AiFillDatabase } from 'react-icons/ai';
-import { MdQueueMusic, MdMoreHoriz } from 'react-icons/md';
+import { MdQueueMusic, MdRadio } from 'react-icons/md';
 import { IoMusicalNotesSharp } from 'react-icons/io5';
 
 const BottomNavigation = () => {
@@ -53,10 +53,10 @@ const BottomNavigation = () => {
         <span className="text-xs text-white">Queue</span>
       </Link>
       
-      {/* More Button */}
-      <Link to="/more" className="flex flex-col items-center">
-        <MdMoreHoriz className={`w-5 h-5 ${isActive('/more') ? 'text-[#a855f7]' : 'text-white'}`} />
-        <span className="text-xs text-white">More</span>
+      {/* Radio Button */}
+      <Link to="/radio" className="flex flex-col items-center">
+        <MdRadio className={`w-5 h-5 ${isActive('/radio') ? 'text-[#a855f7]' : 'text-white'} !text-white !opacity-100`} />
+        <span className="text-xs text-white">Radio</span>
       </Link>
     </div>
   );

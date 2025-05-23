@@ -35,6 +35,7 @@ import Library from "./components/Library";
 import InstallPwaPrompt from "./components/InstallPwaPrompt";
 import InstallPWAButton from "./components/InstallPWAButton";
 import PremiumLoading from './components/PremiumLoading';
+import RadioStations from './components/RadioStations';
 
 // Protected route component that requires authentication
 const ProtectedRoute = ({ children }) => {
@@ -236,6 +237,7 @@ const App = () => {
               <Route path="/terms" element={<Terms />} />
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/contact" element={<Contact />} />
+              <Route path="/radio" element={<RadioStations />} />
               
               {/* Protected routes - login required */}
               <Route path="/playlists" element={<ProtectedRoute><PlaylistsPage /></ProtectedRoute>} />

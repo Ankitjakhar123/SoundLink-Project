@@ -1,6 +1,7 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { FaFire, FaRegClock, FaUser, FaVideo, FaMusic, FaChartBar, FaThLarge, FaHeart, FaStar, FaPodcast, FaPlus, FaListUl, FaBars, FaTimes, FaHome } from 'react-icons/fa';
+import { MdRadio } from 'react-icons/md';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
 
@@ -95,6 +96,13 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
               active={location.pathname === '/playlists'} 
               onClick={() => handleNavigate('/playlists')} 
             />
+            {/* Radio Section */}
+            <SidebarItem 
+              icon={<MdRadio />} 
+              label="Radio" 
+              active={location.pathname === '/radio'} 
+              onClick={() => handleNavigate('/radio')} 
+            />
           </div>
           {/* Playlists Section */}
           {user && (
@@ -137,10 +145,13 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
 
 function SidebarItem({ icon, label, active, highlight, onClick }) {
   return (
-    <div onClick={onClick} className={`flex items-center gap-3 px-3 py-2 rounded-lg mb-1 cursor-pointer
-      ${active ? 'bg-cyan-900 text-cyan-400 font-bold' : ''}
-      ${highlight ? 'text-cyan-400' : 'text-neutral-200 hover:bg-neutral-800'}
-    `}>
+    <div 
+      onClick={onClick} 
+      className={`flex items-center gap-3 px-3 py-2 rounded-lg mb-1 cursor-pointer transition-colors
+        ${active ? 'bg-fuchsia-500/20 text-fuchsia-500' : 'text-neutral-200 hover:bg-neutral-800'}
+        ${highlight ? 'text-fuchsia-500' : ''}
+      `}
+    >
       <span className="text-lg">{icon}</span>
       <span className="text-base">{label}</span>
     </div>
