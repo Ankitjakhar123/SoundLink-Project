@@ -366,10 +366,10 @@ const ArtistDetail = () => {
               transition={{ duration: 0.5, delay: 0.2 }}
               className="grid grid-cols-2 sm:grid-cols-3 gap-4"
             >
-              {artistSongs.length > 0 ? (
+          {artistSongs.length > 0 ? (
                 artistSongs.map((song) => (
                   <div 
-                    key={song._id}
+                    key={song._id} 
                     onClick={() => playWithId(song._id)}
                     className="relative rounded-xl overflow-hidden cursor-pointer group transition-all duration-300 hover:bg-white/10 shadow-lg hover:shadow-xl"
                     style={{
@@ -379,10 +379,10 @@ const ArtistDetail = () => {
                     }}
                   >
                     <div className="aspect-square relative overflow-hidden">
-                      {song.image ? (
-                        <img 
-                          src={song.image} 
-                          alt={song.name} 
+                        {song.image ? (
+                          <img 
+                            src={song.image} 
+                            alt={song.name} 
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                         />
                       ) : (
@@ -440,12 +440,12 @@ const ArtistDetail = () => {
                           >
                             <MdQueueMusic size={18} />
                           </button>
-                          <button 
+                        <button 
                             onClick={(e) => handleAddToPlaylist(e, song._id)}
                             className="text-neutral-400 hover:text-white"
-                          >
+                        >
                             <MdPlaylistAdd size={20} />
-                          </button>
+                        </button>
                         </div>
                       </div>
                     </div>
@@ -555,18 +555,18 @@ const ArtistDetail = () => {
                           <MdQueueMusic size={22} />
                         </button>
                         <span className="text-neutral-400 ml-1 min-w-[45px] text-right">{song.duration || "--:--"}</span>
-                      </div>
                     </div>
-                  ))}
-                </div>
-              ) : (
+                  </div>
+                ))}
+            </div>
+          ) : (
                 <div className="py-12 text-center">
                   <MdPlayArrow size={60} className="text-neutral-500 mx-auto mb-4" />
                   <h3 className="text-xl font-semibold text-white mb-2">No songs found</h3>
                   <p className="text-neutral-400">
                     This artist doesn't have any songs yet.
                   </p>
-                </div>
+            </div>
               )}
             </motion.div>
           )}

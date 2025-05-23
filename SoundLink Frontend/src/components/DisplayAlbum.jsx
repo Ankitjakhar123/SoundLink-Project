@@ -207,8 +207,8 @@ const DisplayAlbum = () => {
                           <MdPlayArrow className="text-white" size={30} />
                         </div>
                       )}
-                    </div>
-                    
+        </div>
+
                     {/* Favorite button */}
                     <button 
                       onClick={(e) => handleToggleFavorite(e, song._id)}
@@ -234,18 +234,18 @@ const DisplayAlbum = () => {
                     <div className="flex items-center justify-between mt-2">
                       <span className="text-xs text-neutral-400">{song.duration || "--:--"}</span>
                       <div className="flex items-center gap-2">
-                        <button 
+                  <button 
                           onClick={(e) => handleAddToQueue(e, song._id)}
                           className="text-neutral-400 hover:text-white"
-                        >
+                  >
                           <MdQueueMusic size={18} />
-                        </button>
-                        <button 
+                  </button>
+                    <button 
                           onClick={(e) => handleAddToPlaylist(e, song._id)}
                           className="text-neutral-400 hover:text-white"
-                        >
+                    >
                           <MdPlaylistAdd size={20} />
-                        </button>
+                    </button>
                       </div>
                     </div>
                   </div>
@@ -302,27 +302,27 @@ const DisplayAlbum = () => {
                       ) : (
                         index + 1
                       )}
-                    </div>
+                </div>
                     <div className="bg-neutral-800 w-12 h-12 rounded flex items-center justify-center relative group-hover:bg-neutral-700 transition-colors">
                       {song.image ? (
                         <img 
                           src={song.image} 
                           alt={song.name} 
                           className="w-full h-full object-cover rounded"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
                           <MdPlayArrow className="text-fuchsia-500" size={24} />
-                        </div>
-                      )}
+                    </div>
+                  )}
                       {isPlaying(song._id) && (
                         <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                           <div className="bg-fuchsia-500 rounded-full p-1">
                             <MdPause className="text-white" size={24} />
                           </div>
                         </div>
-                      )}
-                    </div>
+                  )}
+                </div>
                     <div className="flex-1 min-w-0">
                       <h3 className={`font-semibold truncate ${isPlaying(song._id) ? 'text-fuchsia-500' : 'text-white'}`}>
                         {isPlaying(song._id) && (
@@ -331,34 +331,34 @@ const DisplayAlbum = () => {
                         {song.name}
                       </h3>
                       <p className="text-sm text-neutral-400 truncate">{song.desc}</p>
-                    </div>
+                </div>
                     <div className="flex items-center gap-3">
-                      <button 
+                  <button 
                         onClick={(e) => handleToggleFavorite(e, song._id)}
                         className="text-white opacity-50 hover:opacity-100 transition-opacity"
                       >
                         {isFavorite(song._id) ? 
-                          <MdFavorite className="text-fuchsia-500" size={20} /> : 
+                      <MdFavorite className="text-fuchsia-500" size={20} /> : 
                           <MdFavoriteBorder size={20} />
-                        }
-                      </button>
+                    }
+                  </button>
                       <button 
                         onClick={(e) => handleAddToPlaylist(e, song._id)}
                         className="text-white opacity-50 hover:opacity-100 transition-opacity"
                       >
                         <MdPlaylistAdd size={22} />
                       </button>
-                      <button 
+                  <button 
                         onClick={(e) => handleAddToQueue(e, song._id)}
                         className="text-white opacity-50 hover:opacity-100 transition-opacity"
-                      >
+                  >
                         <MdQueueMusic size={22} />
-                      </button>
+                  </button>
                       <span className="text-neutral-400 ml-1 min-w-[45px] text-right">{song.duration || "--:--"}</span>
-                    </div>
-                  </div>
-                ))}
               </div>
+            </div>
+          ))}
+        </div>
             ) : (
               <div className="py-12 text-center">
                 <MdPlayArrow size={60} className="text-neutral-500 mx-auto mb-4" />
