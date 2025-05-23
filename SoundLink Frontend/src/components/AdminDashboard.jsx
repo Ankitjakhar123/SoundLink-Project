@@ -14,6 +14,7 @@ import AddMovieAlbum from "./AddMovieAlbum";
 import ListMovieAlbum from "./ListMovieAlbum";
 import AdminArtists from "./AdminArtists";
 import { MdMusicNote } from "react-icons/md";
+import Skeleton from './Skeleton';
 
 const adminActions = [
   { label: "Add Song", key: "addSong" },
@@ -72,6 +73,35 @@ const AdminDashboard = ({ token }) => {
         return null;
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black text-white p-4 md:p-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="bg-neutral-900/50 rounded-lg p-6">
+                <Skeleton type="text" className="w-24 mb-4" />
+                <Skeleton type="title" className="w-16" />
+              </div>
+            ))}
+          </div>
+          <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="bg-neutral-900/50 rounded-lg p-6">
+                <Skeleton type="title" className="w-32 mb-4" />
+                <div className="space-y-4">
+                  <Skeleton type="text" className="w-full" />
+                  <Skeleton type="text" className="w-full" />
+                  <Skeleton type="text" className="w-full" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <motion.div

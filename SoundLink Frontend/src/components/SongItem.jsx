@@ -8,6 +8,7 @@ import { FaPlus, FaPlay, FaPause, FaHeart, FaEllipsisV, FaShare, FaLink } from '
 // eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
 import "./SongItem.css";
+import Skeleton from './Skeleton';
 
 const SongItem = ({ name, image, desc, id }) => {
   const { playWithId, playStatus, track, toggleFavorite, isFavorite, play, pause } = useContext(PlayerContext);
@@ -279,9 +280,16 @@ const SongItem = ({ name, image, desc, id }) => {
             </button>
             <h3 className="text-xl font-bold text-white mb-2 text-center">Add to Playlist</h3>
             {loading ? (
-              <div className="text-white text-center py-6">
-                <div className="animate-spin h-8 w-8 border-4 border-fuchsia-500 border-t-transparent rounded-full mx-auto mb-2"></div>
-                <p>Loading...</p>
+              <div className="space-y-4">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="flex items-center gap-3 p-3 bg-neutral-800/50 rounded-lg">
+                    <Skeleton type="image" className="w-12 h-12" />
+                    <div className="flex-1">
+                      <Skeleton type="text" className="w-32 mb-2" />
+                      <Skeleton type="text" className="w-24" />
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : (
               <>

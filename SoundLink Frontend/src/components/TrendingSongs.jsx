@@ -6,6 +6,7 @@ import AddToPlaylistModal from './AddToPlaylistModal';
 import { toast } from 'react-toastify';
 // eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
+import Skeleton from './Skeleton';
 
 const TrendingSongs = () => {
   const { playWithId, track, playStatus, toggleFavorite, favorites, addToQueue } = useContext(PlayerContext);
@@ -97,8 +98,25 @@ const TrendingSongs = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex justify-center items-center bg-black text-white">
-        <div className="animate-pulse text-fuchsia-500 text-xl">Loading trending songs...</div>
+      <div className="min-h-screen w-full flex flex-col justify-start items-center bg-gradient-to-b from-black via-black to-neutral-900 pb-16 px-4">
+        <div className="w-full max-w-6xl mx-auto">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+            <Skeleton type="title" className="w-48" />
+            <Skeleton type="text" className="w-72 h-10" />
+          </div>
+          
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="bg-neutral-900/50 rounded-xl overflow-hidden">
+                <Skeleton type="image" className="w-full aspect-square" />
+                <div className="p-3">
+                  <Skeleton type="text" className="w-3/4 mb-2" />
+                  <Skeleton type="text" className="w-1/2" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }

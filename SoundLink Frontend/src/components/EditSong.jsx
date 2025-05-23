@@ -4,6 +4,7 @@ import { MdMusicNote, MdFileUpload, MdOutlineLyrics, MdDownload } from 'react-ic
 import axios from "axios";
 import { toast } from "react-toastify";
 import { PlayerContext } from "../context/PlayerContext";
+import Skeleton from './Skeleton';
 const url = import.meta.env.VITE_BACKEND_URL;
 
 // Add export functionality
@@ -145,8 +146,27 @@ const EditSong = () => {
 
   if (loading) {
     return (
-      <div className="grid place-items-center min-h-[80vh]">
-        <div className="w-16 h-16 border-4 border-gray-400 border-t-green-800 rounded-full animate-spin"></div>
+      <div className="min-h-screen bg-black text-white p-4 md:p-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col gap-8">
+            <Skeleton type="title" className="w-48 mb-8" />
+            <div className="flex gap-8">
+              <div className="flex flex-col gap-4">
+                <Skeleton type="text" className="w-24" />
+                <Skeleton type="image" className="w-24 h-24" />
+              </div>
+              <div className="flex flex-col gap-4">
+                <Skeleton type="text" className="w-24" />
+                <Skeleton type="image" className="w-24 h-24" />
+              </div>
+            </div>
+            <div className="space-y-4">
+              <Skeleton type="text" className="w-full h-12" />
+              <Skeleton type="text" className="w-full h-12" />
+              <Skeleton type="text" className="w-full h-12" />
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

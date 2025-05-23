@@ -3,9 +3,12 @@ import { toast } from "react-toastify";
 import { MdAlbum } from 'react-icons/md';
 import axios from "axios";
 import { AnimatePresence } from "framer-motion";
+import { useNavigate } from 'react-router-dom';
+import Skeleton from './Skeleton';
 const url = import.meta.env.VITE_BACKEND_URL;
 
-const AddAlbum = () => {
+const AddAlbum = ({ token }) => {
+  const navigate = useNavigate();
   const [image, setImage] = useState(null); // Image file state
   const [colour, setColour] = useState("#121212"); // Background color state
   const [name, setName] = useState(""); // Album name state
@@ -35,22 +38,18 @@ const AddAlbum = () => {
       formData.append("image", image);
       formData.append("bgColour", colour); // Add selected background color to the form data
 
-      const response = await axios.post(`${url}/api/album/add`, formData, {
+      const res = await axios.post(`${url}/api/albums`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
+          "Authorization": `Bearer ${token}`
         },
       });
 
-      if (response.data.success) {
+      if (res.data.success) {
         toast.success("Album added successfully!");
-
-        // Reset form fields after successful submission
-        setName("");
-        setDesc("");
-        setImage(null); // Reset image
-        setColour("#121212"); // Reset background color to default
+        navigate('/admin/albums');
       } else {
-        toast.error(response.data.message || "Something went wrong.");
+        toast.error(res.data.message || "Something went wrong.");
       }
     } catch (error) {
       console.error("Error adding album:", error); // Log the actual error for debugging
@@ -60,91 +59,115 @@ const AddAlbum = () => {
     }
   };
 
-  return loading ? (
-    <div className="grid place-items-center min-h-[80vh]">
-      <div className="w-16 h-16 border-4 border-gray-400 border-t-green-800 rounded-full animate-spin"></div>
-    </div>
-  ) : (
-    <form
-      onSubmit={onSubmitHandler}
-      className="flex flex-col items-start gap-8 text-gray-600"
-    >
-      {/* Upload Section */}
-      <div className="flex gap-8">
-        {/* Image Upload */}
-        <div className="flex flex-col gap-4">
-          <p>Upload Image</p>
-          <input
-            type="file"
-            id="image"
-            accept="image/*"
-            hidden
-            onChange={(e) => {
-              const file = e.target.files[0];
-              if (file) {
-                setImage(file); // Set selected file
-              }
-            }}
-          />
-          <label htmlFor="image">
-            {image ? (
-              <img
-                src={URL.createObjectURL(image)}
-                className="w-24 h-24 object-cover rounded cursor-pointer"
-                alt="Upload Album Artwork"
-              />
-            ) : (
-              <MdAlbum className="w-24 h-24 text-gray-400 mx-auto" />
-            )}
-          </label>
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black text-white p-4 md:p-8">
+        <div className="max-w-2xl mx-auto">
+          <Skeleton type="title" className="w-48 mb-8" />
+          <div className="space-y-6">
+            <div>
+              <Skeleton type="text" className="w-24 mb-2" />
+              <Skeleton type="text" className="w-full h-10" />
+            </div>
+            <div>
+              <Skeleton type="text" className="w-24 mb-2" />
+              <Skeleton type="text" className="w-full h-32" />
+            </div>
+            <div>
+              <Skeleton type="text" className="w-24 mb-2" />
+              <Skeleton type="text" className="w-full h-10" />
+            </div>
+            <div>
+              <Skeleton type="text" className="w-24 mb-2" />
+              <Skeleton type="text" className="w-full h-10" />
+            </div>
+            <div>
+              <Skeleton type="text" className="w-24 mb-2" />
+              <Skeleton type="text" className="w-full h-10" />
+            </div>
+            <div>
+              <Skeleton type="text" className="w-24 mb-2" />
+              <Skeleton type="image" className="w-full h-48" />
+            </div>
+            <Skeleton type="text" className="w-32 h-10" />
+          </div>
         </div>
       </div>
+    );
+  }
 
-      {/* Album Name */}
-      <div className="flex flex-col gap-2.5">
-        <p>Album Name</p>
-        <input
-          type="text"
-          required
-          placeholder="Type here"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="bg-transparent outline-green-600 border-2 border-gray-400 p-2.5 w-[max(40vw,250px)]"
-        />
+  return (
+    <div className="min-h-screen bg-black text-white p-4 md:p-8">
+      <div className="max-w-2xl mx-auto">
+        <h1 className="text-3xl font-bold mb-8">Add New Album</h1>
+        <form onSubmit={onSubmitHandler} className="space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-neutral-400 mb-2">
+              Title
+            </label>
+            <input
+              type="text"
+              name="title"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              className="w-full px-4 py-2 bg-neutral-900 border border-neutral-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-neutral-400 mb-2">
+              Description
+            </label>
+            <textarea
+              name="description"
+              value={desc}
+              onChange={(e) => setDesc(e.target.value)}
+              required
+              rows="4"
+              className="w-full px-4 py-2 bg-neutral-900 border border-neutral-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-neutral-400 mb-2">
+              Cover Image
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files[0];
+                if (file) {
+                  setImage(file);
+                }
+              }}
+              required
+              className="w-full px-4 py-2 bg-neutral-900 border border-neutral-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-neutral-400 mb-2">
+              Background Colour
+            </label>
+            <input
+              type="color"
+              value={colour}
+              onChange={(e) => setColour(e.target.value)}
+              className="w-full px-4 py-2 bg-neutral-900 border border-neutral-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="w-full px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-neutral-900"
+          >
+            Add Album
+          </button>
+        </form>
       </div>
-
-      {/* Album Description */}
-      <div className="flex flex-col gap-2.5">
-        <p>Album Description</p>
-        <input
-          type="text"
-          required
-          placeholder="Type here"
-          value={desc}
-          onChange={(e) => setDesc(e.target.value)}
-          className="bg-transparent outline-green-600 border-2 border-gray-400 p-2.5 w-[max(40vw,250px)]"
-        />
-      </div>
-
-      {/* Background Color Selection */}
-      <div className="flex flex-col gap-2.5">
-        <p>Select Background Colour</p>
-        <input
-          type="color"
-          value={colour} // Use the correct state variable
-          onChange={(e) => setColour(e.target.value)}
-          className="w-24 h-12 cursor-pointer"
-        />
-      </div>
-
-      {/* Submit Button */}
-      <button
-        type="submit"
-        className="text-base bg-black text-white py-2.5 px-14 cursor-pointer"
-      >
-        ADD
-      </button>
-    </form>
+    </div>
   );
 };
 

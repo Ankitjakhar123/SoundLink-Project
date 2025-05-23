@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { motion } from "framer-motion";
+import Skeleton from './Skeleton';
 
 const BulkUpload = ({ token, type }) => {
   const [json, setJson] = useState("");
@@ -46,7 +47,13 @@ const BulkUpload = ({ token, type }) => {
           className="bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white font-semibold px-6 py-2 rounded-lg shadow-lg hover:scale-105 transition-transform"
           disabled={loading}
         >
-          {loading ? "Uploading..." : "Upload"}
+          {loading ? (
+            <div className="flex items-center justify-center gap-2">
+              <Skeleton type="text" className="w-24" />
+            </div>
+          ) : (
+            "Upload"
+          )}
         </button>
       </form>
       {result && (

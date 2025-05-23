@@ -12,6 +12,7 @@ import {
 } from 'react-icons/md';
 import { FaPlay, FaHeadphones } from 'react-icons/fa';
 import { motion } from 'framer-motion';
+import Skeleton from './Skeleton';
 
 const PlaylistsPage = () => {
   const { user, token } = useContext(AuthContext);
@@ -201,10 +202,16 @@ const PlaylistsPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-black text-white">
-        <div className="flex flex-col items-center">
-          <div className="w-16 h-16 border-4 border-fuchsia-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-          <p className="text-xl text-fuchsia-400">Loading playlists...</p>
+      <div className="min-h-screen bg-black text-white p-4 md:p-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center gap-3 mb-8">
+            <Skeleton type="title" className="w-48" />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {[...Array(8)].map((_, i) => (
+              <Skeleton key={i} type="card" />
+            ))}
+          </div>
         </div>
       </div>
     );

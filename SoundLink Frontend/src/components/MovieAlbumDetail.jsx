@@ -6,6 +6,7 @@ import { MdArrowBack, MdMovie, MdPlayArrow, MdPause, MdAccessTime, MdFavorite, M
 import { motion } from 'framer-motion';
 import { PlayerContext } from '../context/PlayerContext';
 import AddToPlaylistModal from './AddToPlaylistModal';
+import Skeleton from './Skeleton';
 
 const MovieAlbumDetail = () => {
   const { id } = useParams();
@@ -226,8 +227,28 @@ const MovieAlbumDetail = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex justify-center items-center bg-black text-white">
-        <div className="animate-pulse text-fuchsia-500 text-xl">Loading movie album...</div>
+      <div className="min-h-screen bg-black text-white p-4 md:p-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col md:flex-row gap-8 items-center md:items-start mb-12">
+            <Skeleton type="movie-card" className="w-64" />
+            <div className="flex-1">
+              <Skeleton type="title" className="w-64 mb-4" />
+              <Skeleton type="text" className="w-48 mb-2" />
+              <Skeleton type="text" className="w-32" />
+            </div>
+          </div>
+          <div className="space-y-4">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="flex items-center gap-4 p-4 bg-neutral-800/50 rounded-lg">
+                <Skeleton type="image" className="w-16 h-16" />
+                <div className="flex-1">
+                  <Skeleton type="text" className="w-48 mb-2" />
+                  <Skeleton type="text" className="w-32" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }

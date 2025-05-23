@@ -2,6 +2,7 @@ import React, { useContext, useState, useEffect } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import AdminDashboard from './AdminDashboard';
 import axios from 'axios';
+import Skeleton from './Skeleton';
 
 const Profile = () => {
   const { user, updateUserData } = useContext(AuthContext);
@@ -220,6 +221,28 @@ const Profile = () => {
 
   // Use userData for display instead of user from context
   const displayUser = userData || user;
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-black text-white p-4 md:p-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col md:flex-row gap-8 items-center md:items-start mb-12">
+            <Skeleton type="image" className="w-48 h-48 rounded-full" />
+            <div className="flex-1">
+              <Skeleton type="title" className="w-64 mb-4" />
+              <Skeleton type="text" className="w-48 mb-2" />
+              <Skeleton type="text" className="w-32" />
+            </div>
+          </div>
+          <div className="space-y-4">
+            <Skeleton type="text" className="w-full h-12" />
+            <Skeleton type="text" className="w-full h-12" />
+            <Skeleton type="text" className="w-full h-12" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!displayUser) return <div className="text-white p-8">No user data found.</div>;
 

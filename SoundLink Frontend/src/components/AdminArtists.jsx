@@ -3,6 +3,7 @@ import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import { AuthContext } from '../context/AuthContext';
 import { MdAdd, MdEdit, MdDelete, MdPerson, MdSearch, MdClear } from 'react-icons/md';
+import Skeleton from './Skeleton';
 
 const AdminArtists = () => {
   const { token } = useContext(AuthContext);
@@ -233,8 +234,10 @@ const AdminArtists = () => {
 
       {/* Artists List */}
       {loading && !showForm ? (
-        <div className="flex justify-center py-12">
-          <div className="animate-pulse text-fuchsia-500">Loading...</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(6)].map((_, i) => (
+            <Skeleton key={i} type="artist-card" />
+          ))}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

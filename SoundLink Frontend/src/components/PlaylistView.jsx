@@ -1,9 +1,10 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState, useContext, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { PlayerContext } from '../context/PlayerContext';
 import { FaTrash, FaEdit, FaPlay, FaRandom, FaTimes, FaMusic, FaArrowLeft, FaEllipsisH } from 'react-icons/fa';
 // eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
+import Skeleton from './Skeleton';
 
 const PlaylistView = () => {
   const { id } = useParams();
@@ -117,10 +118,27 @@ const PlaylistView = () => {
   };
 
   if (loading) return (
-    <div className="min-h-screen flex justify-center items-center bg-gradient-to-b from-black to-neutral-900 text-white">
-      <div className="flex flex-col items-center gap-4">
-        <div className="w-16 h-16 border-4 border-fuchsia-500 border-t-transparent rounded-full animate-spin"></div>
-        <div className="text-xl font-medium text-fuchsia-400">Loading playlist...</div>
+    <div className="min-h-screen bg-gradient-to-b from-black to-neutral-900 text-white p-4 md:p-8">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex flex-col md:flex-row gap-8 items-center md:items-start mb-12">
+          <Skeleton type="image" className="w-48 h-48" />
+          <div className="flex-1">
+            <Skeleton type="title" className="w-64 mb-4" />
+            <Skeleton type="text" className="w-48 mb-2" />
+            <Skeleton type="text" className="w-32" />
+          </div>
+        </div>
+        <div className="space-y-4">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="flex items-center gap-4 p-4 bg-neutral-800/50 rounded-lg">
+              <Skeleton type="image" className="w-16 h-16" />
+              <div className="flex-1">
+                <Skeleton type="text" className="w-48 mb-2" />
+                <Skeleton type="text" className="w-32" />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

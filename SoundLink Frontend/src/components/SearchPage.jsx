@@ -9,6 +9,7 @@ import AddToPlaylistModal from './AddToPlaylistModal';
 import SEO from './SEO';
 import AccessibleFormInput from './AccessibleFormInput';
 import AccessibleIconButton from './AccessibleIconButton';
+import Skeleton from './Skeleton';
 
 const SearchPage = () => {
   const [query, setQuery] = useState('');
@@ -211,8 +212,42 @@ const SearchPage = () => {
         
         {/* Loading Indicator */}
         {loading && (
-          <div className="flex justify-center my-10">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-fuchsia-500"></div>
+          <div className="space-y-8">
+            {/* Songs Skeleton */}
+            <div>
+              <Skeleton type="title" className="w-32 mb-6" />
+              <div className="space-y-4">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="flex items-center gap-4 p-4 bg-neutral-800/50 rounded-lg">
+                    <Skeleton type="image" className="w-16 h-16" />
+                    <div className="flex-1">
+                      <Skeleton type="text" className="w-48 mb-2" />
+                      <Skeleton type="text" className="w-32" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Albums Skeleton */}
+            <div>
+              <Skeleton type="title" className="w-32 mb-6" />
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                {[...Array(5)].map((_, i) => (
+                  <Skeleton key={i} type="card" />
+                ))}
+              </div>
+            </div>
+
+            {/* Artists Skeleton */}
+            <div>
+              <Skeleton type="title" className="w-32 mb-6" />
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                {[...Array(5)].map((_, i) => (
+                  <Skeleton key={i} type="artist-card" />
+                ))}
+              </div>
+            </div>
           </div>
         )}
         

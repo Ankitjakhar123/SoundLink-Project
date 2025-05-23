@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { MdPerson, MdSearch, MdClear, MdArrowBack } from 'react-icons/md';
 // eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
+import Skeleton from './Skeleton';
 
 const Artists = () => {
   const [artists, setArtists] = useState([]);
@@ -41,8 +42,17 @@ const Artists = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex justify-center items-center bg-black text-white">
-        <div className="animate-pulse text-fuchsia-500 text-xl">Loading artists...</div>
+      <div className="min-h-screen bg-black text-white p-4 md:p-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center gap-3 mb-8">
+            <Skeleton type="title" className="w-48" />
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+            {[...Array(10)].map((_, i) => (
+              <Skeleton key={i} type="artist-card" />
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
