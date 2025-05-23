@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from "react";
+import React, { useContext, useState, useEffect, useRef } from "react";
 import Sidebar from "./components/Sidebar";
 import PremiumPlayer from "./components/PremiumPlayer";
 import BottomNavigation from "./components/BottomNavigation";
@@ -59,6 +59,14 @@ const App = () => {
   const MAX_RETRIES = 5;
   const INITIAL_DELAY = 5000;
   const RETRY_DELAY = 3000;
+  const contentContainerRef = useRef(null);
+
+  // Scroll to top on route change
+  useEffect(() => {
+    if (contentContainerRef.current) {
+      contentContainerRef.current.scrollTo(0, 0);
+    }
+  }, [location.pathname]);
 
   // Handle online/offline status
   useEffect(() => {
@@ -201,9 +209,9 @@ const App = () => {
       )}
       
       <Sidebar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
-      <div className={`flex-1 flex flex-col h-screen overflow-y-auto transition-all duration-300 w-full content-container bg-black touch-scroll no-scrollbar ${mobileOpen ? 'opacity-30 pointer-events-none select-none' : ''} md:opacity-100 md:pointer-events-auto md:select-auto`}>
+      <div ref={contentContainerRef} className={`flex-1 flex flex-col h-screen overflow-y-auto transition-all duration-300 w-full content-container bg-black touch-scroll no-scrollbar ${mobileOpen ? 'opacity-30 pointer-events-none select-none' : ''} md:opacity-100 md:pointer-events-auto md:select-auto`}>
         <Navbar onHamburgerClick={() => setMobileOpen(true)} />
-        <div id="main-content" tabIndex="-1" className="flex-1 pb-10 pt-16 md:pt-13">
+        <div id="main-content" tabIndex="-1" className="flex-1">
           {backendStatus === 'checking' ? (
             <PremiumLoading />
           ) : backendStatus === 'error' ? (

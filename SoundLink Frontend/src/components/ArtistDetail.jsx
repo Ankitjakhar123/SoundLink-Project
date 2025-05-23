@@ -283,7 +283,7 @@ const ArtistDetail = () => {
   }
 
   return (
-    <div ref={displayRef} className="min-h-screen w-full flex flex-col justify-start items-center pb-16 px-4 content-container transition-all duration-500">
+    <div ref={displayRef} className="min-h-screen w-full flex flex-col justify-start items-center pb-16 px-4 content-container transition-all duration-500 pt-6">
       <div className="w-full max-w-6xl mx-auto">
         {/* Back navigation */}
         {/* <Link to="/" className="inline-flex items-center text-white/80 hover:text-white py-4">

@@ -321,7 +321,7 @@ const DisplayHome = () => {
           transition={{ duration: 0.7, ease: 'easeOut' }} 
           className="w-full max-w-7xl flex justify-start mt-6 mb-8 px-2 md:px-0"
         >
-            <h1 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight drop-shadow-lg text-left">
+            <h1 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight drop-shadow-lg text-left pt-1">
               Welcome back{user?.username ? `, ${user.username}` : ''}
             </h1>
         </motion.div>

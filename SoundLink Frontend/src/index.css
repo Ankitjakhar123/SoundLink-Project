@@ -8,10 +8,10 @@
   --fuchsia-dark: #86198f;
   --app-background: #000000;
   --content-background: #050505;
-  --safe-area-top: env(safe-area-inset-top, 0px);
-  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
-  --safe-area-left: env(safe-area-inset-left, 0px);
-  --safe-area-right: env(safe-area-inset-right, 0px);
+  --safe-area-top: 0px;
+  --safe-area-bottom: 0px;
+  --safe-area-left: 0px;
+  --safe-area-right: 0px;
 }
 
 * {
@@ -43,10 +43,10 @@ body {
   overflow-y: scroll !important;
   -webkit-overflow-scrolling: touch !important; /* Enhanced smooth scrolling for iOS */
   padding-bottom: var(--player-bottom-padding, 0);
-  padding-top: var(--safe-area-top);
-  padding-bottom: var(--safe-area-bottom);
-  padding-left: var(--safe-area-left);
-  padding-right: var(--safe-area-right);
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 0;
+  padding-right: 0;
 }
 
 ::-webkit-scrollbar {
@@ -96,68 +96,66 @@ footer {
 
 /* Global safe area insets - add at root level */
 :root {
-  --safe-area-top: env(safe-area-inset-top, 0px);
-  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
-  --safe-area-left: env(safe-area-inset-left, 0px);
-  --safe-area-right: env(safe-area-inset-right, 0px);
+  --safe-area-top: 0px;
+  --safe-area-bottom: 0px;
+  --safe-area-left: 0px;
+  --safe-area-right: 0px;
 }
 
 /* Apply safe area padding to the body */
 body {
-  padding-top: var(--safe-area-top);
-  padding-bottom: var(--safe-area-bottom);
-  padding-left: var(--safe-area-left);
-  padding-right: var(--safe-area-right);
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 0;
+  padding-right: 0;
 }
 
-/* Add utility classes for safe area usage */
+/* Remove utility classes for safe area usage */
 .pt-safe {
-  padding-top: var(--safe-area-top) !important;
+  padding-top: 0 !important;
 }
 
-/* Enhanced safe area padding with extra space */
 .pt-safe-plus {
-  padding-top: calc(var(--safe-area-top) + 0.75rem) !important;
+  padding-top: 0 !important;
 }
 
 .pb-safe {
-  padding-bottom: var(--safe-area-bottom) !important;
+  padding-bottom: 0 !important;
 }
 
 .pl-safe {
-  padding-left: var(--safe-area-left) !important;
+  padding-left: 0 !important;
 }
 
 .pr-safe {
-  padding-right: var(--safe-area-right) !important;
+  padding-right: 0 !important;
 }
 
 .mt-safe {
-  margin-top: var(--safe-area-top) !important;
+  margin-top: 0 !important;
 }
 
 .mb-safe {
-  margin-bottom: var(--safe-area-bottom) !important;
+  margin-bottom: 0 !important;
 }
 
-/* Combined safe area padding classes */
+/* Remove combined safe area padding classes */
 .px-safe {
-  padding-left: var(--safe-area-left) !important;
-  padding-right: var(--safe-area-right) !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
 }
 
 .py-safe {
-  padding-top: var(--safe-area-top) !important;
-  padding-bottom: var(--safe-area-bottom) !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
 }
 
 .p-safe {
-  padding: var(--safe-area-top) var(--safe-area-right) var(--safe-area-bottom) var(--safe-area-left) !important;
+  padding: 0 !important;
 }
 
 /* Ensure content containers have space - reduced */
 .content-container {
-  padding-bottom: 100px !important; /* Increased padding to prevent content hiding */
   overflow-y: auto !important;
   -webkit-overflow-scrolling: touch !important;
   position: relative;
@@ -207,7 +205,6 @@ body.has-notch .modal-content {
 /* Responsive adjustments for small screens */
 @media (max-width: 768px) {
   body {
-    padding-bottom: 50px;
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
     position: relative !important;
@@ -219,7 +216,6 @@ body.has-notch .modal-content {
   }
   
   .content-container {
-    padding-bottom: 100px !important; /* Increased padding to prevent content hiding */
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
   }
