@@ -56,9 +56,10 @@ const App = () => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [backendStatus, setBackendStatus] = useState('checking');
   const [retryCount, setRetryCount] = useState(0);
-  const MAX_RETRIES = 5;
-  const INITIAL_DELAY = 5000;
-  const RETRY_DELAY = 3000;
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const MAX_RETRIES = 3;
+  const INITIAL_DELAY = 1000;
+  const RETRY_DELAY = 1000;
   const contentContainerRef = useRef(null);
 
   // Scroll to top on route change
@@ -151,6 +152,7 @@ const App = () => {
         if (response.ok) {
           setBackendStatus('ready');
           setRetryCount(0); // Reset retry count on success
+          setIsInitialLoad(false); // Mark initial load as complete
         } else {
           throw new Error('Backend health check failed');
         }
@@ -163,6 +165,7 @@ const App = () => {
           }, retryCount === 0 ? INITIAL_DELAY : RETRY_DELAY);
         } else {
           setBackendStatus('error');
+          setIsInitialLoad(false); // Mark initial load as complete even on error
         }
       }
     };
@@ -211,8 +214,8 @@ const App = () => {
       <Sidebar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
       <div ref={contentContainerRef} className={`flex-1 flex flex-col h-screen overflow-y-auto transition-all duration-300 w-full content-container bg-black touch-scroll no-scrollbar ${mobileOpen ? 'opacity-30 pointer-events-none select-none' : ''} md:opacity-100 md:pointer-events-auto md:select-auto`}>
         <Navbar onHamburgerClick={() => setMobileOpen(true)} />
-        <div id="main-content" tabIndex="-1" className="flex-1">
-          {backendStatus === 'checking' ? (
+        <div id="main-content" tabIndex="-1" className="flex-1 pt-16 md:pt-16">
+          {backendStatus === 'checking' && isInitialLoad ? (
             <PremiumLoading />
           ) : backendStatus === 'error' ? (
             <div className="min-h-screen flex flex-col items-center justify-center p-4 text-center">
