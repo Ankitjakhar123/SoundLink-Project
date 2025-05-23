@@ -185,10 +185,10 @@ const Premium = () => {
         
         <div className="max-w-7xl mx-auto">
           {/* Back Button */}
-          <Link to="/" className="inline-flex items-center text-white/80 hover:text-white mb-12">
-            <FaArrowLeft className="mr-2" size={18} />
+          {/* <Link to="/" className="inline-flex items-center text-white/80 hover:text-white py-4">
+            <MdArrowBack className="mr-2" size={20} />
             <span>Back to Home</span>
-          </Link>
+          </Link> */}
           
           <div className="text-center max-w-3xl mx-auto">
             <div className="transform transition-all duration-500 animate-fade-in-up">

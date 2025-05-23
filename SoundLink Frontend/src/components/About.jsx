@@ -8,10 +8,10 @@ const About = () => {
       {/* Hero Section */}
       <div className="w-full bg-gradient-to-r from-fuchsia-900/30 to-blue-900/30 py-20">
         <div className="max-w-6xl mx-auto px-4">
-          <Link to="/" className="inline-flex items-center text-white/80 hover:text-white mb-6">
-            <FaArrowLeft className="mr-2" size={16} />
+          {/* <Link to="/" className="inline-flex items-center text-white/80 hover:text-white py-4">
+            <MdArrowBack className="mr-2" size={20} />
             <span>Back to Home</span>
-          </Link>
+          </Link> */}
           
           <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-fuchsia-500 to-blue-500 bg-clip-text text-transparent">
             About SoundLink

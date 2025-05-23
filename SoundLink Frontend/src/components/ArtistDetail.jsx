@@ -265,10 +265,10 @@ const ArtistDetail = () => {
     <div ref={displayRef} className="min-h-screen w-full flex flex-col justify-start items-center pb-16 px-4 content-container transition-all duration-500">
       <div className="w-full max-w-6xl mx-auto">
         {/* Back navigation */}
-        <Link to="/" className="inline-flex items-center text-white/80 hover:text-white py-4">
+        {/* <Link to="/" className="inline-flex items-center text-white/80 hover:text-white py-4">
           <MdArrowBack className="mr-2" size={20} />
           <span>Back to Home</span>
-        </Link>
+        </Link> */}
 
         {/* Artist header */}
         <div className="flex flex-col md:flex-row gap-8 items-center md:items-start mb-12">

@@ -135,9 +135,9 @@ const DisplayAlbum = () => {
         transition={{ duration: 0.6, ease: "easeOut" }}
         className="rounded text-white transition-all duration-500 shadow-2xl p-4 md:p-8 w-full mx-auto flex flex-col gap-6 mt-[-15px] content-container"
       >
-        <Link to="/" className="inline-flex items-center gap-2 text-white/80 hover:text-white mt-4">
+        {/* <Link to="/" className="inline-flex items-center text-white/80 hover:text-white py-4">
           <MdArrowBack /> Back to Home
-        </Link>
+        </Link> */}
 
         <div className="mt-6 flex gap-8 flex-col md:flex-row md:items-end">
           <img className="w-48 h-48 rounded shadow-2xl object-cover" src={albumData.image} alt={albumData.name} />

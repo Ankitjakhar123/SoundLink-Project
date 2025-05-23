@@ -236,9 +236,9 @@ const MovieAlbumDetail = () => {
     return (
       <div className="min-h-screen flex flex-col justify-center items-center bg-black text-white">
         <div className="text-red-500 mb-4">{error || 'Movie album not found'}</div>
-        <Link to="/" className="text-fuchsia-500 hover:text-fuchsia-400">
+        {/* <Link to="/" className="text-fuchsia-500 hover:text-fuchsia-400">
           Return to Home
-        </Link>
+        </Link> */}
       </div>
     );
   }
@@ -251,9 +251,9 @@ const MovieAlbumDetail = () => {
       transition={{ duration: 0.6, ease: "easeOut" }}
       className="min-h-screen text-white p-4 md:p-8 transition-all duration-500 content-container"
     >
-      <Link to="/" className="inline-flex items-center gap-2 text-fuchsia-500 hover:text-fuchsia-400 mb-6">
+      {/* <Link to="/" className="inline-flex items-center gap-2 text-fuchsia-500 hover:text-fuchsia-400 mb-6">
         <MdArrowBack /> Back to Home
-      </Link>
+      </Link> */}
       
       <div className="max-w-6xl mx-auto">
         <div className="mt-10 flex gap-8 flex-col md:flex-row md:items-end">

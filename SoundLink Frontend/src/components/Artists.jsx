@@ -1,12 +1,3 @@
-
-
-
-
-
-
-
-
-
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { MdPerson, MdSearch, MdClear, MdArrowBack } from 'react-icons/md';
@@ -68,10 +59,10 @@ const Artists = () => {
     <div className="min-h-screen w-full flex flex-col justify-start items-center bg-gradient-to-b from-black via-black to-neutral-900 pb-16 px-4">
       <div className="w-full max-w-6xl mx-auto">
         {/* Back navigation */}
-        <Link to="/" className="inline-flex items-center text-white/80 hover:text-white py-4">
+        {/* <Link to="/" className="inline-flex items-center text-white/80 hover:text-white py-4">
           <MdArrowBack className="mr-2" size={20} />
           <span>Back to Home</span>
-        </Link>
+        </Link> */}
 
         {/* Page Header */}
         <motion.div 

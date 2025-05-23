@@ -8,10 +8,10 @@ const Terms = () => {
       {/* Header */}
       <div className="w-full bg-gradient-to-r from-fuchsia-900/30 to-blue-900/30 py-16">
         <div className="max-w-4xl mx-auto px-4">
-          <Link to="/" className="inline-flex items-center text-white/80 hover:text-white mb-6">
-            <FaArrowLeft className="mr-2" size={16} />
+          {/* <Link to="/" className="inline-flex items-center text-white/80 hover:text-white py-4">
+            <MdArrowBack className="mr-2" size={20} />
             <span>Back to Home</span>
-          </Link>
+          </Link> */}
           
           <h1 className="text-3xl md:text-5xl font-bold mb-6">Terms of Service</h1>
           
