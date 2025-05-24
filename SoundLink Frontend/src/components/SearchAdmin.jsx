@@ -46,19 +46,19 @@ const SearchAdmin = ({ token }) => {
           <div className="mb-2 font-bold">Songs:</div>
           <ul>
             {results.songs?.map((s) => (
-              <li key={s._id}>{s.name}</li>
+              <li key={s._id} className="truncate max-w-[300px]">{s.name}</li>
             ))}
           </ul>
           <div className="mb-2 font-bold mt-4">Albums:</div>
           <ul>
             {results.albums?.map((a) => (
-              <li key={a._id}>{a.name}</li>
+              <li key={a._id} className="truncate max-w-[300px]">{a.name}</li>
             ))}
           </ul>
           <div className="mb-2 font-bold mt-4">Users:</div>
           <ul>
             {results.users?.map((u) => (
-              <li key={u._id}>{u.username}</li>
+              <li key={u._id} className="truncate max-w-[300px]">{u.username}</li>
             ))}
           </ul>
         </div>

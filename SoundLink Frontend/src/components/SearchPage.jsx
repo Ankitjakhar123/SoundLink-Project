@@ -352,8 +352,8 @@ const SearchPage = () => {
                         </div>
                         
                         <div className="flex-1 min-w-0">
-                          <h3 className="text-white font-medium text-sm truncate">{song.name}</h3>
-                          <p className="text-neutral-400 text-xs truncate">{song.singer || song.artist || song.artistName || 'Unknown Artist'}</p>
+                          <h3 className="text-white font-medium text-sm truncate max-w-[200px]">{song.name}</h3>
+                          <p className="text-neutral-400 text-xs truncate max-w-[200px]">{song.singer || song.artist || song.artistName || 'Unknown Artist'}</p>
                         </div>
                         
                         <div className="flex items-center gap-2">
@@ -416,8 +416,8 @@ const SearchPage = () => {
                               </div>
                             )}
                           </div>
-                          <h3 className="text-white font-medium text-sm truncate">{album.name}</h3>
-                          <p className="text-neutral-400 text-xs truncate">{album.type || 'Album'}</p>
+                          <h3 className="text-white font-medium text-sm truncate max-w-[200px]">{album.name}</h3>
+                          <p className="text-neutral-400 text-xs truncate max-w-[200px]">{album.type || 'Album'}</p>
                         </div>
                       </Link>
                     ))}
@@ -452,7 +452,7 @@ const SearchPage = () => {
                               </div>
                             )}
                           </div>
-                          <h3 className="text-white font-medium text-sm text-center">{artist.name}</h3>
+                          <h3 className="text-white font-medium text-sm text-center truncate max-w-[200px] mx-auto">{artist.name}</h3>
                           <p className="text-neutral-400 text-xs text-center">Artist</p>
                         </div>
                       </Link>

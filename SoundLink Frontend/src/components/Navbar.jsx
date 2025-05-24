@@ -663,9 +663,9 @@ const ResultSection = ({ title, items, type, onResultClick, showAll }) => {
                                 <FaMusic className="text-neutral-500" />
                             )}
                         </div>
-                        <div className="min-w-0">
-                            <p className="text-white font-medium truncate">{item.name || item.username}</p>
-                            <p className="text-neutral-400 text-sm truncate">{item.desc || item.bio || (type === 'user' ? 'User' : '')}</p>
+                        <div className="min-w-0 flex-1">
+                            <p className="text-white font-medium truncate max-w-[200px]">{item.name || item.username}</p>
+                            <p className="text-neutral-400 text-sm truncate max-w-[200px]">{item.desc || item.bio || (type === 'user' ? 'User' : '')}</p>
                         </div>
                     </div>
                 ))}
