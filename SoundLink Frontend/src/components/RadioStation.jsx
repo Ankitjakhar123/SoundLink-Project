@@ -1,72 +1,76 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
-import { MdPlayArrow, MdPause, MdRadio, MdMusicNote, MdExpandMore, MdChevronRight, MdSearch, MdLanguage, MdWeb, MdSpeed, MdCode } from 'react-icons/md';
-import { PlayerContext } from '../context/PlayerContext';
+import React, { useContext, useState, useEffect } from "react";
+import { RadioContext } from "../context/RadioContext";
+import { PlayerContext } from "../context/PlayerContext";
+import { toast } from "react-toastify";
+import { motion, AnimatePresence } from "framer-motion";
+import { MdPlayArrow, MdPause, MdRadio, MdMusicNote, MdExpandMore, MdChevronRight, MdSearch, MdLanguage, MdWeb, MdSpeed, MdCode } from "react-icons/md";
 
-const RadioStations = () => {
+const RadioStation = () => {
+  const radioContext = useContext(RadioContext);
+  const { currentStation, isPlaying, playStation, stopStation } = radioContext || {};
+  const [isLoading, setIsLoading] = useState(false);
+  const [localPlayingState, setLocalPlayingState] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [currentStation, setCurrentStation] = useState(null);
   const [groupedStations, setGroupedStations] = useState({});
   const [expandedGenres, setExpandedGenres] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedStations, setExpandedStations] = useState({});
-  const [isPlaying, setIsPlaying] = useState(false);
   const STATIONS_PER_PAGE = 10;
 
-  // Get player context
-  const { 
-    pause,
-    audioRef: playerAudioRef,
-    playRadioStation,
-    playStatus: contextPlayStatus
-  } = useContext(PlayerContext);
+  // Sync local state with context state
+  useEffect(() => {
+    if (currentStation) {
+      setLocalPlayingState(prev => ({
+        ...prev,
+        [currentStation.stationuuid]: isPlaying
+      }));
+    }
+  }, [currentStation, isPlaying]);
 
   useEffect(() => {
     fetchStations();
   }, []);
 
-  // Effect to handle playback when currentStation changes
-  useEffect(() => {
-    if (currentStation) {
-      // Add a small delay to ensure state is updated
-      const timer = setTimeout(() => {
-        playRadioStation(currentStation);
-      }, 100);
-
-      return () => {
-        clearTimeout(timer);
-        if (playerAudioRef.current) {
-          playerAudioRef.current.pause();
-          playerAudioRef.current.src = '';
-        }
-      };
-    }
-  }, [currentStation]);
-
-  // Effect to sync with player context's play status
-  useEffect(() => {
-    if (contextPlayStatus !== isPlaying) {
-      setIsPlaying(contextPlayStatus);
-    }
-  }, [contextPlayStatus]);
-
   const fetchStations = async () => {
     try {
       setLoading(true);
       const response = await fetch('https://de1.api.radio-browser.info/json/stations/bycountry/India');
+      if (!response.ok) {
+        throw new Error('Failed to fetch radio stations');
+      }
       const data = await response.json();
       
+      // Filter and validate stations
       const validStations = data
         .filter(station => {
           const url = station.url_resolved || station.url;
-          return url && (url.endsWith('.mp3') || url.includes('stream'));
-        });
+          return url && (
+            url.endsWith('.mp3') || 
+            url.includes('stream') || 
+            url.includes('icecast') ||
+            url.includes('radio')
+          );
+        })
+        .map(station => ({
+          ...station,
+          stationuuid: station.stationuuid || station._id,
+          url_resolved: station.url_resolved || station.url,
+          favicon: station.favicon || station.image || 'https://via.placeholder.com/150',
+          bitrate: station.bitrate || '128',
+          codec: station.codec || 'MP3',
+          country: station.country || 'IN',
+          language: station.language || 'Hindi'
+        }));
+
+      if (validStations.length === 0) {
+        throw new Error('No valid radio stations found');
+      }
 
       groupStationsByGenre(validStations);
     } catch (err) {
-      setError('Failed to fetch radio stations');
       console.error('Error fetching stations:', err);
+      setError(err.message || 'Failed to fetch radio stations');
     } finally {
       setLoading(false);
     }
@@ -123,6 +127,58 @@ const RadioStations = () => {
     setExpandedGenres(initialExpandedState);
   };
 
+  const handlePlayPause = async (station) => {
+    try {
+      setIsLoading(true);
+      
+      // Check if this station is currently playing
+      const isThisStationPlaying = currentStation?.stationuuid === station.stationuuid && isPlaying;
+      
+      if (isThisStationPlaying) {
+        // If this station is playing, stop it
+        stopStation();
+        setLocalPlayingState(prev => ({
+          ...prev,
+          [station.stationuuid]: false
+        }));
+      } else {
+        // Create a proper station object with required fields
+        const stationData = {
+          stationuuid: station.stationuuid || station._id,
+          name: station.name,
+          url_resolved: station.url_resolved || station.streamUrl,
+          favicon: station.favicon || station.image,
+          bitrate: station.bitrate || '128',
+          codec: station.codec || 'MP3',
+          country: station.country || 'IN',
+          language: station.language || 'Hindi'
+        };
+        
+        // Stop any currently playing station
+        if (isPlaying) {
+          stopStation();
+        }
+        
+        // Play the new station
+        playStation(stationData);
+        setLocalPlayingState(prev => ({
+          ...prev,
+          [stationData.stationuuid]: true
+        }));
+      }
+    } catch (error) {
+      console.error('Error handling radio station:', error);
+      toast.error('Failed to play radio station. Please try again.');
+      // Reset local state on error
+      setLocalPlayingState(prev => ({
+        ...prev,
+        [station.stationuuid || station._id]: false
+      }));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const toggleGenreExpanded = (genre) => {
     setExpandedGenres(prevState => ({
       ...prevState,
@@ -136,59 +192,6 @@ const RadioStations = () => {
       [genre]: !prevState[genre]
     }));
   };
-
-  const handlePlayStation = (station) => {
-    try {
-      if (currentStation && currentStation.stationuuid === station.stationuuid) {
-        // If it's the same station, toggle play/pause
-        if (isPlaying) {
-          pause();
-          setIsPlaying(false);
-        } else {
-          // Resume the same station
-          if (playerAudioRef.current) {
-            playerAudioRef.current.src = station.url_resolved || station.url;
-            playerAudioRef.current.load();
-            playerAudioRef.current.play()
-              .then(() => {
-                setIsPlaying(true);
-              })
-              .catch(err => {
-                console.error('Error resuming station:', err);
-                setIsPlaying(false);
-              });
-          }
-        }
-      } else {
-        // If it's a new station, stop current playback and start new one
-        if (playerAudioRef.current) {
-          playerAudioRef.current.pause();
-          playerAudioRef.current.src = '';
-        }
-        
-        // Set the current station first
-        setCurrentStation(station);
-        setIsPlaying(true);
-        
-        // Call playRadioStation directly
-        playRadioStation(station);
-      }
-    } catch (error) {
-      console.error('Error in handlePlayStation:', error);
-      setIsPlaying(false);
-    }
-  };
-
-  // Add cleanup effect
-  useEffect(() => {
-    return () => {
-      // Don't stop playback when leaving the page
-      // Just ensure the state is properly maintained
-      if (currentStation && isPlaying) {
-        setIsPlaying(true);
-      }
-    };
-  }, [currentStation, isPlaying]);
 
   const filterStations = (stations) => {
     if (!searchQuery) return stations;
@@ -246,55 +249,58 @@ const RadioStations = () => {
 
         {/* Stations by Genre */}
         <AnimatePresence>
-          {
-            Object.entries(groupedStations).map(([genre, stations]) => {
-              const filteredStations = filterStations(stations);
-              const visibleStations = expandedStations[genre] 
-                ? filteredStations 
-                : filteredStations.slice(0, STATIONS_PER_PAGE);
+          {Object.entries(groupedStations).map(([genre, stations]) => {
+            const filteredStations = filterStations(stations);
+            const visibleStations = expandedStations[genre] 
+              ? filteredStations 
+              : filteredStations.slice(0, STATIONS_PER_PAGE);
 
-              if (filteredStations.length === 0) return null;
+            if (filteredStations.length === 0) return null;
 
-              return (
-                <div key={genre} className="mb-8 border border-neutral-800 rounded-lg overflow-hidden">
-                  {/* Genre Header */}
-                  <motion.div 
-                    className="flex items-center justify-between p-4 bg-neutral-900 cursor-pointer"
-                    onClick={() => toggleGenreExpanded(genre)}
-                    initial={{ opacity: 1 }}
-                    animate={{ opacity: 1 }}
+            return (
+              <div key={genre} className="mb-8 border border-neutral-800 rounded-lg overflow-hidden">
+                {/* Genre Header */}
+                <motion.div 
+                  className="flex items-center justify-between p-4 bg-neutral-900 cursor-pointer"
+                  onClick={() => toggleGenreExpanded(genre)}
+                  initial={{ opacity: 1 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <h2 className="text-xl font-bold text-white">{genre} ({filteredStations.length})</h2>
+                  <motion.div
+                    animate={{ rotate: expandedGenres[genre] ? 180 : 0 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <h2 className="text-xl font-bold text-white">{genre} ({filteredStations.length})</h2>
-                    <motion.div
-                      animate={{ rotate: expandedGenres[genre] ? 180 : 0 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      {expandedGenres[genre] ? <MdExpandMore size={24} /> : <MdChevronRight size={24} />}
-                    </motion.div>
+                    {expandedGenres[genre] ? <MdExpandMore size={24} /> : <MdChevronRight size={24} />}
                   </motion.div>
+                </motion.div>
 
-                  {/* Stations List - Collapsible */}
-                  <AnimatePresence initial={false}>
-                    {expandedGenres[genre] && (
-                      <motion.div
-                        key="content"
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.3, ease: "easeInOut" }}
-                        className="px-4 py-2"
-                      >
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {visibleStations.map((station) => (
+                {/* Stations List - Collapsible */}
+                <AnimatePresence initial={false}>
+                  {expandedGenres[genre] && (
+                    <motion.div
+                      key="content"
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.3, ease: "easeInOut" }}
+                      className="px-4 py-2"
+                    >
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {visibleStations.map((station) => {
+                          const isStationPlaying = localPlayingState[station.stationuuid] || 
+                            (currentStation?.stationuuid === station.stationuuid && isPlaying);
+
+                          return (
                             <div
                               key={station.stationuuid}
                               className="bg-neutral-900/50 backdrop-blur-md rounded-xl p-4 border border-white/5 hover:border-fuchsia-500/20 transition-colors cursor-pointer"
-                              onClick={() => handlePlayStation(station)}
+                              onClick={() => handlePlayPause(station)}
                             >
                               <div className="flex items-start gap-4">
                                 <div className="w-12 h-12 bg-fuchsia-600/20 rounded-lg flex items-center justify-center flex-shrink-0 relative">
-                                  {currentStation?.stationuuid === station.stationuuid && isPlaying ? (
+                                  {isStationPlaying ? (
                                     <>
                                       <div className="w-full h-full flex items-center justify-center bg-fuchsia-600/20 rounded-lg">
                                         <MdMusicNote className="text-fuchsia-500" size={24} />
@@ -335,48 +341,22 @@ const RadioStations = () => {
                                         <span>{station.codec}</span>
                                       </div>
                                     )}
-                                    {station.homepage && (
-                                      <div className="flex items-center gap-1 text-xs text-neutral-400">
-                                        <MdWeb size={14} />
-                                        <a 
-                                          href={station.homepage} 
-                                          target="_blank" 
-                                          rel="noopener noreferrer"
-                                          className="hover:text-fuchsia-500 truncate"
-                                          onClick={(e) => e.stopPropagation()}
-                                        >
-                                          {new URL(station.homepage).hostname}
-                                        </a>
-                                      </div>
-                                    )}
                                   </div>
-
-                                  {/* Tags */}
-                                  {station.tags && (
-                                    <div className="flex flex-wrap gap-1 mt-2">
-                                      {station.tags.split(',').slice(0, 3).map((tag, index) => (
-                                        <span 
-                                          key={index}
-                                          className="text-xs bg-fuchsia-500/10 text-fuchsia-500 px-2 py-0.5 rounded-full"
-                                        >
-                                          {tag.trim()}
-                                        </span>
-                                      ))}
-                                    </div>
-                                  )}
                                 </div>
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    handlePlayStation(station)
+                                    handlePlayPause(station);
                                   }}
                                   className={`p-2 rounded-full ${
-                                    currentStation?.stationuuid === station.stationuuid && isPlaying
+                                    isStationPlaying
                                       ? 'bg-fuchsia-500'
                                       : 'bg-neutral-800 hover:bg-neutral-700'
                                   }`}
                                 >
-                                  {currentStation?.stationuuid === station.stationuuid && isPlaying ? (
+                                  {isLoading ? (
+                                    <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                  ) : isStationPlaying ? (
                                     <MdPause className="text-white" size={24} />
                                   ) : (
                                     <MdPlayArrow className="text-white" size={24} />
@@ -384,31 +364,31 @@ const RadioStations = () => {
                                 </button>
                               </div>
                             </div>
-                          ))}
+                          );
+                        })}
+                      </div>
+                      
+                      {/* Show More Button */}
+                      {filteredStations.length > STATIONS_PER_PAGE && (
+                        <div className="mt-4 flex justify-center">
+                          <button
+                            onClick={() => toggleShowMore(genre)}
+                            className="px-4 py-2 bg-fuchsia-500/10 text-fuchsia-500 rounded-lg hover:bg-fuchsia-500/20 transition-colors"
+                          >
+                            {expandedStations[genre] ? 'Show Less' : 'Show More'}
+                          </button>
                         </div>
-                        
-                        {/* Show More Button */}
-                        {filteredStations.length > STATIONS_PER_PAGE && (
-                          <div className="mt-4 flex justify-center">
-                            <button
-                              onClick={() => toggleShowMore(genre)}
-                              className="px-4 py-2 bg-fuchsia-500/10 text-fuchsia-500 rounded-lg hover:bg-fuchsia-500/20 transition-colors"
-                            >
-                              {expandedStations[genre] ? 'Show Less' : 'Show More'}
-                            </button>
-                          </div>
-                        )}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              );
-            })
-          }
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            );
+          })}
         </AnimatePresence>
       </div>
     </div>
   );
 };
 
-export default RadioStations; 
+export default RadioStation; 

@@ -1,5 +1,6 @@
 import React, { useContext, useState, useEffect, useRef } from "react";
 import { PlayerContext } from "../context/PlayerContext";
+import { RadioContext } from "../context/RadioContext";
 // eslint-disable-next-line no-unused-vars
 import { AnimatePresence, motion } from "framer-motion";
 import { FaPlay, FaPause, FaStepForward, FaStepBackward, FaVolumeUp, FaVolumeMute, FaHeart } from "react-icons/fa";
@@ -179,7 +180,6 @@ const PremiumPlayer = () => {
   const {
     track,
     playStatus,
-    setPlayStatus,
     play,
     pause,
     Next,
@@ -191,8 +191,6 @@ const PremiumPlayer = () => {
     time,
     toggleFavorite,
     isFavorite,
-    // eslint-disable-next-line no-unused-vars
-    setAutoplayEnabled,
     hidePlayer,
     buffering,
     loadingProgress,
@@ -204,6 +202,10 @@ const PremiumPlayer = () => {
     getAlbumName,
     playWithId,
   } = useContext(PlayerContext);
+
+  // Add RadioContext
+  const radioContext = useContext(RadioContext);
+  const { stopStation } = radioContext || {};
   
   const [volume, setVolume] = useState(0.7);
   const [isMuted, setIsMuted] = useState(false);
@@ -370,12 +372,7 @@ const PremiumPlayer = () => {
     if (playStatus) {
       // For radio stations, we need to handle pause differently
       if (track && track._id?.startsWith('radio-')) {
-        if (audioRef.current) {
-          audioRef.current.pause();
-          setPlayStatus(false);
-          // Keep the source but pause playback
-          audioRef.current.currentTime = 0;
-        }
+        stopStation();
       } else {
         pause();
       }
@@ -402,58 +399,8 @@ const PremiumPlayer = () => {
       return;
     }
     
-    // For radio stations, ensure we have the correct source
-    if (track && track._id?.startsWith('radio-')) {
-      // Always reload the source for radio stations to ensure fresh connection
-      audioRef.current.src = track.file;
-      audioRef.current.load();
-      
-      // Set crossOrigin for radio streams
-      audioRef.current.crossOrigin = "anonymous";
-      
-      // Try to play immediately
-      const playPromise = audioRef.current.play();
-      if (playPromise !== undefined) {
-        playPromise
-          .then(() => {
-            console.log('Radio playback started successfully');
-            setPlayStatus(true);
-          })
-          .catch(error => {
-            console.error('Error playing radio station:', error);
-            setPlayStatus(false);
-            
-            // Try to resume audio context if it was suspended
-            if (window._audioContext && window._audioContext.state === 'suspended') {
-              window._audioContext.resume()
-                .then(() => {
-                  // Try playing again after resuming context
-                  audioRef.current.play()
-                    .then(() => {
-                      console.log('Playback resumed after context resume');
-                      setPlayStatus(true);
-                    })
-                    .catch(err => {
-                      console.error('Failed to play after context resume:', err);
-                    });
-                })
-                .catch(err => {
-                  console.error('Failed to resume audio context:', err);
-                });
-            }
-          });
-      }
-    } else if (!audioRef.current.src && track && track.file) {
-      audioRef.current.src = track.file;
-      audioRef.current.load();
-      play();
-    } else if (!audioRef.current.src) {
-      console.error('No audio source available and no track.file to use');
-      return;
-    } else {
-      // For regular tracks, just play
-      play();
-    }
+    // For regular tracks, use the play function from context
+    play();
   };
   
   // Create a silent audio element to help unlock audio on mobile devices

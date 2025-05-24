@@ -3,6 +3,7 @@ import Sidebar from "./components/Sidebar";
 import PremiumPlayer from "./components/PremiumPlayer";
 import BottomNavigation from "./components/BottomNavigation";
 import { PlayerContext } from "./context/PlayerContext";
+import { RadioContext, RadioContextProvider } from "./context/RadioContext";
 import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 import DisplayHome from "./components/DisplayHome";
 import DisplayAlbum from "./components/DisplayAlbum";
@@ -35,7 +36,7 @@ import Library from "./components/Library";
 import InstallPwaPrompt from "./components/InstallPwaPrompt";
 import InstallPWAButton from "./components/InstallPWAButton";
 import PremiumLoading from './components/PremiumLoading';
-import RadioStations from './components/RadioStations';
+import RadioStation from './components/RadioStation';
 
 // Protected route component that requires authentication
 const ProtectedRoute = ({ children }) => {
@@ -200,78 +201,80 @@ const App = () => {
   }
 
   return (
-    <div className="flex min-h-screen bg-black">
-      <DisclaimerPopup />
-      <InstallPwaPrompt />
-      <InstallPWAButton />
-      
-      {/* Offline indicator */}
-      {!isOnline && (
-        <div className="fixed top-0 left-0 right-0 bg-amber-600 text-black z-50 py-1 px-4 text-center text-sm font-medium">
-          You're offline. Some features may be limited.
+    <RadioContextProvider>
+      <div className="flex min-h-screen bg-black">
+        <DisclaimerPopup />
+        <InstallPwaPrompt />
+        <InstallPWAButton />
+        
+        {/* Offline indicator */}
+        {!isOnline && (
+          <div className="fixed top-0 left-0 right-0 bg-amber-600 text-black z-50 py-1 px-4 text-center text-sm font-medium">
+            You're offline. Some features may be limited.
+          </div>
+        )}
+        
+        <Sidebar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
+        <div ref={contentContainerRef} className={`flex-1 flex flex-col h-screen overflow-y-auto transition-all duration-300 w-full content-container bg-black touch-scroll no-scrollbar ${mobileOpen ? 'opacity-30 pointer-events-none select-none' : ''} md:opacity-100 md:pointer-events-auto md:select-auto`}>
+          <Navbar onHamburgerClick={() => setMobileOpen(true)} />
+          <div id="main-content" tabIndex="-1" className="flex-1 pt-[calc(56px+env(safe-area-inset-top))] md:pt-[calc(56px+env(safe-area-inset-top))]">
+            {backendStatus === 'checking' && isInitialLoad ? (
+              <PremiumLoading />
+            ) : (
+              <Routes>
+                {/* Auth page route */}
+                <Route path="/auth" element={user ? <Navigate to="/" /> : <AuthPage />} />
+                
+                {/* Public routes - no login required */}
+                <Route path="/" element={<DisplayHome />} />
+                <Route path="/album/:id" element={<DisplayAlbum />} />
+                <Route path="/movie/:id" element={<MovieAlbumDetail onEnterFullscreen={lockOrientation} />} />
+                <Route path="/artist/:id" element={<ArtistDetail />} />
+                <Route path="/artists" element={<Artists />} />
+                <Route path="/trending" element={<TrendingSongs />} />
+                {/* Redirect search to home since we're using popup search only */}
+                <Route path="/search" element={<Navigate to="/" />} />
+                <Route path="/premium" element={<Premium />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/terms" element={<Terms />} />
+                <Route path="/privacy" element={<Privacy />} />
+                <Route path="/contact" element={<Contact />} />
+                <Route path="/radio" element={<RadioStation />} />
+                
+                {/* Protected routes - login required */}
+                <Route path="/playlists" element={<ProtectedRoute><PlaylistsPage /></ProtectedRoute>} />
+                <Route path="/playlist/:id" element={<ProtectedRoute><PlaylistView /></ProtectedRoute>} />
+                <Route path="/favorites" element={<ProtectedRoute><Favorites /></ProtectedRoute>} />
+                <Route path="/library" element={<ProtectedRoute><Library /></ProtectedRoute>} />
+                <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                
+                {/* Admin routes - login required */}
+                <Route path="/admin" element={<ProtectedRoute><AdminDashboard token={localStorage.getItem('token')} /></ProtectedRoute>} />
+                <Route path="/admin/albums" element={<ProtectedRoute><ListAlbum /></ProtectedRoute>} />
+                <Route path="/admin/songs" element={<ProtectedRoute><ListSong /></ProtectedRoute>} />
+                <Route path="/admin/artists" element={<ProtectedRoute><AdminArtists /></ProtectedRoute>} />
+                
+                {/* Login and Signup routes - redirect to AuthPage */}
+                <Route path="/login" element={<AuthPage />} />
+                <Route path="/signup" element={<AuthPage />} />
+              </Routes>
+            )}
+          </div>
+          {track && <div className="content-fade"></div>}
+          <PremiumPlayer />
+          {track ? (
+            <audio ref={audioRef} preload="auto">
+              <source src={track.file} type="audio/mp3" />
+            </audio>
+          ) : null}
         </div>
-      )}
-      
-      <Sidebar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
-      <div ref={contentContainerRef} className={`flex-1 flex flex-col h-screen overflow-y-auto transition-all duration-300 w-full content-container bg-black touch-scroll no-scrollbar ${mobileOpen ? 'opacity-30 pointer-events-none select-none' : ''} md:opacity-100 md:pointer-events-auto md:select-auto`}>
-        <Navbar onHamburgerClick={() => setMobileOpen(true)} />
-        <div id="main-content" tabIndex="-1" className="flex-1 pt-[calc(56px+env(safe-area-inset-top))] md:pt-[calc(56px+env(safe-area-inset-top))]">
-          {backendStatus === 'checking' && isInitialLoad ? (
-            <PremiumLoading />
-          ) : (
-            <Routes>
-              {/* Auth page route */}
-              <Route path="/auth" element={user ? <Navigate to="/" /> : <AuthPage />} />
-              
-              {/* Public routes - no login required */}
-              <Route path="/" element={<DisplayHome />} />
-              <Route path="/album/:id" element={<DisplayAlbum />} />
-              <Route path="/movie/:id" element={<MovieAlbumDetail onEnterFullscreen={lockOrientation} />} />
-              <Route path="/artist/:id" element={<ArtistDetail />} />
-              <Route path="/artists" element={<Artists />} />
-              <Route path="/trending" element={<TrendingSongs />} />
-              {/* Redirect search to home since we're using popup search only */}
-              <Route path="/search" element={<Navigate to="/" />} />
-              <Route path="/premium" element={<Premium />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/terms" element={<Terms />} />
-              <Route path="/privacy" element={<Privacy />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/radio" element={<RadioStations />} />
-              
-              {/* Protected routes - login required */}
-              <Route path="/playlists" element={<ProtectedRoute><PlaylistsPage /></ProtectedRoute>} />
-              <Route path="/playlist/:id" element={<ProtectedRoute><PlaylistView /></ProtectedRoute>} />
-              <Route path="/favorites" element={<ProtectedRoute><Favorites /></ProtectedRoute>} />
-              <Route path="/library" element={<ProtectedRoute><Library /></ProtectedRoute>} />
-              <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-              
-              {/* Admin routes - login required */}
-              <Route path="/admin" element={<ProtectedRoute><AdminDashboard token={localStorage.getItem('token')} /></ProtectedRoute>} />
-              <Route path="/admin/albums" element={<ProtectedRoute><ListAlbum /></ProtectedRoute>} />
-              <Route path="/admin/songs" element={<ProtectedRoute><ListSong /></ProtectedRoute>} />
-              <Route path="/admin/artists" element={<ProtectedRoute><AdminArtists /></ProtectedRoute>} />
-              
-              {/* Login and Signup routes - redirect to AuthPage */}
-              <Route path="/login" element={<AuthPage />} />
-              <Route path="/signup" element={<AuthPage />} />
-            </Routes>
-          )}
+        {/* Add bottom navigation for mobile screens */}
+        <div className="md:hidden">
+          <BottomNavigation />
         </div>
-        {track && <div className="content-fade"></div>}
-        <PremiumPlayer />
-        {track ? (
-          <audio ref={audioRef} preload="auto">
-            <source src={track.file} type="audio/mp3" />
-          </audio>
-        ) : null}
       </div>
-      {/* Add bottom navigation for mobile screens */}
-      <div className="md:hidden">
-        <BottomNavigation />
-      </div>
-    </div>
+    </RadioContextProvider>
   );
 };
 

@@ -4,6 +4,7 @@ import { AuthContext } from "./AuthContext";
 import { toast } from "react-toastify";
 import { API_BASE_URL } from "../utils/api";
 import { extractColors } from 'extract-colors';
+import { RadioContext } from './RadioContext';
 //import { assets } from "../assets/assets";
 
 export const PlayerContext = createContext();
@@ -14,6 +15,8 @@ export const PlayerContextProvider = ({ children }) => {
   const seekBar = useRef();
   const volumeRef = useRef();
   const { user, token } = useContext(AuthContext);
+  const radioContext = useContext(RadioContext);
+  const { currentStation, isPlaying: isRadioPlaying } = radioContext || {};
 
   // Helper function to extract the artist name from any possible field
   const getArtistName = (trackObj) => {
@@ -288,7 +291,7 @@ export const PlayerContextProvider = ({ children }) => {
         }
         
         // Set the playing state to true before starting playback
-                setPlayStatus(true);
+        setPlayStatus(true);
         
         // Set buffering to true - will be set to false when playback starts
         setBuffering(true);
@@ -302,20 +305,42 @@ export const PlayerContextProvider = ({ children }) => {
             .then(() => {
               // Playback started successfully
               setBuffering(false);
+              setPlayStatus(true);
             })
             .catch(err => {
               console.error('Play promise error:', err);
               // Set playStatus to false if autoplay was prevented
+              setPlayStatus(false);
+              setBuffering(false);
+              
+              // Try to resume audio context if it was suspended
+              if (window._audioContext && window._audioContext.state === 'suspended') {
+                window._audioContext.resume()
+                  .then(() => {
+                    // Try playing again after resuming context
+                    audioRef.current.play()
+                      .then(() => {
+                        setBuffering(false);
+                        setPlayStatus(true);
+                      })
+                      .catch(retryErr => {
+                        console.error('Failed to play after context resume:', retryErr);
+                        setPlayStatus(false);
+                        setBuffering(false);
+                      });
+                  })
+                  .catch(err => {
+                    console.error('Failed to resume audio context:', err);
                     setPlayStatus(false);
                     setBuffering(false);
-                    
-              // Autoplay may have been prevented by browser policy
-              // Could show a UI indicator that user needs to interact
+                  });
+              }
             });
         } else {
           // Old browsers might not return a promise
           // Assume playback was successful
           setBuffering(false);
+          setPlayStatus(true);
         }
       } catch (error) {
         console.error('Error in play function:', error);
@@ -330,8 +355,11 @@ export const PlayerContextProvider = ({ children }) => {
       try {
         audioRef.current.pause();
         setPlayStatus(false);
+        setBuffering(false);
       } catch (error) {
         console.error('Error pausing audio:', error);
+        setPlayStatus(false);
+        setBuffering(false);
       }
     }
   };
@@ -1168,83 +1196,6 @@ export const PlayerContextProvider = ({ children }) => {
     return formattedLyrics;
   };
 
-  const playRadioStation = (station) => {
-    // Initialize audio context first
-    initAudioContext();
-
-    // Create a radio track object
-    const radioTrack = {
-      _id: `radio-${station.stationuuid}`,
-      name: station.name,
-      file: station.url_resolved || station.url,
-      image: station.favicon || 'https://via.placeholder.com/150',
-      artist: station.name,
-      album: 'Radio Station',
-      metadata: {
-        bitrate: station.bitrate,
-        codec: station.codec,
-        language: station.language,
-        country: station.country,
-        homepage: station.homepage,
-        lastcheckok: station.lastcheckoktime
-      }
-    };
-
-    // Set the track in state
-    setTrack(radioTrack);
-    setPlayStatus(true);
-
-    // Update audio source and play
-    if (audioRef.current) {
-      try {
-        // Stop any current playback
-        audioRef.current.pause();
-        
-        // Set new source with CORS
-        audioRef.current.crossOrigin = "anonymous";
-        audioRef.current.src = radioTrack.file;
-        audioRef.current.load();
-        
-        // Start playback
-        const playPromise = audioRef.current.play();
-        
-        if (playPromise !== undefined) {
-          playPromise
-            .then(() => {
-              console.log('Radio playback started successfully');
-              setPlayStatus(true);
-            })
-            .catch(error => {
-              console.error('Error playing radio station:', error);
-              setPlayStatus(false);
-              
-              // Try to resume audio context if it was suspended
-              if (window._audioContext && window._audioContext.state === 'suspended') {
-                window._audioContext.resume()
-                  .then(() => {
-                    // Try playing again after resuming context
-                    audioRef.current.play()
-                      .then(() => {
-                        console.log('Playback resumed after context resume');
-                        setPlayStatus(true);
-                      })
-                      .catch(err => {
-                        console.error('Failed to play after context resume:', err);
-                      });
-                  })
-                  .catch(err => {
-                    console.error('Failed to resume audio context:', err);
-                  });
-              }
-            });
-        }
-      } catch (error) {
-        console.error('Error in playRadioStation:', error);
-        setPlayStatus(false);
-      }
-    }
-  };
-
   // Add the new buffering states and functions to the context
   const contextValue = {
     audioRef,
@@ -1257,7 +1208,6 @@ export const PlayerContextProvider = ({ children }) => {
     play,
     pause,
     playWithId,
-    playRadioStation,
     Previous,
     Next,
     seekSong,
@@ -1271,40 +1221,31 @@ export const PlayerContextProvider = ({ children }) => {
     loop,
     loading,
     error,
-    // Helper functions for metadata extraction
     getArtistName,
     getAlbumName,
-    // Lyrics helper function
     formatLyricsWithTimestamps,
-    // Buffering and lazy loading related
     buffering,
     loadingProgress,
     bufferingStrategy,
     setBufferingStrategy,
-    // Favorites related
     favorites,
     toggleFavorite,
     isFavorite,
-    // Playlist related
     playlists,
     getUserPlaylists,
     createPlaylist,
     addToPlaylist,
     removeFromPlaylist,
     deletePlaylist,
-    // Queue related
     queueSongs,
     addToQueue,
     removeFromQueue,
     moveQueueItem,
     clearQueue,
-    // Autoplay settings
     autoplayEnabled,
     setAutoplayEnabled,
-    // Player visibility settings
     hidePlayer,
     togglePlayerVisibility,
-    // Theme colors
     themeColors,
   };
 
