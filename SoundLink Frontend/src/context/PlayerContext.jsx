@@ -16,7 +16,6 @@ export const PlayerContextProvider = ({ children }) => {
   const volumeRef = useRef();
   const { user, token } = useContext(AuthContext);
   const radioContext = useContext(RadioContext);
-  const { currentStation, isPlaying: isRadioPlaying } = radioContext || {};
 
   // Helper function to extract the artist name from any possible field
   const getArtistName = (trackObj) => {
@@ -191,7 +190,7 @@ export const PlayerContextProvider = ({ children }) => {
           silentSound.controls = false;
           silentSound.preload = 'auto';
           silentSound.loop = false;
-        silentSound.src = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RSU0UAAAAPAAADTGF2ZjU4LjQ1LjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAAwAAAbAAkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQ19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX1/////////////////////////////////8AAAA5TEFNRTMuMTAwAQAAADkAAABRiCJGmDgAAgAAABYAYOoA/////////////////////////////////8wAAAAATEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV'; // empty mp3 file
+        silentSound.src = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RSU0UAAAAPAAADTGF2ZjU4LjQ1LjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAAwAAAbAAkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQ19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX1/////////////////////////////////8AAAA5TEFNRTMuMTAwAQAAADkAAABRiCJGmDgAAgAAABYAYOoA/////////////////////////////////8wAAAAATEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV'; // empty mp3 file
         silentSound.setAttribute('style', 'display: none;');
         document.body.appendChild(silentSound);
           
@@ -478,7 +477,21 @@ export const PlayerContextProvider = ({ children }) => {
       console.error(`Track with ID ${id} not found in songsData`);
       return;
     }
-    
+
+    // Force stop any playing radio
+    if (radioContext?.forceStopRadio) {
+      radioContext.forceStopRadio();
+    }
+
+    // Reset audio element completely
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      audioRef.current.src = '';
+      audioRef.current.load();
+      audioRef.current.removeAttribute('src');
+    }
+
     // Set buffering state while we set up the track
     setBuffering(true);
     setLoadingProgress(0);
@@ -518,10 +531,8 @@ export const PlayerContextProvider = ({ children }) => {
     setTimeout(() => {
       if (audioRef.current) {
         // Ensure the audio element has the correct source
-        if (audioRef.current.src !== selectedTrack.file) {
-          audioRef.current.src = selectedTrack.file;
-          audioRef.current.load();
-        }
+        audioRef.current.src = selectedTrack.file;
+        audioRef.current.load();
         play();
       }
     }, 100);

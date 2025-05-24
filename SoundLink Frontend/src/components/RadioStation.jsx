@@ -1,14 +1,13 @@
 import React, { useContext, useState, useEffect } from "react";
 import { RadioContext } from "../context/RadioContext";
 import { PlayerContext } from "../context/PlayerContext";
-import { toast } from "react-toastify";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 import { MdPlayArrow, MdPause, MdRadio, MdMusicNote, MdExpandMore, MdChevronRight, MdSearch, MdLanguage, MdWeb, MdSpeed, MdCode } from "react-icons/md";
+import PremiumRadioPlayer from "./PremiumRadioPlayer";
 
 const RadioStation = () => {
   const radioContext = useContext(RadioContext);
-  const { currentStation, isPlaying, playStation, stopStation } = radioContext || {};
-  const [isLoading, setIsLoading] = useState(false);
+  const { currentStation, isPlaying, playStation, stopStation, isLoading } = radioContext || {};
   const [localPlayingState, setLocalPlayingState] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -129,8 +128,6 @@ const RadioStation = () => {
 
   const handlePlayPause = async (station) => {
     try {
-      setIsLoading(true);
-      
       // Check if this station is currently playing
       const isThisStationPlaying = currentStation?.stationuuid === station.stationuuid && isPlaying;
       
@@ -160,7 +157,7 @@ const RadioStation = () => {
         }
         
         // Play the new station
-        playStation(stationData);
+        await playStation(stationData);
         setLocalPlayingState(prev => ({
           ...prev,
           [stationData.stationuuid]: true
@@ -168,14 +165,11 @@ const RadioStation = () => {
       }
     } catch (error) {
       console.error('Error handling radio station:', error);
-      toast.error('Failed to play radio station. Please try again.');
       // Reset local state on error
       setLocalPlayingState(prev => ({
         ...prev,
         [station.stationuuid || station._id]: false
       }));
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -260,37 +254,30 @@ const RadioStation = () => {
             return (
               <div key={genre} className="mb-8 border border-neutral-800 rounded-lg overflow-hidden">
                 {/* Genre Header */}
-                <motion.div 
+                <div 
                   className="flex items-center justify-between p-4 bg-neutral-900 cursor-pointer"
                   onClick={() => toggleGenreExpanded(genre)}
-                  initial={{ opacity: 1 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.3 }}
                 >
                   <h2 className="text-xl font-bold text-white">{genre} ({filteredStations.length})</h2>
-                  <motion.div
-                    animate={{ rotate: expandedGenres[genre] ? 180 : 0 }}
-                    transition={{ duration: 0.3 }}
+                  <div
+                    className={`${expandedGenres[genre] ? 'rotate-180' : ''}`}
                   >
                     {expandedGenres[genre] ? <MdExpandMore size={24} /> : <MdChevronRight size={24} />}
-                  </motion.div>
-                </motion.div>
+                  </div>
+                </div>
 
                 {/* Stations List - Collapsible */}
                 <AnimatePresence initial={false}>
                   {expandedGenres[genre] && (
-                    <motion.div
+                    <div
                       key="content"
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.3, ease: "easeInOut" }}
                       className="px-4 py-2"
                     >
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {visibleStations.map((station) => {
                           const isStationPlaying = localPlayingState[station.stationuuid] || 
                             (currentStation?.stationuuid === station.stationuuid && isPlaying);
+                          const isThisStationLoading = isLoading && currentStation?.stationuuid === station.stationuuid;
 
                           return (
                             <div
@@ -354,7 +341,7 @@ const RadioStation = () => {
                                       : 'bg-neutral-800 hover:bg-neutral-700'
                                   }`}
                                 >
-                                  {isLoading ? (
+                                  {isThisStationLoading ? (
                                     <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
                                   ) : isStationPlaying ? (
                                     <MdPause className="text-white" size={24} />
@@ -379,7 +366,7 @@ const RadioStation = () => {
                           </button>
                         </div>
                       )}
-                    </motion.div>
+                    </div>
                   )}
                 </AnimatePresence>
               </div>
@@ -387,6 +374,9 @@ const RadioStation = () => {
           })}
         </AnimatePresence>
       </div>
+
+      {/* Premium Radio Player */}
+      {currentStation && <PremiumRadioPlayer />}
     </div>
   );
 };

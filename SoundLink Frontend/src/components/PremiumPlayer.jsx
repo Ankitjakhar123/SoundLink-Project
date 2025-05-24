@@ -1,10 +1,9 @@
 import React, { useContext, useState, useEffect, useRef } from "react";
 import { PlayerContext } from "../context/PlayerContext";
-import { RadioContext } from "../context/RadioContext";
 // eslint-disable-next-line no-unused-vars
 import { AnimatePresence, motion } from "framer-motion";
 import { FaPlay, FaPause, FaStepForward, FaStepBackward, FaVolumeUp, FaVolumeMute, FaHeart } from "react-icons/fa";
-import { MdQueueMusic, MdDevices, MdShuffle, MdRepeat, MdOutlineLyrics, MdMoreVert, MdRadio } from "react-icons/md";
+import { MdQueueMusic, MdDevices, MdShuffle, MdRepeat, MdOutlineLyrics, MdMoreVert } from "react-icons/md";
 import QueueComponent from "./QueueComponent";
 import LyricsPanel from "./LyricsPanel";
 import ArtistExplorer from "./ArtistExplorer";
@@ -203,10 +202,6 @@ const PremiumPlayer = () => {
     playWithId,
   } = useContext(PlayerContext);
 
-  // Add RadioContext
-  const radioContext = useContext(RadioContext);
-  const { stopStation } = radioContext || {};
-  
   const [volume, setVolume] = useState(0.7);
   const [isMuted, setIsMuted] = useState(false);
   const [shuffleActive, setShuffleActive] = useState(false);
@@ -348,12 +343,6 @@ const PremiumPlayer = () => {
     }
   };
 
-  // Toggle autoplay - commented out to fix linter errors
-  // eslint-disable-next-line no-unused-vars
-  /* const handleAutoplayToggle = () => {
-    setAutoplayEnabled(prev => !prev);
-  }; */
-
   // Add a useEffect to ensure player starts in a paused state on page load
   useEffect(() => {
     // On first load, ensure player is in paused state
@@ -368,14 +357,8 @@ const PremiumPlayer = () => {
   
   // Modified play function to ensure audio context is properly initialized
   const handlePlayPause = () => {
-    // First handle the pause case which doesn't need special handling
     if (playStatus) {
-      // For radio stations, we need to handle pause differently
-      if (track && track._id?.startsWith('radio-')) {
-        stopStation();
-      } else {
-        pause();
-      }
+      pause();
       return;
     }
     
@@ -399,14 +382,9 @@ const PremiumPlayer = () => {
       return;
     }
     
-    // For regular tracks, use the play function from context
     play();
   };
   
-  // Create a silent audio element to help unlock audio on mobile devices
-  // const unlockAudio = () => { ... };
-  // const unlockAudioOnFirstInteraction = () => { ... };
-
   // Add event listeners to help with autoplay restrictions
   useEffect(() => {
     // We now handle audio context initialization directly in handlePlayPause
@@ -716,26 +694,17 @@ const PremiumPlayer = () => {
               {/* Album art */}
               <div className="px-5">
                 <div className="relative w-[85vw] h-[85vw] max-w-[350px] max-h-[350px] mx-auto rounded-lg overflow-hidden shadow-2xl border border-white/10 mb-4">
-                  {track._id?.startsWith('radio-') ? (
-                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-fuchsia-600/20 to-purple-600/20">
-                      <div className="text-center">
-                        <MdRadio className="text-fuchsia-500 mx-auto mb-2" size={48} />
-                        <div className="text-fuchsia-500 font-semibold">LIVE RADIO</div>
-                      </div>
-                    </div>
-                  ) : (
-                <img 
-                  src={track.image} 
-                  alt={track.name} 
-                  className="w-full h-full object-cover"
-                />
-                  )}
-                {buffering && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                  <img 
+                    src={track.image} 
+                    alt={track.name} 
+                    className="w-full h-full object-cover"
+                  />
+                  {buffering && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/30">
                       <div className="w-10 h-10 border-4 border-t-transparent rounded-full animate-spin" 
                         style={{ borderColor: themeColors.primary, borderTopColor: 'transparent' }}></div>
-                  </div>
-                )}
+                    </div>
+                  )}
                 </div>
               </div>
               
@@ -1272,18 +1241,12 @@ const PremiumPlayer = () => {
             onClick={() => isSmallScreen && setShowExtraControls(true)}
           >
             <div className="relative">
-              {track._id?.startsWith('radio-') ? (
-                <div className="w-10 h-10 rounded bg-gradient-to-br from-fuchsia-600/20 to-purple-600/20 flex items-center justify-center border" style={{ borderColor: `${themeColors.text}30` }}>
-                  <MdRadio className="text-fuchsia-500" size={20} />
-                </div>
-              ) : (
               <img
                 src={track.image}
                 alt={track.name}
                 className="w-10 h-10 rounded object-cover border"
                 style={{ borderColor: `${themeColors.text}30` }}
               />
-              )}
               {buffering && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded">
                   <div className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin"

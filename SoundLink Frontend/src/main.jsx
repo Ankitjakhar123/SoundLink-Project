@@ -6,6 +6,7 @@ import App from "./App.jsx";
 import { BrowserRouter } from "react-router-dom";
 import { PlayerContextProvider } from "./context/PlayerContext.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
+import { RadioContextProvider } from "./context/RadioContext.jsx";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { initializeDeviceStyles } from "./utils/deviceUtils.js";
@@ -34,8 +35,10 @@ createRoot(document.getElementById("root")).render(
     <BrowserRouter>
       <AuthProvider>
         <PlayerContextProvider>
-          <App />
-          <ToastContainer position="bottom-right" theme="dark" />
+          <RadioContextProvider>
+            <App />
+            <ToastContainer position="bottom-right" theme="dark" />
+          </RadioContextProvider>
         </PlayerContextProvider>
       </AuthProvider>
     </BrowserRouter>
