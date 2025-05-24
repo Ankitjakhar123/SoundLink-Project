@@ -54,7 +54,7 @@ const AdminDashboard = ({ token }) => {
       case "addSong":
         return <AddSong />;
       case "addAlbum":
-        return <AddAlbum />;
+        return <AddAlbum token={token} />;
       case "listSong":
         return <ListSong onCloseModal={() => setModal(null)} />;
       case "listAlbum":
@@ -62,7 +62,7 @@ const AdminDashboard = ({ token }) => {
       case "manageArtists":
         return <AdminArtists />;
       case "addMovieAlbum":
-        return <AddMovieAlbum />;
+        return <AddMovieAlbum token={token} />;
       case "listMovieAlbum":
         return <ListMovieAlbum onCloseModal={() => setModal(null)} />;
       case "bulkUpload":

@@ -1,5 +1,5 @@
 import MovieAlbum from '../models/MovieAlbum.js';
-import cloudinary from 'cloudinary';
+import { v2 as cloudinary } from 'cloudinary';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';

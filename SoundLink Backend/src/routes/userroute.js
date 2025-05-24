@@ -7,7 +7,7 @@ import userSettingsModel from '../models/userSettingsModel.js';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 import mongoose from 'mongoose';
-import cloudinary from 'cloudinary';
+import { v2 as cloudinary } from 'cloudinary';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
 
 // Get current directory

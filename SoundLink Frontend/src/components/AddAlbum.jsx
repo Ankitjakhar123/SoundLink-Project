@@ -38,7 +38,7 @@ const AddAlbum = ({ token }) => {
       formData.append("image", image);
       formData.append("bgColour", colour); // Add selected background color to the form data
 
-      const res = await axios.post(`${url}/api/albums`, formData, {
+      const res = await axios.post(`${url}/api/album/add`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
           "Authorization": `Bearer ${token}`

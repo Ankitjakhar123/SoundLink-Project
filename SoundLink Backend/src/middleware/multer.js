@@ -30,7 +30,7 @@ const fileFilter = (req, file, cb) => {
   // Check file type based on field name
   if (file.fieldname === 'image' || file.fieldname === 'coverImage') {
     // Accept images only for image fields
-    if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/i)) {
+    if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
       return cb(new Error('Only image files are allowed for image uploads!'), false);
     }
   } else if (file.fieldname === 'audio') {

@@ -1,5 +1,14 @@
-import cloudinary from "cloudinary";
+import { v2 as cloudinary } from "cloudinary";
 import songModel from "../models/songModel.js";
+import dotenv from 'dotenv';
+dotenv.config();
+
+// Configure Cloudinary
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_SECRET_KEY,
+});
 
 const addSong = async (req, res) => {
   try {
@@ -9,32 +18,51 @@ const addSong = async (req, res) => {
     const artist = req.body.artist; // Add artist field
     const lyrics = req.body.lyrics; // Add lyrics field
 
+    // Check for files
+    if (!req.files || !req.files.audio || !req.files.audio[0]) {
+      return res.status(400).json({ success: false, message: "Audio file missing" });
+    }
+    if (!req.files || !req.files.image || !req.files.image[0]) {
+      return res.status(400).json({ success: false, message: "Image file missing" });
+    }
+
     const audioFile = req.files.audio[0];
     const imageFile = req.files.image[0];
 
-    // Check for Cloudinary configuration
-    const isCloudinaryConfigured = process.env.CLOUDINARY_CLOUD_NAME && 
-                                  process.env.CLOUDINARY_API_KEY && 
-                                  process.env.CLOUDINARY_API_SECRET;
-    
-    if (!isCloudinaryConfigured) {
-      console.warn("Cloudinary is not configured properly. Please check environment variables.");
-      
-      // Configure cloudinary with environment variables if they exist
-      cloudinary.config({
-        cloud_name: process.env.CLOUDINARY_CLOUD_NAME || process.env.CLOUDINARY_NAME,
-        api_key: process.env.CLOUDINARY_API_KEY,
-        api_secret: process.env.CLOUDINARY_API_SECRET || process.env.CLOUDINARY_SECRET_KEY,
-      });
+    // Log file info
+    console.log('Image file info:', {
+      originalname: imageFile.originalname,
+      mimetype: imageFile.mimetype,
+      size: imageFile.size,
+      path: imageFile.path
+    });
+    console.log('Audio file info:', {
+      originalname: audioFile.originalname,
+      mimetype: audioFile.mimetype,
+      size: audioFile.size,
+      path: audioFile.path
+    });
+
+    // Validate image MIME type
+    const allowedImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedImageTypes.includes(imageFile.mimetype)) {
+      return res.status(400).json({ success: false, message: `Invalid image MIME type: ${imageFile.mimetype}` });
     }
-    
+
+    // Check for Cloudinary configuration
+    const isCloudinaryConfigured = process.env.CLOUDINARY_NAME && 
+                                  process.env.CLOUDINARY_API_KEY && 
+                                  process.env.CLOUDINARY_SECRET_KEY;
+    if (!isCloudinaryConfigured) {
+      return res.status(500).json({ success: false, message: "Cloudinary is not configured properly." });
+    }
+
     try {
       // Try to upload audio to Cloudinary
       const audioUpload = await cloudinary.uploader.upload(audioFile.path, {
         resource_type: "video",
         folder: "soundlink/audio",
       });
-      
       // Try to upload image to Cloudinary
       const imageUpload = await cloudinary.uploader.upload(imageFile.path, {
         resource_type: "image",
@@ -52,29 +80,20 @@ const addSong = async (req, res) => {
         duration,
         createdBy: req.user.id,
       };
-      
-      // Add artist to songData if provided
-      if (artist) {
-        songData.artist = artist;
-      }
-
-      // Add lyrics to songData if provided
-      if (lyrics) {
-        songData.lyrics = lyrics;
-      }
+      if (artist) songData.artist = artist;
+      if (lyrics) songData.lyrics = lyrics;
 
       const song = songModel(songData);
       await song.save();
 
       res.json({ success: true, message: "Song Added", song });
     } catch (cloudinaryError) {
-      console.error("Cloudinary upload error:", cloudinaryError);
-      
-      // Return detailed error to client
+      console.error("Cloudinary upload error (full):", cloudinaryError);
       return res.status(500).json({ 
         success: false, 
         error: "Cloudinary upload failed",
-        details: cloudinaryError.message 
+        details: cloudinaryError.message,
+        cloudinaryError
       });
     }
   } catch (error) {
