@@ -26,6 +26,7 @@ const Navbar = (props) => {
     const [showBottomNav, setShowBottomNav] = useState(true);
     const [showQueue, setShowQueue] = useState(false);
     const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+    const touchStartY = useRef(null);
 
     // Mobile keyboard detection for iOS and Android
     useEffect(() => {
@@ -226,6 +227,20 @@ const Navbar = (props) => {
         return addCacheBuster(avatarUrl);
     };
 
+    const handleTouchStart = (e) => {
+        touchStartY.current = e.touches[0].clientY;
+    };
+
+    const handleTouchEnd = (e) => {
+        if (touchStartY.current !== null) {
+            const touchEndY = e.changedTouches[0].clientY;
+            if (touchEndY - touchStartY.current > 50) { // 50px threshold
+                setShowSearchResults(false);
+            }
+            touchStartY.current = null;
+        }
+    };
+
     return (
         <>
             <div className="w-full flex items-center justify-between py-2 px-2 md:py-3 md:px-8 bg-black fixed top-0 left-0 right-0 z-40 backdrop-blur-xl shadow-sm pt-[env(safe-area-inset-top)]">
@@ -253,12 +268,12 @@ const Navbar = (props) => {
                 </div>
 
                 {/* Center: Search Bar - Shown on desktop or when activated on mobile */}
-                <div className={`${showSearchBar ? 'absolute left-0 right-0 top-0 bottom-0 bg-black z-40 px-2 py-2' : 'hidden'} md:flex md:static md:bg-transparent md:flex-1 md:justify-center md:px-0 md:py-0 search-container`}>
+                <div className={`${showSearchBar ? 'absolute left-0 right-0 top-0 bottom-0 bg-black z-40 flex items-center px-2 py-2 pt-[calc(env(safe-area-inset-top)+1rem)]' : 'hidden'} md:flex md:static md:bg-transparent md:flex-1 md:justify-center md:px-0 md:py-0 search-container`}>
                     <form 
                         onSubmit={handleSearch}
-                        className={`flex items-center gap-2 px-3 md:px-4 py-2 rounded-full bg-black border border-neutral-800 transition-all duration-300 ring-0 w-full max-w-md`}
+                        className="relative flex items-center w-full max-w-md mx-auto bg-neutral-900 rounded-full shadow-md focus-within:ring-2 focus-within:ring-fuchsia-500 transition"
                     >
-                        <FaSearch className="text-neutral-400 flex-shrink-0" size={16} />
+                        <FaSearch className="absolute left-4 text-neutral-400" size={18} />
                         <input
                             ref={inputRef}
                             type="text"
@@ -267,73 +282,63 @@ const Navbar = (props) => {
                             onKeyDown={handleKeyDown}
                             onFocus={() => search.trim() && setShowSearchResults(true)}
                             placeholder="Search for songs, albums, artists..."
-                            className="bg-transparent outline-none border-none text-white flex-1 min-w-0 placeholder-neutral-500"
+                            className="pl-12 pr-12 py-3 bg-transparent outline-none border-none text-white flex-1 min-w-0 placeholder-neutral-500 rounded-full"
                             style={{ outline: 'none' }}
+                            aria-label="Search"
                         />
                         {search && (
                             <button 
                                 type="button"
                                 onClick={clearSearch}
-                                className="text-neutral-400 hover:text-white flex-shrink-0"
+                                className="absolute right-4 text-neutral-400 hover:text-white flex-shrink-0 focus:outline-none"
+                                aria-label="Clear search"
                             >
-                                <FaTimes size={16} />
+                                <FaTimes size={18} />
                             </button>
                         )}
                         {isSearching && (
-                            <div className="w-4 h-4 border-2 border-fuchsia-500 border-t-transparent rounded-full animate-spin"></div>
+                            <div className="absolute right-12 w-4 h-4 border-2 border-fuchsia-500 border-t-transparent rounded-full animate-spin"></div>
                         )}
-                        {/* Mobile Close Button */}
-                        <button 
-                            type="button"
-                            onClick={() => setShowSearchBar(false)}
-                            className="md:hidden ml-2 text-neutral-400 hover:text-white flex-shrink-0"
-                        >
-                            <FaTimes size={18} />
-                        </button>
                     </form>
                     
                     {/* Search Results Dropdown */}
                     {showSearchResults && searchResults && (
-                        <div 
-                            ref={searchResultsRef}
-                            className={`${showSearchBar ? 'fixed mt-12 inset-4 rounded-xl' : 'absolute top-full'} left-0 right-0 mt-2 mx-auto max-w-3xl z-50 bg-neutral-800 shadow-xl max-h-[80vh] overflow-y-auto border border-neutral-700`}
-                            style={{maxHeight: showSearchBar ? 'calc(100vh - 100px)' : '80vh'}}
-                        >
-                            <div className="p-4">
-                                <SearchResults 
-                                    results={searchResults} 
-                                    onResultClick={handleResultClick}
-                                />
-                                <div className="mt-3 flex justify-center">
-                                    <button 
-                                        onClick={() => {
-                                            // Load more results instead of navigating
-                                            // This will expand the results shown in the popup
-                                            const loadMoreResults = async () => {
-                                                setIsSearching(true);
-                                                try {
-                                                    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
-                                                    const response = await axios.get(`${backendUrl}/api/search?q=${encodeURIComponent(search)}&full=true`);
-                                                    
-                                                    if (response.data.success) {
-                                                        // Mark this as a full search
-                                                        setSearchResults({...response.data, isFullSearch: true});
-                                                    }
-                                                } catch (error) {
-                                                    console.error('Error loading more results:', error);
-                                                } finally {
-                                                    setIsSearching(false);
-                                                }
-                                            };
-                                            loadMoreResults();
-                                        }}
-                                        className="text-fuchsia-400 hover:text-fuchsia-300 text-sm font-medium"
-                                    >
-                                        {searchResults.isFullSearch ? 'All results loaded' : 'Load more results'}
-                                    </button>
-                                </div>
-                            </div>
+                      <div
+                        ref={searchResultsRef}
+                        className="absolute left-0 right-0 top-full mt-2 w-full z-50 flex justify-center"
+                        style={{ pointerEvents: 'auto' }}
+                        onTouchStart={handleTouchStart}
+                        onTouchEnd={handleTouchEnd}
+                      >
+                        <div className="w-full mx-2 sm:mx-0 max-w-2xl bg-neutral-900 rounded-2xl shadow-2xl border border-neutral-700 overflow-y-auto max-h-[70vh] p-2">
+                          <SearchResults results={searchResults} onResultClick={handleResultClick} />
+                          <div className="mt-3 flex justify-center">
+                            <button
+                              onClick={() => {
+                                // Load more results instead of navigating
+                                const loadMoreResults = async () => {
+                                  setIsSearching(true);
+                                  try {
+                                    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
+                                    const response = await axios.get(`${backendUrl}/api/search?q=${encodeURIComponent(search)}&full=true`);
+                                    if (response.data.success) {
+                                      setSearchResults({ ...response.data, isFullSearch: true });
+                                    }
+                                  } catch (error) {
+                                    console.error('Error loading more results:', error);
+                                  } finally {
+                                    setIsSearching(false);
+                                  }
+                                };
+                                loadMoreResults();
+                              }}
+                              className="text-fuchsia-400 hover:text-fuchsia-300 text-sm font-medium"
+                            >
+                              {searchResults.isFullSearch ? 'All results loaded' : 'Load more results'}
+                            </button>
+                          </div>
                         </div>
+                      </div>
                     )}
                 </div>
 
