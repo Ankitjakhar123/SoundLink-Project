@@ -21,6 +21,54 @@ const PremiumRadioPlayer = () => {
   const playerRef = useRef(null);
   const retryTimeoutRef = useRef(null);
 
+  // Add media session handling
+  useEffect(() => {
+    if (!currentStation) return;
+
+    // Set up media session metadata
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: currentStation.name,
+        artist: 'Live Radio',
+        album: currentStation.language || 'Radio Station',
+        artwork: [
+          { 
+            src: currentStation.logo || 'https://your-default-radio-logo.png',
+            sizes: '512x512',
+            type: 'image/png'
+          }
+        ]
+      });
+
+      // Set up media session action handlers
+      navigator.mediaSession.setActionHandler('play', () => {
+        playStation(currentStation);
+      });
+
+      navigator.mediaSession.setActionHandler('pause', () => {
+        stopStation();
+      });
+
+      // Update playback state
+      navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
+    }
+
+    // Cleanup function
+    return () => {
+      if ('mediaSession' in navigator) {
+        navigator.mediaSession.setActionHandler('play', null);
+        navigator.mediaSession.setActionHandler('pause', null);
+      }
+    };
+  }, [currentStation, isPlaying, playStation, stopStation]);
+
+  // Update media session state when playStatus changes
+  useEffect(() => {
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
+    }
+  }, [isPlaying]);
+
   // Update screen size state on resize
   useEffect(() => {
     const handleResize = () => {

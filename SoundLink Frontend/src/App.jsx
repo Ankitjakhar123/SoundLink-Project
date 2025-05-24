@@ -52,7 +52,17 @@ const ProtectedRoute = ({ children }) => {
 };
 
 const App = () => {
-  const { audioRef, track, play, pause, playStatus, Next, Previous } = useContext(PlayerContext);
+  const { 
+    audioRef, 
+    track, 
+    play, 
+    pause, 
+    playStatus, 
+    Next, 
+    Previous,
+    getArtistName,
+    getAlbumName 
+  } = useContext(PlayerContext);
   const radioContext = useContext(RadioContext);
   const { user } = useContext(AuthContext);
   const location = useLocation();
@@ -102,20 +112,12 @@ const App = () => {
       if (currentTrack) {
         navigator.mediaSession.metadata = new MediaMetadata({
           title: currentTrack.name,
-          artist: currentTrack.singer || 
-                 currentTrack.artist || 
-                 currentTrack.artistName || 
-                 (currentTrack.metadata && currentTrack.metadata.artist) || 
-                 (currentTrack.meta && currentTrack.meta.artist) ||
-                 (currentTrack.tags && currentTrack.tags.artist) ||
-                 (currentTrack.createdBy && currentTrack.createdBy.name) ||
-                 'Unknown Artist',
-          album: currentTrack.albumName || 
-                 currentTrack.album || 
-                 (currentTrack.metadata && currentTrack.metadata.album) || 
-                 (currentTrack.meta && currentTrack.meta.album) ||
-                 (currentTrack.tags && currentTrack.tags.album) ||
-                 'Unknown Album',
+          artist: currentTrack.isRadio ? 
+                 (currentTrack.language || 'Live Radio') : 
+                 (getArtistName(currentTrack) || 'Unknown Artist'),
+          album: currentTrack.isRadio ? 
+                 'Radio Station' : 
+                 (getAlbumName(currentTrack) || 'Unknown Album'),
           artwork: [
             { src: currentTrack.image || '/icons/soundlink-icon.svg?v=2', sizes: '512x512', type: 'image/png' }
           ]
