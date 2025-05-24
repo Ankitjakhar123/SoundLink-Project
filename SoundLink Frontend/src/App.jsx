@@ -263,6 +263,7 @@ const App = () => {
           )}
         </div>
         {track && <div className="content-fade"></div>}
+        {/* Only one player at a time: radio or premium */}
         {radioContext?.currentStation ? (
           <PremiumRadioPlayer />
         ) : track ? (

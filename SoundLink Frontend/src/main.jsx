@@ -34,12 +34,12 @@ createRoot(document.getElementById("root")).render(
   <StrictMode>
     <BrowserRouter>
       <AuthProvider>
-        <PlayerContextProvider>
-          <RadioContextProvider>
+        <RadioContextProvider>
+          <PlayerContextProvider>
             <App />
             <ToastContainer position="bottom-right" theme="dark" />
-          </RadioContextProvider>
-        </PlayerContextProvider>
+          </PlayerContextProvider>
+        </RadioContextProvider>
       </AuthProvider>
     </BrowserRouter>
   </StrictMode>

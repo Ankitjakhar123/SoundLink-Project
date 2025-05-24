@@ -97,8 +97,30 @@ export const RadioContextProvider = ({ children }) => {
 
       // Pause any playing track from PlayerContext if available
       if (playerContext?.pause) {
+        console.log('Pausing premium player');
         playerContext.pause();
       }
+      // Also clear the current song and reset the premium player audio element
+      if (playerContext?.setTrack) {
+        console.log('Clearing premium player track');
+        playerContext.setTrack(null);
+      }
+      if (playerContext?.audioRef?.current) {
+        console.log('Resetting premium player audio element');
+        playerContext.audioRef.current.pause();
+        playerContext.audioRef.current.currentTime = 0;
+        playerContext.audioRef.current.src = '';
+        playerContext.audioRef.current.load();
+        playerContext.audioRef.current.removeAttribute('src');
+      }
+      // Fallback: pause all audio elements on the page
+      console.log('Pausing all audio elements on the page');
+      document.querySelectorAll('audio').forEach(a => {
+        a.pause();
+        a.currentTime = 0;
+        a.src = '';
+        a.load();
+      });
 
       // Set up the radio station
       setCurrentStation(station);
@@ -175,6 +197,8 @@ export const RadioContextProvider = ({ children }) => {
   };
 
   const forceStopRadio = () => {
+    console.log("forceStopRadio called");
+    console.log("audioRef.current:", audioRef.current);
     if (retryTimeoutRef.current) {
       clearTimeout(retryTimeoutRef.current);
       retryTimeoutRef.current = null;
@@ -186,6 +210,13 @@ export const RadioContextProvider = ({ children }) => {
       audioRef.current.load();
       audioRef.current.removeAttribute('src');
     }
+    // Fallback: pause all audio elements on the page
+    document.querySelectorAll('audio').forEach(a => {
+      a.pause();
+      a.currentTime = 0;
+      a.src = '';
+      a.load();
+    });
     setIsPlaying(false);
     setCurrentStation(null);
     setError(null);

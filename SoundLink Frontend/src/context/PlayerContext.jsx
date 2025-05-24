@@ -478,81 +478,84 @@ export const PlayerContextProvider = ({ children }) => {
       return;
     }
 
-    // Force stop any playing radio
+    // Always force stop any playing radio before playing a song
     if (radioContext?.forceStopRadio) {
       radioContext.forceStopRadio();
     }
 
-    // Reset audio element completely
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-      audioRef.current.src = '';
-      audioRef.current.load();
-      audioRef.current.removeAttribute('src');
-    }
-
-    // Set buffering state while we set up the track
-    setBuffering(true);
-    setLoadingProgress(0);
-    
-    // Extract colors from the album art to use for UI theming
-    try {
-      const colorTheme = await extractColorsFromTrack(selectedTrack);
-      setThemeColors(colorTheme);
-    } catch (error) {
-      console.error('Error extracting colors:', error);
-      // Use fallback colors if extraction fails
-      setThemeColors({
-        primary: '#8b5cf6',
-        secondary: '#0f172a',
-        text: '#ffffff'
-      });
-    }
-    
-    // Set the track in state
-    setTrack(selectedTrack);
-    
-    // Record this song in history if user is logged in
-    if (user && user._id && token) {
-      try {
-        await axios.post(
-          `${API_BASE_URL}/api/play/add`,
-          { song: id },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-      } catch (error) {
-        // Non-critical error, just log it
-        console.error('Failed to record play history:', error);
-      }
-    }
-    
-    // Set a short timeout to ensure the track state is updated before playing
-    setTimeout(() => {
+    // Add a short delay to ensure currentStation is cleared before setting the new track
+    setTimeout(async () => {
+      // Reset audio element completely
       if (audioRef.current) {
-        // Ensure the audio element has the correct source
-        audioRef.current.src = selectedTrack.file;
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+        audioRef.current.src = '';
         audioRef.current.load();
-        play();
+        audioRef.current.removeAttribute('src');
       }
-    }, 100);
-    
-    // Auto-prefetch the next few songs for smoother playback
-    if (selectedTrack && bufferingStrategy === 'aggressive') {
-      // Find next songs to prefetch
-      // Could be next in album, related by artist, or based on user's history
-      const relatedSongs = songsData
-        .filter(s => 
-          s._id !== selectedTrack._id && // Not the current song
-          (s.artist === selectedTrack.artist || s.album === selectedTrack.album) // Same artist or album
-        )
-        .slice(0, 3); // Limit to 3 songs to prefetch
+
+      // Set buffering state while we set up the track
+      setBuffering(true);
+      setLoadingProgress(0);
       
-      // Start prefetching them
-      relatedSongs.forEach(song => {
-        prefetchTrack(song._id);
-      });
-    }
+      // Extract colors from the album art to use for UI theming
+      try {
+        const colorTheme = await extractColorsFromTrack(selectedTrack);
+        setThemeColors(colorTheme);
+      } catch (error) {
+        console.error('Error extracting colors:', error);
+        // Use fallback colors if extraction fails
+        setThemeColors({
+          primary: '#8b5cf6',
+          secondary: '#0f172a',
+          text: '#ffffff'
+        });
+      }
+      
+      // Set the track in state
+      setTrack(selectedTrack);
+      
+      // Record this song in history if user is logged in
+      if (user && user._id && token) {
+        try {
+          await axios.post(
+            `${API_BASE_URL}/api/play/add`,
+            { song: id },
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+        } catch (error) {
+          // Non-critical error, just log it
+          console.error('Failed to record play history:', error);
+        }
+      }
+      
+      // Set a short timeout to ensure the track state is updated before playing
+      setTimeout(() => {
+        if (audioRef.current) {
+          // Ensure the audio element has the correct source
+          audioRef.current.src = selectedTrack.file;
+          audioRef.current.load();
+          play();
+        }
+      }, 100);
+      
+      // Auto-prefetch the next few songs for smoother playback
+      if (selectedTrack && bufferingStrategy === 'aggressive') {
+        // Find next songs to prefetch
+        // Could be next in album, related by artist, or based on user's history
+        const relatedSongs = songsData
+          .filter(s => 
+            s._id !== selectedTrack._id && // Not the current song
+            (s.artist === selectedTrack.artist || s.album === selectedTrack.album) // Same artist or album
+          )
+          .slice(0, 3); // Limit to 3 songs to prefetch
+        
+        // Start prefetching them
+        relatedSongs.forEach(song => {
+          prefetchTrack(song._id);
+        });
+      }
+    }, 50);
   };
 
   const Previous = () => {

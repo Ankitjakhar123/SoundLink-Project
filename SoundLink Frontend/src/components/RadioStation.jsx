@@ -376,7 +376,7 @@ const RadioStation = () => {
       </div>
 
       {/* Premium Radio Player */}
-      {currentStation && <PremiumRadioPlayer />}
+      {currentStation && isPlaying && <PremiumRadioPlayer />}
     </div>
   );
 };
