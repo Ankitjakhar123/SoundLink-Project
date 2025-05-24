@@ -17,9 +17,7 @@ const Library = () => {
     getUserPlaylists, 
     addToQueue, 
     track, 
-    playStatus, 
-    pause, 
-    play 
+    playStatus
   } = useContext(PlayerContext);
   
   const [activeTab, setActiveTab] = useState('favorites');
@@ -27,6 +25,7 @@ const Library = () => {
   const [selectedSongId, setSelectedSongId] = useState(null);
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const [recentlyPlayed, setRecentlyPlayed] = useState([]);
+  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
   
   // Fetch playlists on component mount
   useEffect(() => {
@@ -46,6 +45,22 @@ const Library = () => {
         setRecentlyPlayed([]);
       }
     }
+  }, []);
+
+  // Check screen size and set view mode accordingly
+  useEffect(() => {
+    const handleResize = () => {
+      setViewMode(window.innerWidth < 768 ? 'grid' : 'list');
+    };
+
+    // Set initial value
+    handleResize();
+
+    // Add event listener
+    window.addEventListener('resize', handleResize);
+
+    // Cleanup
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
   
   // Close dropdown menu when clicking outside
@@ -79,26 +94,8 @@ const Library = () => {
     addToQueue(songId);
   };
 
-  const handleToggleOptions = (e, songId) => {
-    e.stopPropagation();
-    setShowOptions(showOptions === songId ? null : songId);
-  };
-
   const isPlaying = (songId) => {
     return track && track._id === songId && playStatus;
-  };
-
-  const handlePlayPause = (e, songId) => {
-    e.stopPropagation();
-    if (track && track._id === songId) {
-      if (playStatus) {
-        pause();
-      } else {
-        play();
-      }
-    } else {
-      playWithId(songId);
-    }
   };
   
   // Determine which content to show based on the active tab
@@ -130,102 +127,176 @@ const Library = () => {
     }
     
     return (
-      <div className="mt-6 bg-neutral-900/50 backdrop-blur-md rounded-xl overflow-hidden">
-        <div className="grid grid-cols-12 p-4 border-b border-neutral-900 text-neutral-400 text-sm">
-          <div className="col-span-7 md:col-span-6 flex items-center"># TITLE</div>
-          <div className="hidden md:block md:col-span-3">ALBUM</div>
-          <div className="col-span-3 md:col-span-2 text-right md:text-left">DURATION</div>
-          <div className="col-span-2 md:col-span-1 text-right"></div>
-        </div>
-        
-        <div className="divide-y divide-neutral-900/50">
-          {favorites.map((song, index) => (
-            <div 
-              key={song._id} 
-              className={`grid grid-cols-12 p-4 hover:bg-white/10 transition-all cursor-pointer group ${isPlaying(song._id) ? 'bg-white/10' : ''}`}
-              onClick={() => playWithId(song._id)}
-            >
-              <div className="col-span-7 md:col-span-6 flex items-center gap-3">
-                <div className="w-6 min-w-[24px] text-neutral-400 flex items-center justify-center">
-                  <span className={isPlaying(song._id) ? 'hidden' : 'group-hover:hidden'}>{index + 1}</span>
-                  <button 
-                    className={isPlaying(song._id) ? 'block' : 'hidden group-hover:block'}
-                    onClick={(e) => handlePlayPause(e, song._id)}
-                  >
-                    {isPlaying(song._id) ? <MdPause className="text-fuchsia-500" /> : <MdPlayArrow />}
-                  </button>
-                </div>
-                
-                <div className="bg-neutral-800 w-10 h-10 min-w-[40px] rounded flex-shrink-0 overflow-hidden">
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+        className="mt-6"
+      >
+        {/* Grid View (for small screens) */}
+        {viewMode === 'grid' && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            {favorites.map((song) => (
+              <div 
+                key={song._id} 
+                onClick={() => playWithId(song._id)}
+                className="relative rounded-xl overflow-hidden cursor-pointer group transition-all duration-300 hover:bg-white/10 shadow-lg hover:shadow-xl"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(142, 36, 170, 0.2), rgba(18, 18, 18, 0.1))'
+                }}
+              >
+                <div className="aspect-square relative overflow-hidden">
                   {song.image ? (
                     <img 
                       src={song.image} 
                       alt={song.name} 
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <MdPlayArrow size={20} className="text-fuchsia-500" />
+                    <div className="w-full h-full flex items-center justify-center text-fuchsia-500"
+                         style={{
+                           background: 'linear-gradient(135deg, rgba(142, 36, 170, 0.3), rgba(18, 18, 18, 0.2))'
+                         }}>
+                      <MdPlayArrow size={60} />
                     </div>
                   )}
-                </div>
-                
-                <div className="flex-1 min-w-0">
-                  <div className={`font-medium truncate ${isPlaying(song._id) ? 'text-fuchsia-500' : 'text-white'}`}>{song.name}</div>
-                  <div className="text-xs text-neutral-400 truncate">{song.desc}</div>
-                </div>
-              </div>
-              
-              <div className="hidden md:block md:col-span-3 text-neutral-400 truncate">
-                {song.album || "Single"}
-              </div>
-              
-              <div className="col-span-3 md:col-span-2 flex items-center text-neutral-400 justify-end md:justify-start">
-                {song.duration || "--:--"}
-              </div>
-              
-              <div className="col-span-2 md:col-span-1 flex items-center justify-end gap-1 sm:gap-3">
-                <button 
-                  onClick={(e) => handleToggleFavorite(e, song._id)}
-                  className="opacity-70 group-hover:opacity-100 transition-opacity text-neutral-400 hover:text-white"
-                  aria-label="Toggle favorite"
-                >
-                  <MdFavorite className="text-fuchsia-500" size={18} />
-                </button>
-                
-                <div className="relative song-options">
-                  <button 
-                    onClick={(e) => handleToggleOptions(e, song._id)}
-                    className="opacity-70 group-hover:opacity-100 transition-opacity text-neutral-400 hover:text-white"
-                    aria-label="More options"
-                  >
-                    <MdMoreVert size={18} />
-                  </button>
                   
-                  {showOptions === song._id && (
-                    <div className="absolute right-0 top-full mt-2 w-48 bg-neutral-800 rounded-md shadow-lg py-1 z-50 border border-neutral-700">
+                  {/* Play overlay */}
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-200">
+                    {isPlaying(song._id) ? (
+                      <div className="bg-fuchsia-500 rounded-full p-3 shadow-lg transform scale-110">
+                        <MdPause className="text-white" size={30} />
+                      </div>
+                    ) : (
+                      <div className="bg-fuchsia-500 rounded-full p-3 shadow-lg transform scale-110">
+                        <MdPlayArrow className="text-white" size={30} />
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Favorite button */}
+                  <button 
+                    onClick={(e) => handleToggleFavorite(e, song._id)}
+                    className="absolute top-2 right-2 bg-black/50 rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <MdFavorite className="text-fuchsia-500" size={20} />
+                  </button>
+                </div>
+                
+                <div className="p-3">
+                  <h3 className={`font-bold truncate ${isPlaying(song._id) ? 'text-fuchsia-500' : 'text-white'}`}>
+                    {isPlaying(song._id) && (
+                      <span className="inline-block w-2 h-2 bg-fuchsia-500 rounded-full mr-2 animate-pulse"></span>
+                    )}
+                    {song.name}
+                  </h3>
+                  <p className="text-xs text-neutral-400 truncate mt-1">{song.desc}</p>
+                  
+                  {/* Song actions */}
+                  <div className="flex items-center justify-between mt-2">
+                    <span className="text-xs text-neutral-400">{song.duration || "--:--"}</span>
+                    <div className="flex items-center gap-2">
                       <button 
-                        onClick={(e) => {e.stopPropagation(); handleAddToQueue(e, song._id)}}
-                        className="w-full text-left px-4 py-2 text-white hover:bg-neutral-700 flex items-center gap-2"
+                        onClick={(e) => handleAddToQueue(e, song._id)}
+                        className="text-neutral-400 hover:text-white"
                       >
                         <MdQueueMusic size={18} />
-                        Add to Queue
                       </button>
                       <button 
-                        onClick={(e) => {e.stopPropagation(); handleAddToPlaylist(e, song._id)}}
-                        className="w-full text-left px-4 py-2 text-white hover:bg-neutral-700 flex items-center gap-2"
+                        onClick={(e) => handleAddToPlaylist(e, song._id)}
+                        className="text-neutral-400 hover:text-white"
                       >
-                        <MdPlaylistAdd size={18} />
-                        Add to Playlist
+                        <MdPlaylistAdd size={20} />
                       </button>
                     </div>
-                  )}
+                  </div>
                 </div>
               </div>
+            ))}
+          </div>
+        )}
+
+        {/* List View (for larger screens) */}
+        {viewMode === 'list' && (
+          <div className="backdrop-blur-md rounded-xl p-6 border border-white/5"
+               style={{
+                 background: 'linear-gradient(135deg, rgba(142, 36, 170, 0.2), rgba(18, 18, 18, 0.1))'
+               }}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {favorites.map((song, index) => (
+                <div 
+                  key={song._id} 
+                  className="flex items-center gap-4 p-3 rounded-lg hover:bg-white/10 transition-all cursor-pointer group"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(142, 36, 170, 0.3), rgba(18, 18, 18, 0.2))'
+                  }}
+                  onClick={() => playWithId(song._id)}
+                >
+                  <div className="flex-shrink-0 w-8 text-center text-neutral-500">
+                    {isPlaying(song._id) ? (
+                      <div className="bg-fuchsia-500 rounded-full p-1">
+                        <MdPause className="text-white" size={16} />
+                      </div>
+                    ) : (
+                      index + 1
+                    )}
+                  </div>
+                  <div className="bg-neutral-800 w-12 h-12 rounded flex items-center justify-center relative group-hover:bg-neutral-700 transition-colors">
+                    {song.image ? (
+                      <img 
+                        src={song.image} 
+                        alt={song.name} 
+                        className="w-full h-full object-cover rounded"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <MdPlayArrow className="text-fuchsia-500" size={24} />
+                      </div>
+                    )}
+                    {isPlaying(song._id) && (
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                        <div className="bg-fuchsia-500 rounded-full p-1">
+                          <MdPause className="text-white" size={24} />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className={`font-semibold truncate ${isPlaying(song._id) ? 'text-fuchsia-500' : 'text-white'}`}>
+                      {isPlaying(song._id) && (
+                        <span className="inline-block w-2 h-2 bg-fuchsia-500 rounded-full mr-2 animate-pulse"></span>
+                      )}
+                      {song.name}
+                    </h3>
+                    <p className="text-sm text-neutral-400 truncate">{song.desc}</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button 
+                      onClick={(e) => handleToggleFavorite(e, song._id)}
+                      className="text-white opacity-50 hover:opacity-100 transition-opacity"
+                    >
+                      <MdFavorite className="text-fuchsia-500" size={20} />
+                    </button>
+                    <button 
+                      onClick={(e) => handleAddToPlaylist(e, song._id)}
+                      className="text-white opacity-50 hover:opacity-100 transition-opacity"
+                    >
+                      <MdPlaylistAdd size={22} />
+                    </button>
+                    <button 
+                      onClick={(e) => handleAddToQueue(e, song._id)}
+                      className="text-white opacity-50 hover:opacity-100 transition-opacity"
+                    >
+                      <MdQueueMusic size={22} />
+                    </button>
+                    <span className="text-neutral-400 ml-1 min-w-[45px] text-right">{song.duration || "--:--"}</span>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      </div>
+          </div>
+        )}
+      </motion.div>
     );
   };
   
@@ -249,155 +320,278 @@ const Library = () => {
           <Link 
             key={playlist._id}
             to={`/playlist/${playlist._id}`}
-            className="bg-neutral-900/50 rounded-lg p-4 hover:bg-neutral-800 transition-all cursor-pointer shadow-lg"
+            className="group"
           >
-            <div className="aspect-square rounded bg-neutral-800 mb-3 overflow-hidden flex items-center justify-center">
-              {playlist.songs && playlist.songs.length > 0 && playlist.songs[0].image ? (
-                <img 
-                  src={playlist.songs[0].image} 
-                  alt={playlist.name} 
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <MdPlaylistPlay size={50} className="text-fuchsia-500/50" />
-              )}
+            <div className="aspect-square rounded-lg overflow-hidden bg-neutral-800 relative">
+              <div className="w-full h-full bg-gradient-to-br from-fuchsia-600 to-purple-800 flex items-center justify-center">
+                <MdPlaylistPlay className="text-white/80 text-4xl" />
+              </div>
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                <div className="bg-fuchsia-500 rounded-full p-3 shadow-lg transform scale-110">
+                  <MdPlayArrow className="text-white" size={24} />
+                </div>
+              </div>
             </div>
-            <h4 className="text-white font-medium truncate">{playlist.name}</h4>
-            <p className="text-neutral-400 text-sm truncate">{playlist.songs ? playlist.songs.length : 0} songs</p>
+            <h3 className="mt-2 text-white font-medium truncate">{playlist.name}</h3>
+            <p className="text-sm text-neutral-400">{playlist.songs.length} songs</p>
           </Link>
         ))}
       </div>
     );
   };
   
-  // Render recently played tracks
+  // Render recently played songs
   const renderHistory = () => {
     if (!recentlyPlayed || recentlyPlayed.length === 0) {
       return (
         <div className="py-12 text-center bg-neutral-900/30 rounded-xl my-6">
           <MdHistory size={60} className="text-neutral-500 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-white mb-2">No recent history</h3>
+          <h3 className="text-xl font-semibold text-white mb-2">No history yet</h3>
           <p className="text-neutral-400">
-            Play songs to see your listening history
+            Your recently played songs will appear here
           </p>
         </div>
       );
     }
     
     return (
-      <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-        {recentlyPlayed.map(song => (
-          <div 
-            key={song._id}
-            onClick={() => playWithId(song._id)} 
-            className="bg-neutral-900/50 rounded-lg p-3 hover:bg-neutral-800 transition-all cursor-pointer"
-          >
-            <div className="aspect-square rounded bg-neutral-800 mb-3 overflow-hidden relative group">
-              {song.image ? (
-                <img 
-                  src={song.image} 
-                  alt={song.name} 
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <MdPlayArrow size={40} className="text-fuchsia-500/50" />
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+        className="mt-6"
+      >
+        {/* Grid View (for small screens) */}
+        {viewMode === 'grid' && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            {recentlyPlayed.map((song) => (
+              <div 
+                key={song._id} 
+                onClick={() => playWithId(song._id)}
+                className="relative rounded-xl overflow-hidden cursor-pointer group transition-all duration-300 hover:bg-white/10 shadow-lg hover:shadow-xl"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(142, 36, 170, 0.2), rgba(18, 18, 18, 0.1))'
+                }}
+              >
+                <div className="aspect-square relative overflow-hidden">
+                  {song.image ? (
+                    <img 
+                      src={song.image} 
+                      alt={song.name} 
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-fuchsia-500"
+                         style={{
+                           background: 'linear-gradient(135deg, rgba(142, 36, 170, 0.3), rgba(18, 18, 18, 0.2))'
+                         }}>
+                      <MdPlayArrow size={60} />
+                    </div>
+                  )}
+                  
+                  {/* Play overlay */}
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-200">
+                    {isPlaying(song._id) ? (
+                      <div className="bg-fuchsia-500 rounded-full p-3 shadow-lg transform scale-110">
+                        <MdPause className="text-white" size={30} />
+                      </div>
+                    ) : (
+                      <div className="bg-fuchsia-500 rounded-full p-3 shadow-lg transform scale-110">
+                        <MdPlayArrow className="text-white" size={30} />
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Favorite button */}
+                  <button 
+                    onClick={(e) => handleToggleFavorite(e, song._id)}
+                    className="absolute top-2 right-2 bg-black/50 rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    {favorites && favorites.some(fav => fav._id === song._id) ? 
+                      <MdFavorite className="text-fuchsia-500" size={20} /> : 
+                      <MdFavoriteBorder className="text-white" size={20} />
+                    }
+                  </button>
                 </div>
-              )}
-              
-              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                <button className="bg-fuchsia-500 rounded-full p-3">
-                  <MdPlayArrow className="text-white" size={24} />
-                </button>
+                
+                <div className="p-3">
+                  <h3 className={`font-bold truncate ${isPlaying(song._id) ? 'text-fuchsia-500' : 'text-white'}`}>
+                    {isPlaying(song._id) && (
+                      <span className="inline-block w-2 h-2 bg-fuchsia-500 rounded-full mr-2 animate-pulse"></span>
+                    )}
+                    {song.name}
+                  </h3>
+                  <p className="text-xs text-neutral-400 truncate mt-1">{song.desc}</p>
+                  
+                  {/* Song actions */}
+                  <div className="flex items-center justify-between mt-2">
+                    <span className="text-xs text-neutral-400">{song.duration || "--:--"}</span>
+                    <div className="flex items-center gap-2">
+                      <button 
+                        onClick={(e) => handleAddToQueue(e, song._id)}
+                        className="text-neutral-400 hover:text-white"
+                      >
+                        <MdQueueMusic size={18} />
+                      </button>
+                      <button 
+                        onClick={(e) => handleAddToPlaylist(e, song._id)}
+                        className="text-neutral-400 hover:text-white"
+                      >
+                        <MdPlaylistAdd size={20} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
-            <h4 className="text-white font-medium truncate">{song.name}</h4>
-            <p className="text-neutral-400 text-sm truncate">{song.desc}</p>
+            ))}
           </div>
-        ))}
-      </div>
+        )}
+
+        {/* List View (for larger screens) */}
+        {viewMode === 'list' && (
+          <div className="backdrop-blur-md rounded-xl p-6 border border-white/5"
+               style={{
+                 background: 'linear-gradient(135deg, rgba(142, 36, 170, 0.2), rgba(18, 18, 18, 0.1))'
+               }}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {recentlyPlayed.map((song, index) => (
+                <div 
+                  key={song._id} 
+                  className="flex items-center gap-4 p-3 rounded-lg hover:bg-white/10 transition-all cursor-pointer group"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(142, 36, 170, 0.3), rgba(18, 18, 18, 0.2))'
+                  }}
+                  onClick={() => playWithId(song._id)}
+                >
+                  <div className="flex-shrink-0 w-8 text-center text-neutral-500">
+                    {isPlaying(song._id) ? (
+                      <div className="bg-fuchsia-500 rounded-full p-1">
+                        <MdPause className="text-white" size={16} />
+                      </div>
+                    ) : (
+                      index + 1
+                    )}
+                  </div>
+                  <div className="bg-neutral-800 w-12 h-12 rounded flex items-center justify-center relative group-hover:bg-neutral-700 transition-colors">
+                    {song.image ? (
+                      <img 
+                        src={song.image} 
+                        alt={song.name} 
+                        className="w-full h-full object-cover rounded"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <MdPlayArrow className="text-fuchsia-500" size={24} />
+                      </div>
+                    )}
+                    {isPlaying(song._id) && (
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                        <div className="bg-fuchsia-500 rounded-full p-1">
+                          <MdPause className="text-white" size={24} />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className={`font-semibold truncate ${isPlaying(song._id) ? 'text-fuchsia-500' : 'text-white'}`}>
+                      {isPlaying(song._id) && (
+                        <span className="inline-block w-2 h-2 bg-fuchsia-500 rounded-full mr-2 animate-pulse"></span>
+                      )}
+                      {song.name}
+                    </h3>
+                    <p className="text-sm text-neutral-400 truncate">{song.desc}</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button 
+                      onClick={(e) => handleToggleFavorite(e, song._id)}
+                      className="text-white opacity-50 hover:opacity-100 transition-opacity"
+                    >
+                      {favorites && favorites.some(fav => fav._id === song._id) ? 
+                        <MdFavorite className="text-fuchsia-500" size={20} /> : 
+                        <MdFavoriteBorder size={20} />
+                      }
+                    </button>
+                    <button 
+                      onClick={(e) => handleAddToPlaylist(e, song._id)}
+                      className="text-white opacity-50 hover:opacity-100 transition-opacity"
+                    >
+                      <MdPlaylistAdd size={22} />
+                    </button>
+                    <button 
+                      onClick={(e) => handleAddToQueue(e, song._id)}
+                      className="text-white opacity-50 hover:opacity-100 transition-opacity"
+                    >
+                      <MdQueueMusic size={22} />
+                    </button>
+                    <span className="text-neutral-400 ml-1 min-w-[45px] text-right">{song.duration || "--:--"}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </motion.div>
     );
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col justify-start items-center bg-gradient-to-b from-black via-black to-neutral-900 pb-16 px-4">
+    <div className="min-h-screen w-full flex flex-col bg-gradient-to-b from-black via-neutral-900 to-black pb-32 px-4 pt-4">
       <div className="w-full max-w-6xl mx-auto">
-        {/* Back navigation */}
-        {/* <Link to="/" className="inline-flex items-center text-white/80 hover:text-white py-4">
-          <MdArrowBack className="mr-2" size={20} />
-          <span>Back to Home</span>
-        </Link> */}
-
-        {/* Page Header */}
+        {/* Library header */}
         <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, y: -20 }} 
+          animate={{ opacity: 1, y: 0 }} 
           transition={{ duration: 0.5 }}
-          className="mt-4 mb-8"
+          className="flex flex-col gap-4 mb-10"
         >
-          <h1 className="text-3xl md:text-4xl font-bold text-white mb-6">
+          <h1 className="text-3xl md:text-4xl font-bold text-white">
             Your Library
           </h1>
-          
-          {/* Tabs */}
-          <div className="flex border-b border-neutral-900">
-            <button
-              className={`px-6 py-3 font-medium text-sm transition-colors ${
-                activeTab === 'favorites' 
-                  ? 'text-fuchsia-500 border-b-2 border-fuchsia-500' 
-                  : 'text-white hover:text-fuchsia-400'
-              }`}
-              onClick={() => setActiveTab('favorites')}
-            >
-              <div className="flex items-center gap-2">
-                <MdFavorite />
-                <span>Favorites</span>
-              </div>
-            </button>
-            
-            <button
-              className={`px-6 py-3 font-medium text-sm transition-colors ${
-                activeTab === 'playlists' 
-                  ? 'text-fuchsia-500 border-b-2 border-fuchsia-500' 
-                  : 'text-white hover:text-fuchsia-400'
-              }`}
-              onClick={() => setActiveTab('playlists')}
-            >
-              <div className="flex items-center gap-2">
-                <MdPlaylistPlay />
-                <span>Playlists</span>
-              </div>
-            </button>
-            
-            <button
-              className={`px-6 py-3 font-medium text-sm transition-colors ${
-                activeTab === 'history' 
-                  ? 'text-fuchsia-500 border-b-2 border-fuchsia-500' 
-                  : 'text-white hover:text-fuchsia-400'
-              }`}
-              onClick={() => setActiveTab('history')}
-            >
-              <div className="flex items-center gap-2">
-                <MdHistory />
-                <span>Recently Played</span>
-              </div>
-            </button>
-          </div>
+          {user && (
+            <p className="text-neutral-400">
+              Your personal music collection, {user.username}
+            </p>
+          )}
         </motion.div>
 
-        {/* Content based on active tab */}
-        <motion.div
-          key={activeTab}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="min-h-[300px]"
-        >
-          {renderContent()}
-        </motion.div>
+        {/* Tabs */}
+        <div className="flex gap-4 mb-6">
+          <button
+            onClick={() => setActiveTab('favorites')}
+            className={`px-4 py-2 rounded-full font-medium transition-colors ${
+              activeTab === 'favorites'
+                ? 'bg-fuchsia-600 text-white'
+                : 'bg-neutral-800 text-neutral-400 hover:bg-neutral-700'
+            }`}
+          >
+            Favorites
+          </button>
+          <button
+            onClick={() => setActiveTab('playlists')}
+            className={`px-4 py-2 rounded-full font-medium transition-colors ${
+              activeTab === 'playlists'
+                ? 'bg-fuchsia-600 text-white'
+                : 'bg-neutral-800 text-neutral-400 hover:bg-neutral-700'
+            }`}
+          >
+            Playlists
+          </button>
+          <button
+            onClick={() => setActiveTab('history')}
+            className={`px-4 py-2 rounded-full font-medium transition-colors ${
+              activeTab === 'history'
+                ? 'bg-fuchsia-600 text-white'
+                : 'bg-neutral-800 text-neutral-400 hover:bg-neutral-700'
+            }`}
+          >
+            History
+          </button>
+        </div>
+
+        {/* Content */}
+        {renderContent()}
       </div>
-      
-      {/* Add To Playlist Modal */}
+
       {showPlaylistModal && (
         <AddToPlaylistModal 
           songId={selectedSongId} 

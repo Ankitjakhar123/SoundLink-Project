@@ -1,20 +1,32 @@
-import React, { useEffect, useState, useContext, useRef } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { PlayerContext } from '../context/PlayerContext';
-import { FaTrash, FaEdit, FaPlay, FaRandom, FaTimes, FaMusic, FaArrowLeft, FaEllipsisH } from 'react-icons/fa';
+import { FaTrash, FaEdit, FaPlay, FaRandom, FaTimes, FaMusic, FaArrowLeft } from 'react-icons/fa';
+import { MdPlayArrow, MdPause, MdFavorite, MdFavoriteBorder, MdPlaylistAdd, MdQueueMusic } from 'react-icons/md';
 // eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
 import Skeleton from './Skeleton';
+import AddToPlaylistModal from './AddToPlaylistModal';
 
 const PlaylistView = () => {
   const { id } = useParams();
-  // eslint-disable-next-line no-unused-vars
-  const { playWithId, playlists, deletePlaylist, removeFromPlaylist } = useContext(PlayerContext);
+  const { 
+    playWithId, 
+    deletePlaylist, 
+    toggleFavorite, 
+    favorites,
+    addToQueue,
+    track,
+    playStatus
+  } = useContext(PlayerContext);
   const [playlist, setPlaylist] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editName, setEditName] = useState(false);
   const [newName, setNewName] = useState("");
   const [showOptionsFor, setShowOptionsFor] = useState(null);
+  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
+  const [selectedSongId, setSelectedSongId] = useState(null);
+  const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const navigate = useNavigate();
   const url = import.meta.env.VITE_BACKEND_URL;
 
@@ -22,6 +34,22 @@ const PlaylistView = () => {
     fetchPlaylist();
     // eslint-disable-next-line
   }, [id]);
+
+  // Check screen size and set view mode accordingly
+  useEffect(() => {
+    const handleResize = () => {
+      setViewMode(window.innerWidth < 768 ? 'grid' : 'list');
+    };
+
+    // Set initial value
+    handleResize();
+
+    // Add event listener
+    window.addEventListener('resize', handleResize);
+
+    // Cleanup
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Click outside handler for song options menu
   useEffect(() => {
@@ -54,14 +82,6 @@ const PlaylistView = () => {
       navigate('/');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const removeSong = async (songId) => {
-    const success = await removeFromPlaylist(songId, id);
-    if (success) {
-      fetchPlaylist();
-      setShowOptionsFor(null);
     }
   };
 
@@ -110,11 +130,28 @@ const PlaylistView = () => {
     }
   };
 
-  const formatDuration = (seconds) => {
-    if (!seconds) return "--:--";
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs < 10 ? '0' + secs : secs}`;
+  const handleToggleFavorite = (e, songId) => {
+    e.stopPropagation();
+    toggleFavorite(songId);
+  };
+
+  const handleAddToPlaylist = (e, songId) => {
+    e.stopPropagation();
+    setSelectedSongId(songId);
+    setShowPlaylistModal(true);
+  };
+
+  const handleAddToQueue = (e, songId) => {
+    e.stopPropagation();
+    addToQueue(songId);
+  };
+
+  const isPlaying = (songId) => {
+    return track && track._id === songId && playStatus;
+  };
+
+  const isFavorite = (songId) => {
+    return favorites && favorites.some(fav => fav._id === songId);
   };
 
   if (loading) return (
@@ -196,186 +233,289 @@ const PlaylistView = () => {
           </div>
           
           {/* Playlist Details */}
-          <div className="flex flex-col max-w-3xl">
-            <p className="uppercase text-xs font-medium text-white/60 tracking-widest">Playlist</p>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-4 mb-4">
+              {editName ? (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    className="bg-neutral-800 text-white px-4 py-2 rounded-lg border border-neutral-700"
+                    placeholder="New playlist name"
+                  />
+                  <button
+                    onClick={renamePlaylist}
+                    className="bg-fuchsia-600 text-white px-4 py-2 rounded-lg hover:bg-fuchsia-700"
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={() => setEditName(false)}
+                    className="text-neutral-400 hover:text-white"
+                  >
+                    <FaTimes size={20} />
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <h1 className="text-4xl md:text-5xl font-bold text-white truncate">
+                    {playlist.name}
+                  </h1>
+                  <button
+                    onClick={() => {
+                      setNewName(playlist.name);
+                      setEditName(true);
+                    }}
+                    className="text-neutral-400 hover:text-white"
+                  >
+                    <FaEdit size={20} />
+                  </button>
+                  <button
+                    onClick={handleDeletePlaylist}
+                    className="text-neutral-400 hover:text-red-500"
+                  >
+                    <FaTrash size={20} />
+                  </button>
+                </>
+              )}
+            </div>
             
-            {editName ? (
-              <div className="flex items-center gap-3 mt-2">
-                <input
-                  value={newName}
-                  onChange={e => setNewName(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && renamePlaylist()}
-                  autoFocus
-                  className="bg-white/10 text-white border border-white/20 rounded-lg px-4 py-2 text-2xl font-bold focus:outline-none focus:border-fuchsia-500"
-                />
-                <button 
-                  onClick={renamePlaylist} 
-                  className="bg-fuchsia-600 hover:bg-fuchsia-700 transition-colors text-white p-2 rounded-lg"
-                >
-                  Save
-                </button>
-                <button 
-                  onClick={() => setEditName(false)} 
-                  className="text-white/60 hover:text-white p-2 rounded-lg"
-                >
-                  <FaTimes />
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-3 mt-2">
-                <h1 className="text-4xl md:text-5xl font-bold text-white break-words">{playlist.name}</h1>
-                <button 
-                  onClick={() => { setEditName(true); setNewName(playlist.name); }} 
-                  className="text-white/60 hover:text-white"
-                >
-                  <FaEdit size={18} />
-                </button>
-              </div>
-            )}
-            
-            <p className="text-white/60 mt-2 md:mt-4 text-sm md:text-base">
-              {playlist.songs.length} {playlist.songs.length === 1 ? 'song' : 'songs'}
+            <p className="text-neutral-400 mb-6">
+              {playlist.songs.length} songs
             </p>
             
-            {/* Action Buttons */}
-            <div className="flex flex-wrap gap-3 mt-6">
-              <button 
-                onClick={playAll} 
+            <div className="flex gap-4">
+              <button
+                onClick={playAll}
                 disabled={playlist.songs.length === 0}
-                className={`bg-fuchsia-600 hover:bg-fuchsia-700 transition-colors text-white font-medium px-6 py-3 rounded-full flex items-center gap-2 shadow-lg shadow-fuchsia-900/20
-                ${playlist.songs.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`bg-fuchsia-600 text-white px-6 py-3 rounded-full font-medium flex items-center gap-2
+                  ${playlist.songs.length === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-fuchsia-700'}`}
               >
-                <FaPlay size={14} /> Play All
+                <FaPlay size={18} />
+                Play All
               </button>
-              <button 
-                onClick={shuffleAll} 
+              <button
+                onClick={shuffleAll}
                 disabled={playlist.songs.length === 0}
-                className={`bg-white/10 hover:bg-white/20 transition-colors text-white font-medium px-6 py-3 rounded-full flex items-center gap-2
-                ${playlist.songs.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`bg-neutral-800 text-white px-6 py-3 rounded-full font-medium flex items-center gap-2
+                  ${playlist.songs.length === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-neutral-700'}`}
               >
-                <FaRandom size={14} /> Shuffle
-              </button>
-              <button 
-                onClick={handleDeletePlaylist}
-                className="bg-red-600/20 hover:bg-red-600/40 transition-colors text-red-400 font-medium px-6 py-3 rounded-full flex items-center gap-2"
-              >
-                <FaTrash size={14} /> Delete Playlist
+                <FaRandom size={18} />
+                Shuffle
               </button>
             </div>
           </div>
         </motion.div>
       </div>
-      
-      {/* Songs List Section */}
+
+      {/* Songs List */}
       <div className="px-6 md:px-12 pt-8 max-w-7xl mx-auto w-full">
-        {/* Song List Header */}
-        {playlist.songs.length > 0 && (
-          <div className="grid grid-cols-12 gap-4 py-2 px-4 text-white/50 font-medium text-sm border-b border-white/10">
-            <div className="col-span-1 flex items-center justify-center">#</div>
-            <div className="col-span-5">TITLE</div>
-            <div className="col-span-4 hidden md:block">DESCRIPTION</div>
-            <div className="col-span-2 hidden md:block text-right">DURATION</div>
-          </div>
-        )}
-        
-        {/* Songs List */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-        >
-          {playlist.songs.length === 0 ? (
-            <div className="py-16 flex flex-col items-center justify-center">
-              <FaMusic className="text-6xl text-white/20 mb-6" />
-              <h3 className="text-2xl font-bold text-white mb-2">This playlist is empty</h3>
-              <p className="text-white/60 mb-8 text-center max-w-md">
-                Start adding your favorite songs to create your perfect playlist.
-              </p>
-              <Link 
-                to="/" 
-                className="bg-fuchsia-600 hover:bg-fuchsia-700 transition-colors text-white px-6 py-3 rounded-full font-medium"
+        {playlist.songs.length > 0 ? (
+          <>
+            {/* Grid View (for small screens) */}
+            {viewMode === 'grid' && (
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="grid grid-cols-2 sm:grid-cols-3 gap-4"
               >
-                Browse Songs
-              </Link>
-            </div>
-          ) : (
-            <div className="divide-y divide-white/5">
-              {playlist.songs.map((song, idx) => (
-                <div
-                  key={song._id}
-                  className="grid grid-cols-12 gap-4 py-3 px-4 items-center group hover:bg-white/5 rounded-md transition-colors cursor-pointer relative"
-                  onClick={() => playWithId(song._id)}
-                >
-                  {/* Index / Play Icon */}
-                  <div className="col-span-1 flex items-center justify-center">
-                    <span className="group-hover:hidden text-white/40">{idx + 1}</span>
-                    <FaPlay className="hidden group-hover:block text-white" size={12} />
-                  </div>
-                  
-                  {/* Song Title and Image */}
-                  <div className="col-span-11 md:col-span-5 flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 flex-shrink-0 rounded overflow-hidden bg-neutral-800">
+                {playlist.songs.map((song) => (
+                  <div 
+                    key={song._id} 
+                    onClick={() => playWithId(song._id)}
+                    className="relative rounded-xl overflow-hidden cursor-pointer group transition-all duration-300 hover:bg-white/10 shadow-lg hover:shadow-xl"
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(142, 36, 170, 0.2), rgba(18, 18, 18, 0.1))'
+                    }}
+                  >
+                    <div className="aspect-square relative overflow-hidden">
                       {song.image ? (
                         <img 
                           src={song.image} 
                           alt={song.name} 
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-neutral-700 to-neutral-900">
-                          <FaMusic className="text-white/60" />
+                        <div className="w-full h-full flex items-center justify-center text-fuchsia-500"
+                             style={{
+                               background: 'linear-gradient(135deg, rgba(142, 36, 170, 0.3), rgba(18, 18, 18, 0.2))'
+                             }}>
+                          <MdPlayArrow size={60} />
                         </div>
                       )}
-                    </div>
-                    <div className="min-w-0">
-                      <h3 className="text-white font-medium truncate">{song.name}</h3>
-                      <p className="text-white/60 text-sm truncate md:hidden">{song.desc}</p>
-                    </div>
-                  </div>
-                  
-                  {/* Song Description */}
-                  <div className="col-span-4 hidden md:block truncate text-white/60">
-                    {song.desc}
-                  </div>
-                  
-                  {/* Duration / Options */}
-                  <div className="hidden md:flex col-span-2 items-center justify-end gap-4">
-                    <span className="text-white/60">{formatDuration(song.duration)}</span>
-                    
-                    {/* Song Options Button */}
-                    <div className="relative song-options">
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShowOptionsFor(showOptionsFor === song._id ? null : song._id);
-                        }}
-                        className="p-2 text-white/40 hover:text-white transition-colors rounded-full hover:bg-white/10"
-                      >
-                        <FaEllipsisH />
-                      </button>
                       
-                      {/* Options Dropdown */}
-                      {showOptionsFor === song._id && (
-                        <div className="absolute right-0 top-8 z-20 bg-neutral-800 rounded-md shadow-xl py-1 min-w-[150px] border border-white/10">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              removeSong(song._id);
-                            }}
-                            className="w-full py-2 px-4 text-left flex items-center gap-3 text-red-400 hover:bg-neutral-700 transition-colors"
+                      {/* Play overlay */}
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-200">
+                        {isPlaying(song._id) ? (
+                          <div className="bg-fuchsia-500 rounded-full p-3 shadow-lg transform scale-110">
+                            <MdPause className="text-white" size={30} />
+                          </div>
+                        ) : (
+                          <div className="bg-fuchsia-500 rounded-full p-3 shadow-lg transform scale-110">
+                            <MdPlayArrow className="text-white" size={30} />
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Favorite button */}
+                      <button 
+                        onClick={(e) => handleToggleFavorite(e, song._id)}
+                        className="absolute top-2 right-2 bg-black/50 rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        {isFavorite(song._id) ? 
+                          <MdFavorite className="text-fuchsia-500" size={20} /> : 
+                          <MdFavoriteBorder className="text-white" size={20} />
+                        }
+                      </button>
+                    </div>
+                    
+                    <div className="p-3">
+                      <h3 className={`font-bold truncate ${isPlaying(song._id) ? 'text-fuchsia-500' : 'text-white'}`}>
+                        {isPlaying(song._id) && (
+                          <span className="inline-block w-2 h-2 bg-fuchsia-500 rounded-full mr-2 animate-pulse"></span>
+                        )}
+                        {song.name}
+                      </h3>
+                      <p className="text-xs text-neutral-400 truncate mt-1">{song.desc}</p>
+                      
+                      {/* Song actions */}
+                      <div className="flex items-center justify-between mt-2">
+                        <span className="text-xs text-neutral-400">{song.duration || "--:--"}</span>
+                        <div className="flex items-center gap-2">
+                          <button 
+                            onClick={(e) => handleAddToQueue(e, song._id)}
+                            className="text-neutral-400 hover:text-white"
                           >
-                            <FaTrash size={14} /> Remove
+                            <MdQueueMusic size={18} />
+                          </button>
+                          <button 
+                            onClick={(e) => handleAddToPlaylist(e, song._id)}
+                            className="text-neutral-400 hover:text-white"
+                          >
+                            <MdPlaylistAdd size={20} />
                           </button>
                         </div>
-                      )}
+                      </div>
                     </div>
                   </div>
+                ))}
+              </motion.div>
+            )}
+
+            {/* List View (for larger screens) */}
+            {viewMode === 'list' && (
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="backdrop-blur-md rounded-xl p-6 border border-white/5"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(142, 36, 170, 0.2), rgba(18, 18, 18, 0.1))'
+                }}
+              >
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {playlist.songs.map((song, index) => (
+                    <div 
+                      key={song._id} 
+                      className="flex items-center gap-4 p-3 rounded-lg hover:bg-white/10 transition-all cursor-pointer group"
+                      style={{
+                        background: 'linear-gradient(135deg, rgba(142, 36, 170, 0.3), rgba(18, 18, 18, 0.2))'
+                      }}
+                      onClick={() => playWithId(song._id)}
+                    >
+                      <div className="flex-shrink-0 w-8 text-center text-neutral-500">
+                        {isPlaying(song._id) ? (
+                          <div className="bg-fuchsia-500 rounded-full p-1">
+                            <MdPause className="text-white" size={16} />
+                          </div>
+                        ) : (
+                          index + 1
+                        )}
+                      </div>
+                      <div className="bg-neutral-800 w-12 h-12 rounded flex items-center justify-center relative group-hover:bg-neutral-700 transition-colors">
+                        {song.image ? (
+                          <img 
+                            src={song.image} 
+                            alt={song.name} 
+                            className="w-full h-full object-cover rounded"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <MdPlayArrow className="text-fuchsia-500" size={24} />
+                          </div>
+                        )}
+                        {isPlaying(song._id) && (
+                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                            <div className="bg-fuchsia-500 rounded-full p-1">
+                              <MdPause className="text-white" size={24} />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className={`font-semibold truncate ${isPlaying(song._id) ? 'text-fuchsia-500' : 'text-white'}`}>
+                          {isPlaying(song._id) && (
+                            <span className="inline-block w-2 h-2 bg-fuchsia-500 rounded-full mr-2 animate-pulse"></span>
+                          )}
+                          {song.name}
+                        </h3>
+                        <p className="text-sm text-neutral-400 truncate">{song.desc}</p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <button 
+                          onClick={(e) => handleToggleFavorite(e, song._id)}
+                          className="text-white opacity-50 hover:opacity-100 transition-opacity"
+                        >
+                          {isFavorite(song._id) ? 
+                            <MdFavorite className="text-fuchsia-500" size={20} /> : 
+                            <MdFavoriteBorder size={20} />
+                          }
+                        </button>
+                        <button 
+                          onClick={(e) => handleAddToPlaylist(e, song._id)}
+                          className="text-white opacity-50 hover:opacity-100 transition-opacity"
+                        >
+                          <MdPlaylistAdd size={22} />
+                        </button>
+                        <button 
+                          onClick={(e) => handleAddToQueue(e, song._id)}
+                          className="text-white opacity-50 hover:opacity-100 transition-opacity"
+                        >
+                          <MdQueueMusic size={22} />
+                        </button>
+                        <span className="text-neutral-400 ml-1 min-w-[45px] text-right">{song.duration || "--:--"}</span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
-        </motion.div>
+              </motion.div>
+            )}
+          </>
+        ) : (
+          <div className="py-16 flex flex-col items-center justify-center">
+            <FaMusic className="text-6xl text-white/20 mb-6" />
+            <h3 className="text-2xl font-bold text-white mb-2">This playlist is empty</h3>
+            <p className="text-white/60 mb-8 text-center max-w-md">
+              Start adding your favorite songs to create your perfect playlist.
+            </p>
+            <Link 
+              to="/" 
+              className="bg-fuchsia-600 hover:bg-fuchsia-700 transition-colors text-white px-6 py-3 rounded-full font-medium"
+            >
+              Browse Songs
+            </Link>
+          </div>
+        )}
       </div>
+
+      {showPlaylistModal && (
+        <AddToPlaylistModal 
+          songId={selectedSongId} 
+          onClose={() => setShowPlaylistModal(false)} 
+        />
+      )}
     </div>
   );
 };
