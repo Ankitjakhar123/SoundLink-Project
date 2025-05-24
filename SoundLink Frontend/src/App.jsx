@@ -89,49 +89,114 @@ const App = () => {
 
   // Setup Media Session API for lock screen controls
   useEffect(() => {
-    if ('mediaSession' in navigator && track) {
-      navigator.mediaSession.metadata = new MediaMetadata({
-        title: track.name,
-        artist: track.singer || 
-               track.artist || 
-               track.artistName || 
-               (track.metadata && track.metadata.artist) || 
-               (track.meta && track.meta.artist) ||
-               (track.tags && track.tags.artist) ||
-               (track.createdBy && track.createdBy.name) ||
-               'Unknown Artist',
-        album: track.albumName || 
-               track.album || 
-               (track.metadata && track.metadata.album) || 
-               (track.meta && track.meta.album) ||
-               (track.tags && track.tags.album) ||
-               'Unknown Album',
-        artwork: [
-          { src: track.image || '/icons/soundlink-icon.svg?v=2', sizes: '512x512', type: 'image/png' }
-        ]
-      });
-      
-      // Define media session actions
-      navigator.mediaSession.setActionHandler('play', () => {
-        play();
-      });
-      
-      navigator.mediaSession.setActionHandler('pause', () => {
-        pause();
-      });
-      
-      navigator.mediaSession.setActionHandler('previoustrack', () => {
-        Previous();
-      });
-      
-      navigator.mediaSession.setActionHandler('nexttrack', () => {
-        Next();
-      });
-      
-      // Update playback state
-      navigator.mediaSession.playbackState = playStatus ? 'playing' : 'paused';
+    if ('mediaSession' in navigator) {
+      // Handle both regular tracks and radio stations
+      const currentTrack = track || (radioContext?.currentStation ? {
+        name: radioContext.currentStation.name,
+        singer: radioContext.currentStation.language || 'Live Radio',
+        albumName: 'Radio Station',
+        image: radioContext.currentStation.favicon || '/icons/soundlink-icon.svg?v=2',
+        isRadio: true
+      } : null);
+
+      if (currentTrack) {
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: currentTrack.name,
+          artist: currentTrack.singer || 
+                 currentTrack.artist || 
+                 currentTrack.artistName || 
+                 (currentTrack.metadata && currentTrack.metadata.artist) || 
+                 (currentTrack.meta && currentTrack.meta.artist) ||
+                 (currentTrack.tags && currentTrack.tags.artist) ||
+                 (currentTrack.createdBy && currentTrack.createdBy.name) ||
+                 'Unknown Artist',
+          album: currentTrack.albumName || 
+                 currentTrack.album || 
+                 (currentTrack.metadata && currentTrack.metadata.album) || 
+                 (currentTrack.meta && currentTrack.meta.album) ||
+                 (currentTrack.tags && currentTrack.tags.album) ||
+                 'Unknown Album',
+          artwork: [
+            { src: currentTrack.image || '/icons/soundlink-icon.svg?v=2', sizes: '512x512', type: 'image/png' }
+          ]
+        });
+        
+        // Define media session actions
+        navigator.mediaSession.setActionHandler('play', () => {
+          if (currentTrack.isRadio) {
+            radioContext?.playStation(radioContext.currentStation);
+          } else {
+            play();
+          }
+        });
+        
+        navigator.mediaSession.setActionHandler('pause', () => {
+          if (currentTrack.isRadio) {
+            radioContext?.stopStation();
+          } else {
+            pause();
+          }
+        });
+
+        // Add seek functionality for non-radio content
+        if (!currentTrack.isRadio && audioRef.current) {
+          navigator.mediaSession.setActionHandler('seekto', (details) => {
+            if (details.seekTime !== undefined) {
+              audioRef.current.currentTime = details.seekTime;
+            }
+          });
+
+          navigator.mediaSession.setActionHandler('seekforward', (details) => {
+            const seekTime = details.seekTime || 10; // Default 10 seconds
+            audioRef.current.currentTime = Math.min(
+              audioRef.current.duration,
+              audioRef.current.currentTime + seekTime
+            );
+          });
+
+          navigator.mediaSession.setActionHandler('seekbackward', (details) => {
+            const seekTime = details.seekTime || 10; // Default 10 seconds
+            audioRef.current.currentTime = Math.max(
+              0,
+              audioRef.current.currentTime - seekTime
+            );
+          });
+        }
+        
+        // Only set up track navigation for non-radio content
+        if (!currentTrack.isRadio) {
+          navigator.mediaSession.setActionHandler('previoustrack', () => {
+            Previous();
+          });
+          
+          navigator.mediaSession.setActionHandler('nexttrack', () => {
+            Next();
+          });
+        }
+        
+        // Update playback state
+        const isPlaying = currentTrack.isRadio ? radioContext?.isPlaying : playStatus;
+        navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
+
+        // Update position state for non-radio content
+        if (!currentTrack.isRadio && audioRef.current) {
+          const updatePositionState = () => {
+            if (audioRef.current && audioRef.current.duration) {
+              navigator.mediaSession.setPositionState({
+                duration: audioRef.current.duration,
+                playbackRate: audioRef.current.playbackRate,
+                position: audioRef.current.currentTime
+              });
+            }
+          };
+
+          // Update position state periodically
+          const positionInterval = setInterval(updatePositionState, 1000);
+          return () => clearInterval(positionInterval);
+        }
+      }
     }
-  }, [track, playStatus, play, pause, Next, Previous]);
+  }, [track, playStatus, play, pause, Next, Previous, radioContext?.currentStation, radioContext?.isPlaying, radioContext?.playStation, radioContext?.stopStation]);
 
   // Screen orientation lock for landscape mode on video playback
   const lockOrientation = () => {
