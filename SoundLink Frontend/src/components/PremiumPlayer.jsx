@@ -610,29 +610,30 @@ const PremiumPlayer = () => {
               className="fixed inset-0 z-0 bg-cover bg-center" 
               style={{ 
                 backgroundImage: `url(${track.image})`,
-                filter: 'blur(60px) brightness(0.6)', // Decreased brightness from 0.7 to 0.6
-                transform: 'scale(1.2)', // Prevent blur edges
+                filter: 'blur(60px) brightness(0.6)',
+                transform: 'scale(1.2)',
+                backgroundColor: themeColors.secondary // Add solid background color
               }}
             ></div>
             
             {/* Color overlay with gradient from album colors - fixed position */}
             <div 
-              className="fixed inset-0 z-0 opacity-80" // Increased opacity from 70 to 80
+              className="fixed inset-0 z-0 opacity-100" // Changed opacity to 100
               style={{ 
-                background: `linear-gradient(167deg, ${themeColors.primary}cc 0%, ${themeColors.secondary}ee 80%, ${themeColors.secondary} 100%)`,
-                mixBlendMode: 'color', // Changed back to color blend mode for stronger effect
+                background: `linear-gradient(167deg, ${themeColors.primary} 0%, ${themeColors.secondary} 80%, ${themeColors.secondary} 100%)`,
+                mixBlendMode: 'normal', // Changed from color to normal
               }}
             ></div>
             
             {/* Dark overlay with gradient - fixed position */}
-            <div className="fixed inset-0 bg-gradient-to-b from-black/50 via-black/30 to-black/60 z-0"></div> {/* Increased opacity values */}
+            <div className="fixed inset-0 bg-gradient-to-b from-black via-black/90 to-black z-0"></div> {/* Made darker and more solid */}
             
             {/* Additional color boost at top - fixed position */}
             <div 
               className="fixed top-0 left-0 right-0 h-32 z-0"
               style={{ 
-                background: `linear-gradient(to bottom, ${themeColors.primary}60 0%, transparent 100%)`,
-                opacity: 0.7,
+                background: `linear-gradient(to bottom, ${themeColors.primary} 0%, transparent 100%)`,
+                opacity: 0.9, // Increased opacity
               }}
             ></div>
             
@@ -642,6 +643,7 @@ const PremiumPlayer = () => {
               <div className="sticky flex justify-between items-center p-5 mb-2 z-20 pt-safe backdrop-blur-xl" 
                 style={{ 
                   top: 0,
+                  paddingTop: 'calc(env(safe-area-inset-top) + 1rem)',
                   boxShadow: `0 4px 12px rgba(0, 0, 0, 0.3), 0 1px 3px ${themeColors.primary}30`,
                   background: `linear-gradient(to bottom, ${themeColors.secondary}ee, ${themeColors.secondary}f8)`,
                   borderBottom: `1px solid ${themeColors.primary}30`

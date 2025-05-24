@@ -5,6 +5,7 @@ import { FaCrown, FaBars, FaUser, FaSignOutAlt, FaUserShield, FaCog, FaSearch, F
 import axios from 'axios';
 import { PlayerContext } from '../context/PlayerContext';
 import QueueComponent from './QueueComponent';
+import { MdRadio } from 'react-icons/md';
 
 // Default avatar path - ensure this SVG file exists in the public directory
 const DEFAULT_AVATAR = '/default-avatar.svg';
@@ -21,15 +22,12 @@ const Navbar = (props) => {
     const { user, logout } = useContext(AuthContext);
     const { playWithId, track, hidePlayer, togglePlayerVisibility } = useContext(PlayerContext);
     const [showProfileDropdown, setShowProfileDropdown] = useState(false);
-    const [showMobileDropdown, setShowMobileDropdown] = useState(false);
     const profileDropdownRef = useRef(null);
-    const mobileDropdownRef = useRef(null);
     const [showBottomNav, setShowBottomNav] = useState(true);
     const [showQueue, setShowQueue] = useState(false);
+    const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
 
     // Mobile keyboard detection for iOS and Android
-    const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
-    
     useEffect(() => {
         const detectKeyboard = () => {
             // On iOS and many Android devices, when keyboard shows, the viewport height changes
@@ -69,11 +67,6 @@ const Navbar = (props) => {
                 setShowProfileDropdown(false);
             }
             
-            // Handle mobile bottom menu dropdown 
-            if (mobileDropdownRef.current && !mobileDropdownRef.current.contains(event.target)) {
-                setShowMobileDropdown(false);
-            }
-            
             if (searchResultsRef.current && !searchResultsRef.current.contains(event.target) && 
                 inputRef.current && !inputRef.current.contains(event.target)) {
                 setShowSearchResults(false);
@@ -97,7 +90,6 @@ const Navbar = (props) => {
         logout();
         navigate('/auth');
         setShowProfileDropdown(false);
-        setShowMobileDropdown(false);
     };
 
     const handleSearch = async (e) => {
@@ -558,31 +550,13 @@ const Navbar = (props) => {
                         <span className="text-xs text-white">Queue</span>
                     </button>
 
-                    {/* More (Three dots) */}
+                    {/* Radio */}
                     <button 
-                        onClick={() => setShowMobileDropdown(!showMobileDropdown)}
-                        className="flex flex-col items-center more-button relative"
+                        onClick={() => navigate('/radio')}
+                        className="flex flex-col items-center"
                     >
-                        <FaEllipsisH className="w-5 h-5 text-[#a855f7]" />
-                        <span className="text-xs text-white">More</span>
-                        
-                        {/* Mobile more menu dropdown */}
-                        {showMobileDropdown && (
-                            <div 
-                                ref={mobileDropdownRef}
-                                className="absolute bottom-full mb-2 right-0 w-40 rounded-lg overflow-hidden bg-neutral-800 shadow-lg border border-neutral-700 z-[100]"
-                                style={{transform: 'translateY(-50px)'}}
-                            >
-                                {/* Only show Playlists option for small screens */}
-                                <button 
-                                    onClick={() => { navigate('/playlists'); setShowMobileDropdown(false); }}
-                                    className="w-full text-left px-4 py-2 text-white hover:bg-neutral-700 flex items-center gap-2"
-                                >
-                                    <FaList className="text-fuchsia-400" />
-                                    Playlists
-                                </button>
-                            </div>
-                        )}
+                        <MdRadio className="w-5 h-5 text-[#a855f7]" />
+                        <span className="text-xs text-white">Radio</span>
                     </button>
                 </div>
             </div>

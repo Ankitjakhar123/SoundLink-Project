@@ -116,7 +116,14 @@ const LyricsPanel = ({ isOpen, onClose }) => {
           }}
         >
           {/* Header */}
-          <div className="flex justify-between items-center p-4 border-b" style={{ borderColor: `${themeColors.text}20` }}>
+          <div 
+            className="flex justify-between items-center p-4 border-b sticky top-0 z-10 backdrop-blur-xl" 
+            style={{ 
+              borderColor: `${themeColors.text}20`,
+              paddingTop: 'calc(env(safe-area-inset-top) + 1rem)',
+              background: `linear-gradient(to bottom, ${themeColors.secondary}ee, ${themeColors.secondary}f8)`,
+            }}
+          >
             <div>
               <h3 className="text-lg font-bold" style={{ color: themeColors.text }}>Lyrics</h3>
               <p className="text-sm" style={{ color: `${themeColors.text}99` }}>{track?.name} • {getArtistName(track)}</p>
