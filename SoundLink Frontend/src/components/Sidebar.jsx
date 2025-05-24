@@ -50,7 +50,7 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
           className="md:hidden absolute right-4 z-50 bg-black/80 p-2 rounded-full border border-neutral-800"
           onClick={() => setMobileOpen(false)}
           aria-label="Close sidebar"
-          style={{ top: 0 }}
+          style={{ top: 'calc(1rem + env(safe-area-inset-top))' }}
         >
           <FaTimes size={22} />
         </button>
