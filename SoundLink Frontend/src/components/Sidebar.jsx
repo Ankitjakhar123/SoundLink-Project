@@ -41,19 +41,22 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
   return (
     <>
       {/* Sidebar */}
-      <aside className={sidebarClass}>
+      <aside 
+        className={sidebarClass}
+        style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top))', paddingBottom: 'env(safe-area-inset-bottom)' }}
+      >
         {/* Close button for mobile */}
         <button
           className="md:hidden absolute right-4 z-50 bg-black/80 p-2 rounded-full border border-neutral-800"
           onClick={() => setMobileOpen(false)}
           aria-label="Close sidebar"
-          style={{ top: 'calc(1rem + env(safe-area-inset-top))' }}
+          style={{ top: 0 }}
         >
           <FaTimes size={22} />
         </button>
         {/* Logo */}
         <div 
-          className="flex items-center px-4 py-4 cursor-pointer relative md:hidden safe-area-padding-bottom"
+          className="flex items-center px-4 py-4 cursor-pointer relative md:hidden"
           onClick={() => handleNavigate('/')}
         >
           <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-neutral-900 transform translate-y-[-6px]"></div>
