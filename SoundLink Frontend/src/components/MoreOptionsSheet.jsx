@@ -15,8 +15,10 @@ import {
   MdPlaylistAdd,
   MdInfoOutline
 } from 'react-icons/md';
+import axios from 'axios';
 
 const MoreOptionsSheet = ({ isOpen, onClose, trackId }) => {
+  const navigate = useNavigate();
   const { 
     toggleFavorite, 
     isFavorite, 
@@ -30,7 +32,6 @@ const MoreOptionsSheet = ({ isOpen, onClose, trackId }) => {
     songsData
   } = useContext(PlayerContext);
   
-  const navigate = useNavigate();
   const [showPlaylists, setShowPlaylists] = useState(false);
 
   if (!isOpen || !track) return null;
@@ -40,97 +41,204 @@ const MoreOptionsSheet = ({ isOpen, onClose, trackId }) => {
   if (!currentSong) return null;
 
   // Handle navigation to artist page
-  const goToArtist = () => {
-    const artistName = getArtistName(currentSong);
-    
-    // First, check if we have an artist ID to use (preferred)
-    if (currentSong.artist && typeof currentSong.artist === 'string' && currentSong.artist.length > 5) {
-      navigate(`/artist/${currentSong.artist}`);
-    } else {
-      // If no ID, use the artist name as the identifier (fallback)
-      navigate(`/artist/${encodeURIComponent(artistName)}`);
+  const goToArtist = async () => {
+    try {
+      // Get artist name from desc field
+      const artistName = currentSong.desc || getArtistName(currentSong);
+      console.log('Artist Name:', artistName);
+
+      if (!artistName || artistName === 'Unknown Artist') {
+        console.warn('Invalid artist name:', artistName);
+        return;
+      }
+
+      // Fetch artists list to find the correct artist ID
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
+      const response = await axios.get(`${backendUrl}/api/artist/list`);
+      
+      if (response.data.success) {
+        // Find the artist by name
+        const artist = response.data.artists.find(a => 
+          a.name.toLowerCase() === artistName.toLowerCase()
+        );
+
+        if (artist) {
+          console.log('Found artist:', artist);
+          navigate(`/artist/${artist._id}`);
+        } else {
+          console.warn('Artist not found in database:', artistName);
+          // If artist not found, try to find a song with the same artist name
+          const artistSong = songsData.find(song => 
+            (song.desc || getArtistName(song)).toLowerCase() === artistName.toLowerCase()
+          );
+          
+          if (artistSong) {
+            console.log('Found song by artist:', artistSong);
+            // Navigate to the song's page instead
+            navigate(`/song/${artistSong._id}`);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error navigating to artist:', error);
+    } finally {
+      onClose();
     }
-    onClose();
   };
 
   // Handle navigation to album page
-  const goToAlbum = () => {
-    // First check if we have an album ID
-    if (currentSong.albumId) {
-      navigate(`/album/${currentSong.albumId}`);
-    } else {
-      // Look for the album in albumsData by name
-      const albumName = getAlbumName(currentSong);
+  const goToAlbum = async () => {
+    try {
+      console.log('Starting album navigation...');
+      console.log('Current Song:', currentSong);
       
-      // Navigate to album page
-      if (albumName && albumName !== 'Unknown Album') {
-        // Use album name in URL when it's not numeric (handle old paths)
-        if (!/^\d+$/.test(albumName)) {
-          navigate(`/album/${encodeURIComponent(albumName)}`);
-        } else {
-          // For numeric IDs, just use as is
-          navigate(`/album/${albumName}`);
+      // Get album name
+      const albumName = getAlbumName(currentSong);
+      console.log('Album Name:', albumName);
+
+      if (!albumName || albumName === 'Unknown Album') {
+        console.warn('Invalid album name:', albumName);
+        return;
+      }
+
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
+      
+      // First try regular albums
+      console.log('Fetching regular albums...');
+      const regularAlbumsResponse = await axios.get(`${backendUrl}/api/album/list`);
+      if (regularAlbumsResponse.data.success && regularAlbumsResponse.data.albums) {
+        const regularAlbum = regularAlbumsResponse.data.albums.find(a => 
+          a.name.toLowerCase() === albumName.toLowerCase()
+        );
+        if (regularAlbum) {
+          console.log('Found regular album:', regularAlbum);
+          navigate(`/album/${regularAlbum._id}`);
+          return;
         }
       }
+
+      // Then try movie albums
+      console.log('Fetching movie albums...');
+      const movieAlbumsResponse = await axios.get(`${backendUrl}/api/moviealbum/list`);
+      if (movieAlbumsResponse.data.success && movieAlbumsResponse.data.movieAlbums) {
+        const movieAlbum = movieAlbumsResponse.data.movieAlbums.find(a => 
+          a.title.toLowerCase() === albumName.toLowerCase()
+        );
+        if (movieAlbum) {
+          console.log('Found movie album:', movieAlbum);
+          navigate(`/moviealbum/${movieAlbum._id}`);
+          return;
+        }
+      }
+
+      // If no album found, try to find a song with the same album name
+      const albumSong = songsData.find(song => {
+        const songAlbum = getAlbumName(song);
+        return songAlbum && songAlbum.toLowerCase() === albumName.toLowerCase();
+      });
+
+      if (albumSong) {
+        console.log('No album found, navigating to song instead:', albumSong._id);
+        navigate(`/song/${albumSong._id}`);
+      } else {
+        console.warn('No album or song found for:', albumName);
+      }
+    } catch (error) {
+      console.error('Error navigating to album:', error);
+    } finally {
+      onClose();
     }
-    onClose();
   };
 
   // Handle sharing functionality
   const shareTrack = () => {
-    if (navigator.share) {
-      navigator.share({
+    try {
+      const artistName = getArtistName(currentSong);
+      const shareData = {
         title: currentSong.name,
-        text: `Check out ${currentSong.name} by ${getArtistName(currentSong)}`,
-        url: window.location.origin + `/song/${currentSong._id}`
-      })
-      .catch(error => console.log('Sharing failed', error));
-    } else {
-      // Fallback for browsers that don't support the Web Share API
-      const shareUrl = `${window.location.origin}/song/${currentSong._id}`;
-      navigator.clipboard.writeText(shareUrl)
-        .then(() => {
-          alert('Link copied to clipboard!');
-        })
-        .catch(err => {
-          console.error('Failed to copy: ', err);
+        text: `Check out ${currentSong.name} by ${artistName}`,
+        url: `${window.location.origin}/song/${currentSong._id}`
+      };
+
+      if (navigator.share) {
+        navigator.share(shareData).catch(error => {
+          console.log('Sharing failed:', error);
+          fallbackShare(shareData.url);
         });
+      } else {
+        fallbackShare(shareData.url);
+      }
+    } catch (error) {
+      console.error('Error sharing track:', error);
+    } finally {
+      onClose();
     }
-    onClose();
+  };
+
+  // Fallback share function
+  const fallbackShare = (url) => {
+    navigator.clipboard.writeText(url)
+      .then(() => {
+        if (window.toast) {
+          window.toast.success('Link copied to clipboard!');
+        } else {
+          alert('Link copied to clipboard!');
+        }
+      })
+      .catch(err => {
+        console.error('Failed to copy:', err);
+        if (window.toast) {
+          window.toast.error('Failed to copy link');
+        }
+      });
   };
 
   // Handle download functionality
   const downloadTrack = () => {
-    if (currentSong.file) {
+    try {
+      if (!currentSong.file) {
+        console.warn('No file URL available for download');
+        return;
+      }
+
+      const artistName = getArtistName(currentSong);
+      const fileName = `${currentSong.name} - ${artistName}.mp3`;
+      
       const link = document.createElement('a');
       link.href = currentSong.file;
-      link.download = `${currentSong.name} - ${getArtistName(currentSong)}.mp3`;
+      link.download = fileName;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+    } catch (error) {
+      console.error('Error downloading track:', error);
+    } finally {
+      onClose();
     }
-    onClose();
   };
 
   // Add to radio (similar songs)
   const goToRadio = () => {
-    // Navigate to either an actual radio route or similar songs based on genre
-    navigate(`/trending?genre=${encodeURIComponent(currentSong.genre || '')}`);
-    onClose();
+    try {
+      navigate('/radio');
+    } catch (error) {
+      console.error('Error navigating to radio:', error);
+    } finally {
+      onClose();
+    }
   };
 
-  // About this song option - direct to song info page
+  // About this song option
   const goToSongInfo = () => {
-    // Since there isn't a dedicated song page, show the song in its album context
-    if (currentSong.album) {
-      navigate(`/album/${encodeURIComponent(currentSong.album)}`, { 
-        state: { highlightSongId: currentSong._id } 
-      });
-    } else {
-      // Fallback - go to artist
-      goToArtist();
+    try {
+      if (currentSong && currentSong._id) {
+        navigate(`/song/${currentSong._id}/info`);
+      }
+    } catch (error) {
+      console.error('Error navigating to song info:', error);
+    } finally {
+      onClose();
     }
-    onClose();
   };
 
   // Option items when showing the main menu
@@ -139,8 +247,16 @@ const MoreOptionsSheet = ({ isOpen, onClose, trackId }) => {
       icon: isFavorite(trackId) ? <FaHeart /> : <FaRegHeart />,
       label: isFavorite(trackId) ? 'Remove from Liked Songs' : 'Like',
       action: () => {
-        toggleFavorite(trackId);
-        onClose();
+        try {
+          toggleFavorite(trackId);
+          if (window.toast) {
+            window.toast.success(isFavorite(trackId) ? 'Removed from Liked Songs' : 'Added to Liked Songs');
+          }
+        } catch (error) {
+          console.error('Error toggling favorite:', error);
+        } finally {
+          onClose();
+        }
       }
     },
     {
@@ -154,11 +270,15 @@ const MoreOptionsSheet = ({ isOpen, onClose, trackId }) => {
       icon: <MdOutlineQueueMusic />,
       label: 'Add to queue',
       action: () => {
-        addToQueue(trackId);
-        onClose();
-        // Show toast notification
-        if (window.toast) {
-          window.toast.success('Added to queue');
+        try {
+          addToQueue(trackId);
+          if (window.toast) {
+            window.toast.success('Added to queue');
+          }
+        } catch (error) {
+          console.error('Error adding to queue:', error);
+        } finally {
+          onClose();
         }
       }
     },
@@ -203,7 +323,7 @@ const MoreOptionsSheet = ({ isOpen, onClose, trackId }) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/70 z-50"
+            className="fixed inset-0 bg-black/70 z-[60]"
             onClick={onClose}
           />
           
@@ -213,7 +333,7 @@ const MoreOptionsSheet = ({ isOpen, onClose, trackId }) => {
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="fixed bottom-0 left-0 right-0 z-50 max-h-[85vh] overflow-y-auto rounded-t-xl options-sheet"
+            className="fixed bottom-0 left-0 right-0 z-[60] max-h-[85vh] overflow-y-auto rounded-t-xl options-sheet"
             style={{ 
               backgroundColor: themeColors.secondary,
               color: themeColors.text

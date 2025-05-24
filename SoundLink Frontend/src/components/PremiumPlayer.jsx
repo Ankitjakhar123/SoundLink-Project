@@ -1712,8 +1712,7 @@ const InlineLyricsDisplay = ({ track, currentTime, themeColors }) => {
                   scale: isActive ? 1.05 : 0.9,
                 }}
                 style={{ 
-                  color: isActive ? themeColors.primary : `${themeColors.text}aa`,
-                  fontWeight: isActive ? '700' : '400',
+                  color: isActive ? themeColors.primary : `${themeColors.text}80`,
                   fontSize: isActive ? '1.1rem' : '0.9rem',
                   textShadow: isActive ? `0 0 8px ${themeColors.primary}30` : 'none',
                   letterSpacing: isActive ? '0.02em' : 'normal',

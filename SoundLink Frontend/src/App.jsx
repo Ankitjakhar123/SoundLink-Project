@@ -38,6 +38,7 @@ import InstallPWAButton from "./components/InstallPWAButton";
 import PremiumLoading from './components/PremiumLoading';
 import RadioStation from './components/RadioStation';
 import PremiumRadioPlayer from './components/PremiumRadioPlayer';
+import SongDetail from './components/SongDetail';
 
 // Protected route component that requires authentication
 const ProtectedRoute = ({ children }) => {
@@ -298,6 +299,7 @@ const App = () => {
               <Route path="/album/:id" element={<DisplayAlbum />} />
               <Route path="/movie/:id" element={<MovieAlbumDetail onEnterFullscreen={lockOrientation} />} />
               <Route path="/artist/:id" element={<ArtistDetail />} />
+              <Route path="/song/:id/info" element={<SongDetail />} />
               <Route path="/artists" element={<Artists />} />
               <Route path="/trending" element={<TrendingSongs />} />
               {/* Redirect search to home since we're using popup search only */}

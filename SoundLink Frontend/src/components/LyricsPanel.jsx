@@ -165,17 +165,16 @@ const LyricsPanel = ({ isOpen, onClose }) => {
                         key={line.index} 
                         className={`text-lg mb-1.5 transition-all duration-300 will-change-transform line-${line.index} px-4 py-1.5`}
                         style={{ 
-                          color: isActive ? themeColors.primary : themeColors.text,
+                          color: isActive ? themeColors.primary : `${themeColors.text}80`,
                           fontSize: isActive ? '1.25rem' : '1rem',
-                          fontWeight: isActive ? '700' : '400',
                           transform: isActive ? 'scale(1.05)' : 'scale(1)',
                           transformOrigin: 'center center',
                           textShadow: isActive ? `0 0 10px ${themeColors.primary}40` : 'none',
                         }}
                       >
                         {line.text || ' '} {/* Empty lines render as space */}
-                </p>
-              </div>
+                      </p>
+                    </div>
                   );
                 })
               ) : (

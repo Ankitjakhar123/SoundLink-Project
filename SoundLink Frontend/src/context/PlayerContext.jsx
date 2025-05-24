@@ -136,6 +136,9 @@ export const PlayerContextProvider = ({ children }) => {
     accent: '#ec4899'
   });
 
+  // Add this after the other state declarations
+  const [lastPlayedSong, setLastPlayedSong] = useState(null);
+
   // Initialize audio context
   const initAudioContext = () => {
     // Only create once
@@ -458,7 +461,15 @@ export const PlayerContextProvider = ({ children }) => {
     };
   };
 
-  // Modified playWithId to extract colors from album art
+  // Add this function after the other functions
+  const saveLastPlayedSong = (song) => {
+    if (song) {
+      localStorage.setItem('lastPlayedSong', JSON.stringify(song));
+      setLastPlayedSong(song);
+    }
+  };
+
+  // Modified playWithId function to save the last played song
   const playWithId = async (id) => {
     // First check if we're just reloading the current track
     if (track && track._id === id) {
@@ -512,8 +523,9 @@ export const PlayerContextProvider = ({ children }) => {
         });
       }
       
-      // Set the track in state
+      // Set the track in state and save as last played
       setTrack(selectedTrack);
+      saveLastPlayedSong(selectedTrack);
       
       // Record this song in history if user is logged in
       if (user && user._id && token) {
@@ -579,13 +591,22 @@ export const PlayerContextProvider = ({ children }) => {
       // Remove from queue
       setQueueSongs(prevQueue => prevQueue.slice(1));
       setAutoplayEnabled(true);
+      // Reset progress bar
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0;
+      }
       return;
     }
     
     const currentIndex = songsData.findIndex(item => item._id === track._id);
     if (currentIndex < songsData.length - 1) {
-      setTrack(songsData[currentIndex + 1]);
+      const nextTrack = songsData[currentIndex + 1];
+      setTrack(nextTrack);
       setAutoplayEnabled(true);
+      // Reset progress bar
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0;
+      }
     }
   };
 
@@ -871,6 +892,7 @@ export const PlayerContextProvider = ({ children }) => {
     }
   };
 
+  // Modify the getSongData function to load the last played song
   const getSongData = async () => {
     try {
       setLoading(prev => ({...prev, songs: true}));
@@ -880,7 +902,25 @@ export const PlayerContextProvider = ({ children }) => {
       const response = await axios.get(`${API_BASE_URL}/api/song/list?all=true`);
       setSongsData(response.data.songs);
       
-      if (response.data.songs.length > 0) {
+      // Try to load the last played song from localStorage
+      const savedLastPlayed = localStorage.getItem('lastPlayedSong');
+      if (savedLastPlayed) {
+        try {
+          const lastPlayed = JSON.parse(savedLastPlayed);
+          // Verify the song still exists in our data
+          const songExists = response.data.songs.some(song => song._id === lastPlayed._id);
+          if (songExists) {
+            setTrack(lastPlayed);
+            setLastPlayedSong(lastPlayed);
+          } else {
+            // If the saved song doesn't exist anymore, set the first song
+            setTrack(response.data.songs[0]);
+          }
+        } catch (error) {
+          console.error('Error loading last played song:', error);
+          setTrack(response.data.songs[0]);
+        }
+      } else if (response.data.songs.length > 0) {
         setTrack(response.data.songs[0]);
       }
     } catch (error) {
@@ -1210,6 +1250,31 @@ export const PlayerContextProvider = ({ children }) => {
     return formattedLyrics;
   };
 
+  // Add event listener for when song ends
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const handleEnded = () => {
+      if (!audio.loop) {
+        Next();
+        // Ensure the next song starts playing
+        setTimeout(() => {
+          if (audioRef.current) {
+            audioRef.current.play().catch(error => {
+              console.error('Error playing next song:', error);
+            });
+          }
+        }, 100);
+      }
+    };
+
+    audio.addEventListener("ended", handleEnded);
+    return () => {
+      audio.removeEventListener("ended", handleEnded);
+    };
+  }, [track]);
+
   // Add the new buffering states and functions to the context
   const contextValue = {
     audioRef,
@@ -1261,6 +1326,8 @@ export const PlayerContextProvider = ({ children }) => {
     hidePlayer,
     togglePlayerVisibility,
     themeColors,
+    lastPlayedSong,
+    saveLastPlayedSong,
   };
 
   return (
