@@ -671,7 +671,9 @@ const PremiumPlayer = () => {
           <div 
             className="fixed inset-0 bottom-[50px] z-40 mobile-player-overlay overflow-y-auto pt-safe"
             style={{ 
-              color: themeColors.text
+              color: themeColors.text,
+              paddingTop: 'env(safe-area-inset-top)',
+              paddingBottom: 'env(safe-area-inset-bottom)'
             }}
           >
             {/* Status bar background */}
