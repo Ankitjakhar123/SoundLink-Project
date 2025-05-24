@@ -640,10 +640,11 @@ const PremiumPlayer = () => {
             {/* Content container - now a single scrollable area */}
             <div className="relative z-10 min-h-full pb-20">
               {/* Top navigation row - sticky at top */}
-              <div className="sticky flex justify-between items-center p-5 mb-2 z-20 pt-safe backdrop-blur-xl" 
+              <div className="sticky flex justify-between items-center p-5 mb-2 z-20 backdrop-blur-xl" 
                 style={{ 
                   top: 0,
                   paddingTop: 'calc(env(safe-area-inset-top) + 1rem)',
+                  paddingBottom: '1rem',
                   boxShadow: `0 4px 12px rgba(0, 0, 0, 0.3), 0 1px 3px ${themeColors.primary}30`,
                   background: `linear-gradient(to bottom, ${themeColors.secondary}ee, ${themeColors.secondary}f8)`,
                   borderBottom: `1px solid ${themeColors.primary}30`
