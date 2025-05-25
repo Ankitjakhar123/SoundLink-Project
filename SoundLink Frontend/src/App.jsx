@@ -101,20 +101,22 @@ const App = () => {
   // Setup Media Session API for lock screen controls
   useEffect(() => {
     if ('mediaSession' in navigator) {
-      // Handle both regular tracks and radio stations
-      const currentTrack = track || (radioContext?.currentStation ? {
-        name: radioContext.currentStation.name,
-        singer: radioContext.currentStation.language || 'Live Radio',
-        albumName: 'Radio Station',
-        image: radioContext.currentStation.favicon || '/icons/soundlink-icon.svg?v=2',
-        isRadio: true
-      } : null);
+      // Prioritize radio if it is playing
+      const currentTrack = (radioContext?.isPlaying && radioContext?.currentStation)
+        ? {
+            name: radioContext.currentStation.name,
+            singer: radioContext.currentStation.language || 'Live Radio',
+            albumName: 'Radio Station',
+            image: radioContext.currentStation.favicon || '/icons/soundlink-icon.svg?v=2',
+            isRadio: true
+          }
+        : track;
 
       if (currentTrack) {
         navigator.mediaSession.metadata = new MediaMetadata({
           title: currentTrack.name,
           artist: currentTrack.isRadio ? 
-                 (currentTrack.language || 'Live Radio') : 
+                 (currentTrack.singer || 'Live Radio') : 
                  (getArtistName(currentTrack) || 'Unknown Artist'),
           album: currentTrack.isRadio ? 
                  'Radio Station' : 
