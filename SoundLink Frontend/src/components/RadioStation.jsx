@@ -2,7 +2,7 @@ import React, { useContext, useState, useEffect } from "react";
 import { RadioContext } from "../context/RadioContext";
 import { PlayerContext } from "../context/PlayerContext";
 import { AnimatePresence } from "framer-motion";
-import { MdPlayArrow, MdPause, MdRadio, MdMusicNote, MdExpandMore, MdChevronRight, MdSearch, MdLanguage, MdWeb, MdSpeed, MdCode } from "react-icons/md";
+import { MdPlayArrow, MdPause, MdRadio, MdMusicNote, MdExpandMore, MdChevronRight, MdSearch, MdLanguage, MdWeb, MdSpeed, MdCode, MdStar, MdStarBorder, MdKeyboardArrowDown, MdFavorite, MdFavoriteBorder } from "react-icons/md";
 import PremiumRadioPlayer from "./PremiumRadioPlayer";
 
 const RadioStation = () => {
@@ -15,7 +15,33 @@ const RadioStation = () => {
   const [expandedGenres, setExpandedGenres] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedStations, setExpandedStations] = useState({});
+  const [pinnedGenres, setPinnedGenres] = useState([]);
+  const [favoriteStations, setFavoriteStations] = useState([]);
+  const [isQuickSelectOpen, setIsQuickSelectOpen] = useState(false);
   const STATIONS_PER_PAGE = 10;
+
+  // Load favorites from localStorage on component mount
+  useEffect(() => {
+    const savedFavorites = localStorage.getItem('favoriteStations');
+    if (savedFavorites) {
+      setFavoriteStations(JSON.parse(savedFavorites));
+    }
+  }, []);
+
+  // Save favorites to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('favoriteStations', JSON.stringify(favoriteStations));
+  }, [favoriteStations]);
+
+  const toggleFavorite = (station) => {
+    setFavoriteStations(prev => {
+      if (prev.some(s => s.stationuuid === station.stationuuid)) {
+        return prev.filter(s => s.stationuuid !== station.stationuuid);
+      } else {
+        return [...prev, station];
+      }
+    });
+  };
 
   // Sync local state with context state
   useEffect(() => {
@@ -78,8 +104,11 @@ const RadioStation = () => {
   const groupStationsByGenre = (allStations) => {
     const genres = {
       Hindi: [],
-      Rajasthani: [],
       Bollywood: [],
+      Haryanvi: [],
+      Rajasthani: [],
+      DJ: [],
+      Punjabi: [],
       Other: []
     };
 
@@ -87,24 +116,56 @@ const RadioStation = () => {
       const stationGenres = station.tags ? station.tags.toLowerCase().split(',') : [];
       let addedToGenre = false;
 
-      if (stationGenres.some(tag => tag.trim().includes('hindi') || tag.trim().includes('bollywood'))) {
-        genres.Hindi.push(station);
+      // Check for Haryanvi stations first
+      if (stationGenres.some(tag => 
+        tag.trim().includes('haryanvi') || 
+        tag.trim().includes('haryana') || 
+        station.name.toLowerCase().includes('haryanvi') ||
+        station.name.toLowerCase().includes('haryana')
+      )) {
+        genres.Haryanvi.push(station);
         addedToGenre = true;
       }
-      
-      if (stationGenres.some(tag => tag.trim().includes('rajasthani'))) {
+      // Check for Rajasthani stations
+      else if (stationGenres.some(tag => 
+        tag.trim().includes('rajasthani') || 
+        tag.trim().includes('rajasthan') || 
+        station.name.toLowerCase().includes('rajasthani') ||
+        station.name.toLowerCase().includes('rajasthan')
+      )) {
         genres.Rajasthani.push(station);
         addedToGenre = true;
       }
-
-      if (!addedToGenre && station.name.toLowerCase().includes('bollywood')) {
-         genres.Bollywood.push(station);
-         addedToGenre = true;
+      // Check for DJ stations
+      else if (stationGenres.some(tag => 
+        tag.trim().includes('dj') || 
+        tag.trim().includes('disc jockey') || 
+        station.name.toLowerCase().includes('dj') ||
+        station.name.toLowerCase().includes('disc jockey')
+      )) {
+        genres.DJ.push(station);
+        addedToGenre = true;
       }
-
-      if (!addedToGenre && stationGenres.some(tag => tag.trim().includes('bollywood'))) {
-          genres.Bollywood.push(station);
-          addedToGenre = true;
+      // Check for Punjabi stations
+      else if (stationGenres.some(tag => 
+        tag.trim().includes('punjabi') || 
+        tag.trim().includes('punjab') || 
+        station.name.toLowerCase().includes('punjabi') ||
+        station.name.toLowerCase().includes('punjab')
+      )) {
+        genres.Punjabi.push(station);
+        addedToGenre = true;
+      }
+      // Then check for Hindi stations
+      else if (stationGenres.some(tag => tag.trim().includes('hindi'))) {
+        genres.Hindi.push(station);
+        addedToGenre = true;
+      }
+      // Then check for Bollywood stations
+      else if (stationGenres.some(tag => tag.trim().includes('bollywood')) || 
+               station.name.toLowerCase().includes('bollywood')) {
+        genres.Bollywood.push(station);
+        addedToGenre = true;
       }
 
       if (!addedToGenre) {
@@ -113,8 +174,11 @@ const RadioStation = () => {
     });
     
     const orderedGenres = {};
-    if (genres.Hindi.length > 0) orderedGenres.Hindi = genres.Hindi;
+    if (genres.Haryanvi.length > 0) orderedGenres.Haryanvi = genres.Haryanvi;
     if (genres.Rajasthani.length > 0) orderedGenres.Rajasthani = genres.Rajasthani;
+    if (genres.DJ.length > 0) orderedGenres.DJ = genres.DJ;
+    if (genres.Punjabi.length > 0) orderedGenres.Punjabi = genres.Punjabi;
+    if (genres.Hindi.length > 0) orderedGenres.Hindi = genres.Hindi;
     if (genres.Bollywood.length > 0) orderedGenres.Bollywood = genres.Bollywood;
     if (genres.Other.length > 0) orderedGenres.Other = genres.Other;
 
@@ -128,47 +192,32 @@ const RadioStation = () => {
 
   const handlePlayPause = async (station) => {
     try {
-      // Check if this station is currently playing
       const isThisStationPlaying = currentStation?.stationuuid === station.stationuuid && isPlaying;
-      
+
       if (isThisStationPlaying) {
-        // If this station is playing, stop it
         stopStation();
         setLocalPlayingState(prev => ({
           ...prev,
           [station.stationuuid]: false
         }));
       } else {
-        // Create a proper station object with required fields
-        const stationData = {
-          stationuuid: station.stationuuid || station._id,
-          name: station.name,
-          url_resolved: station.url_resolved || station.streamUrl,
-          favicon: station.favicon || station.image,
-          bitrate: station.bitrate || '128',
-          codec: station.codec || 'MP3',
-          country: station.country || 'IN',
-          language: station.language || 'Hindi'
-        };
-        
         // Stop any currently playing station
-        if (isPlaying) {
-          stopStation();
+        if (isPlaying && currentStation) {
+          setLocalPlayingState({}); // Reset all
         }
-        
+
         // Play the new station
-        await playStation(stationData);
-        setLocalPlayingState(prev => ({
-          ...prev,
-          [stationData.stationuuid]: true
-        }));
+        await playStation(station);
+
+        // Set only the new station as playing
+        setLocalPlayingState({
+          [station.stationuuid]: true
+        });
       }
     } catch (error) {
-      console.error('Error handling radio station:', error);
-      // Reset local state on error
       setLocalPlayingState(prev => ({
         ...prev,
-        [station.stationuuid || station._id]: false
+        [station.stationuuid]: false
       }));
     }
   };
@@ -193,6 +242,23 @@ const RadioStation = () => {
       station.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (station.tags && station.tags.toLowerCase().includes(searchQuery.toLowerCase()))
     );
+  };
+
+  const togglePinGenre = (genre) => {
+    setPinnedGenres(prev => {
+      if (prev.includes(genre)) {
+        return prev.filter(g => g !== genre);
+      } else {
+        return [...prev, genre].slice(0, 2); // Keep only top 2 pinned genres
+      }
+    });
+  };
+
+  const scrollToGenre = (genre) => {
+    const element = document.getElementById(`genre-${genre}`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
   };
 
   if (loading) {
@@ -227,6 +293,175 @@ const RadioStation = () => {
           </p>
         </div>
 
+        {/* Quick Selection Dropdown */}
+        <div className="mb-8 relative">
+          <button
+            onClick={() => setIsQuickSelectOpen(!isQuickSelectOpen)}
+            className="w-full bg-neutral-900/50 border border-neutral-800 rounded-lg p-4 flex items-center justify-between text-white hover:bg-neutral-800/50 transition-colors"
+          >
+            <span className="font-semibold">Quick Selection</span>
+            <MdKeyboardArrowDown 
+              size={24} 
+              className={`transform transition-transform ${isQuickSelectOpen ? 'rotate-180' : ''}`}
+            />
+          </button>
+          
+          {isQuickSelectOpen && (
+            <div className="absolute top-full left-0 right-0 mt-2 bg-neutral-900/95 border border-neutral-800 rounded-lg p-4 z-10 backdrop-blur-sm">
+              <div className="flex flex-wrap gap-2">
+                {Object.keys(groupedStations).map((genre) => (
+                  <button
+                    key={genre}
+                    onClick={() => {
+                      scrollToGenre(genre);
+                      setIsQuickSelectOpen(false);
+                    }}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-full transition-colors ${
+                      pinnedGenres.includes(genre)
+                        ? 'bg-fuchsia-500 text-white'
+                        : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700'
+                    }`}
+                  >
+                    <span>{genre}</span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        togglePinGenre(genre);
+                      }}
+                      className="p-1 hover:bg-white/10 rounded-full"
+                    >
+                      {pinnedGenres.includes(genre) ? (
+                        <MdStar className="text-yellow-400" size={20} />
+                      ) : (
+                        <MdStarBorder className="text-neutral-400" size={20} />
+                      )}
+                    </button>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Favorites Section */}
+        {favoriteStations.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-xl font-bold text-white mb-4">Favorites</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {favoriteStations.map((station) => (
+                <div
+                  key={`favorite-${station.stationuuid}`}
+                  className="bg-neutral-900/50 rounded-lg p-4 border border-neutral-800 hover:border-fuchsia-500/50 transition-colors"
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg font-semibold text-white truncate">{station.name}</h3>
+                      {station.genre && (
+                        <p className="text-sm text-neutral-400 truncate">{station.genre}</p>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => toggleFavorite(station)}
+                      className="p-1 hover:bg-white/10 rounded-full ml-2"
+                    >
+                      <MdFavorite className="text-fuchsia-500" size={20} />
+                    </button>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-sm text-neutral-400">
+                      {station.bitrate && (
+                        <span className="flex items-center gap-1">
+                          <MdSpeed size={14} />
+                          {station.bitrate}kbps
+                        </span>
+                      )}
+                      {station.codec && (
+                        <span className="flex items-center gap-1">
+                          <MdCode size={14} />
+                          {station.codec}
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => handlePlayPause(station)}
+                      className={`p-2 rounded-full ${
+                        localPlayingState[station.stationuuid]
+                          ? 'bg-fuchsia-500'
+                          : 'bg-neutral-700 hover:bg-neutral-600'
+                      }`}
+                    >
+                      {localPlayingState[station.stationuuid] ? (
+                        <MdPause className="text-white" size={20} />
+                      ) : (
+                        <MdPlayArrow className="text-white" size={20} />
+                      )}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Pinned Genres Section */}
+        {pinnedGenres.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-xl font-bold text-white mb-4">Pinned Genres</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {pinnedGenres.map((genre) => (
+                <div
+                  key={`pinned-${genre}`}
+                  className="bg-neutral-900/50 rounded-lg p-4 border border-neutral-800"
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-white">{genre}</h3>
+                    <button
+                      onClick={() => togglePinGenre(genre)}
+                      className="p-1 hover:bg-white/10 rounded-full"
+                    >
+                      <MdStar className="text-yellow-400" size={20} />
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 gap-2">
+                    {groupedStations[genre]?.slice(0, 3).map((station) => (
+                      <div
+                        key={station.stationuuid}
+                        className="flex items-center justify-between p-2 bg-neutral-800/50 rounded-lg"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <span className="text-white truncate">{station.name}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => togglePinGenre(station)}
+                            className="p-1 hover:bg-white/10 rounded-full"
+                          >
+                            <MdStarBorder className="text-neutral-400" size={16} />
+                          </button>
+                          <button
+                            onClick={() => handlePlayPause(station)}
+                            className={`p-2 rounded-full ${
+                              localPlayingState[station.stationuuid]
+                                ? 'bg-fuchsia-500'
+                                : 'bg-neutral-700 hover:bg-neutral-600'
+                            }`}
+                          >
+                            {localPlayingState[station.stationuuid] ? (
+                              <MdPause className="text-white" size={16} />
+                            ) : (
+                              <MdPlayArrow className="text-white" size={16} />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Search Bar */}
         <div className="mb-8">
           <div className="relative">
@@ -252,7 +487,11 @@ const RadioStation = () => {
             if (filteredStations.length === 0) return null;
 
             return (
-              <div key={genre} className="mb-8 border border-neutral-800 rounded-lg overflow-hidden">
+              <div 
+                key={genre} 
+                id={`genre-${genre}`}
+                className="mb-8 border border-neutral-800 rounded-lg overflow-hidden"
+              >
                 {/* Genre Header */}
                 <div 
                   className="flex items-center justify-between p-4 bg-neutral-900 cursor-pointer"
@@ -266,18 +505,15 @@ const RadioStation = () => {
                   </div>
                 </div>
 
-                {/* Stations List - Collapsible */}
+                {/* Stations List */}
                 <AnimatePresence initial={false}>
                   {expandedGenres[genre] && (
-                    <div
-                      key="content"
-                      className="px-4 py-2"
-                    >
+                    <div className="px-4 py-2">
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {visibleStations.map((station) => {
-                          const isStationPlaying = localPlayingState[station.stationuuid] || 
-                            (currentStation?.stationuuid === station.stationuuid && isPlaying);
+                          const isStationPlaying = currentStation?.stationuuid === station.stationuuid && isPlaying;
                           const isThisStationLoading = isLoading && currentStation?.stationuuid === station.stationuuid;
+                          const isFavorite = favoriteStations.some(s => s.stationuuid === station.stationuuid);
 
                           return (
                             <div
@@ -330,25 +566,40 @@ const RadioStation = () => {
                                     )}
                                   </div>
                                 </div>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handlePlayPause(station);
-                                  }}
-                                  className={`p-2 rounded-full ${
-                                    isStationPlaying
-                                      ? 'bg-fuchsia-500'
-                                      : 'bg-neutral-800 hover:bg-neutral-700'
-                                  }`}
-                                >
-                                  {isThisStationLoading ? (
-                                    <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                  ) : isStationPlaying ? (
-                                    <MdPause className="text-white" size={24} />
-                                  ) : (
-                                    <MdPlayArrow className="text-white" size={24} />
-                                  )}
-                                </button>
+                                <div className="flex flex-col items-end gap-2">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toggleFavorite(station);
+                                    }}
+                                    className="p-1 hover:bg-white/10 rounded-full"
+                                  >
+                                    {isFavorite ? (
+                                      <MdFavorite className="text-fuchsia-500" size={20} />
+                                    ) : (
+                                      <MdFavoriteBorder className="text-neutral-400" size={20} />
+                                    )}
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handlePlayPause(station);
+                                    }}
+                                    className={`p-2 rounded-full ${
+                                      isStationPlaying
+                                        ? 'bg-fuchsia-500'
+                                        : 'bg-neutral-800 hover:bg-neutral-700'
+                                    }`}
+                                  >
+                                    {isThisStationLoading ? (
+                                      <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                    ) : isStationPlaying ? (
+                                      <MdPause className="text-white" size={24} />
+                                    ) : (
+                                      <MdPlayArrow className="text-white" size={24} />
+                                    )}
+                                  </button>
+                                </div>
                               </div>
                             </div>
                           );
