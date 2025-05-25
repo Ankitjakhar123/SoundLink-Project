@@ -152,9 +152,9 @@ export const RadioContextProvider = ({ children }) => {
           album: station.language || 'Radio Station',
           artwork: [
             { 
-              src: station.favicon || station.logo || 'https://your-default-radio-logo.png',
+              src: '/live-radio-artwork.svg',
               sizes: '512x512',
-              type: 'image/png'
+              type: 'image/svg+xml'
             }
           ]
         });

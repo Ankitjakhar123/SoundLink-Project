@@ -107,7 +107,7 @@ const App = () => {
             name: radioContext.currentStation.name,
             singer: radioContext.currentStation.language || 'Live Radio',
             albumName: 'Radio Station',
-            image: radioContext.currentStation.favicon || '/icons/soundlink-icon.svg?v=2',
+            image: '/live-radio-artwork.svg',
             isRadio: true
           }
         : track;
@@ -122,7 +122,7 @@ const App = () => {
                  'Radio Station' : 
                  (getAlbumName(currentTrack) || 'Unknown Album'),
           artwork: [
-            { src: currentTrack.image || '/icons/soundlink-icon.svg?v=2', sizes: '512x512', type: 'image/png' }
+            { src: currentTrack.image || '/icons/soundlink-icon.svg?v=2', sizes: '512x512', type: currentTrack.isRadio ? 'image/svg+xml' : 'image/png' }
           ]
         });
         
