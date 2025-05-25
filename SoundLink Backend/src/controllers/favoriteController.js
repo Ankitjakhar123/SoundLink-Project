@@ -1,18 +1,19 @@
 import favoriteModel from "../models/favoriteModel.js";
 
-// Like a song or album
+// Like a song, album, or radio station
 export const like = async (req, res) => {
   try {
-    const { songId, albumId } = req.body;
-    if (!songId && !albumId) {
-      return res.status(400).json({ success: false, message: "Song or album ID required." });
+    const { songId, albumId, radioStation } = req.body;
+    if (!songId && !albumId && !radioStation) {
+      return res.status(400).json({ success: false, message: "Song, album, or radio station required." });
     }
     const filter = { user: req.user.id };
     if (songId) filter.song = songId;
     if (albumId) filter.album = albumId;
+    if (radioStation) filter['radioStation.stationuuid'] = radioStation.stationuuid;
     let favorite = await favoriteModel.findOne(filter);
     if (!favorite) {
-      favorite = new favoriteModel(filter);
+      favorite = new favoriteModel({ ...filter, radioStation: radioStation || undefined });
       await favorite.save();
     }
     res.json({ success: true, favorite });
@@ -21,16 +22,17 @@ export const like = async (req, res) => {
   }
 };
 
-// Unlike a song or album
+// Unlike a song, album, or radio station
 export const unlike = async (req, res) => {
   try {
-    const { songId, albumId } = req.body;
-    if (!songId && !albumId) {
-      return res.status(400).json({ success: false, message: "Song or album ID required." });
+    const { songId, albumId, radioStation } = req.body;
+    if (!songId && !albumId && !radioStation) {
+      return res.status(400).json({ success: false, message: "Song, album, or radio station required." });
     }
     const filter = { user: req.user.id };
     if (songId) filter.song = songId;
     if (albumId) filter.album = albumId;
+    if (radioStation) filter['radioStation.stationuuid'] = radioStation.stationuuid;
     await favoriteModel.findOneAndDelete(filter);
     res.json({ success: true, message: "Unliked." });
   } catch (error) {

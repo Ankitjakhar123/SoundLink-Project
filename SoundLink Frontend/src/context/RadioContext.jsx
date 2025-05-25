@@ -1,6 +1,9 @@
 import React, { createContext, useState, useContext, useRef, useEffect } from 'react';
 import { PlayerContext } from './PlayerContext';
 import { toast } from 'react-toastify';
+import axios from "axios";
+import { AuthContext } from "./AuthContext";
+import { API_BASE_URL } from "../utils/api";
 
 export const RadioContext = createContext();
 
@@ -18,6 +21,7 @@ export const RadioContextProvider = ({ children }) => {
   const retryTimeoutRef = useRef(null);
   const MAX_RETRIES = 3;
   const RETRY_DELAY = 2000;
+  const { token } = useContext(AuthContext);
 
   // Load favorites from localStorage
   useEffect(() => {
@@ -31,6 +35,26 @@ export const RadioContextProvider = ({ children }) => {
   useEffect(() => {
     localStorage.setItem('radioFavorites', JSON.stringify(favorites));
   }, [favorites]);
+
+  // Fetch radio favorites from backend
+  const getRadioFavorites = async () => {
+    if (!token) return;
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/favorite/my`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.data.success) {
+        const radioFavs = response.data.favorites.filter(fav => fav.radioStation);
+        setFavorites(radioFavs.map(fav => fav.radioStation));
+      }
+    } catch {
+      // handle error
+    }
+  };
+
+  useEffect(() => {
+    if (token) getRadioFavorites();
+  }, [token]);
 
   // Handle audio events
   useEffect(() => {
@@ -260,17 +284,37 @@ export const RadioContextProvider = ({ children }) => {
     forceStopRadio();
   };
 
-  const toggleFavorite = (station) => {
-    setFavorites(prev => {
-      const isFavorite = prev.some(s => s.stationuuid === station.stationuuid);
-      if (isFavorite) {
-        toast.info('Removed from favorites');
-        return prev.filter(s => s.stationuuid !== station.stationuuid);
-      } else {
-        toast.success('Added to favorites');
-        return [...prev, station];
-      }
-    });
+  // Toggle favorite for radio station
+  const toggleFavorite = async (station) => {
+    if (!token) {
+      // fallback to localStorage for guests
+      setFavorites(prev => {
+        const isFavorite = prev.some(s => s.stationuuid === station.stationuuid);
+        if (isFavorite) {
+          toast.info('Removed from favorites');
+          return prev.filter(s => s.stationuuid !== station.stationuuid);
+        } else {
+          toast.success('Added to favorites');
+          return [...prev, station];
+        }
+      });
+      return;
+    }
+    // If logged in, sync with backend
+    const isFavorite = favorites.some(s => s.stationuuid === station.stationuuid);
+    if (isFavorite) {
+      await axios.post(`${API_BASE_URL}/api/favorite/unlike`, { radioStation: { stationuuid: station.stationuuid } }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setFavorites(prev => prev.filter(s => s.stationuuid !== station.stationuuid));
+      toast.info('Removed from favorites');
+    } else {
+      await axios.post(`${API_BASE_URL}/api/favorite/like`, { radioStation: station }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setFavorites(prev => [...prev, station]);
+      toast.success('Added to favorites');
+    }
   };
 
   const isFavorite = (station) => {
