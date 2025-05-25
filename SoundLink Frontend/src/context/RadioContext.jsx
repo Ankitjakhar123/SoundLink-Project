@@ -23,19 +23,6 @@ export const RadioContextProvider = ({ children }) => {
   const RETRY_DELAY = 2000;
   const { token } = useContext(AuthContext);
 
-  // Load favorites from localStorage
-  useEffect(() => {
-    const savedFavorites = localStorage.getItem('radioFavorites');
-    if (savedFavorites) {
-      setFavorites(JSON.parse(savedFavorites));
-    }
-  }, []);
-
-  // Save favorites to localStorage
-  useEffect(() => {
-    localStorage.setItem('radioFavorites', JSON.stringify(favorites));
-  }, [favorites]);
-
   // Fetch radio favorites from backend
   const getRadioFavorites = async () => {
     if (!token) return;
@@ -53,7 +40,9 @@ export const RadioContextProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    if (token) getRadioFavorites();
+    if (token) {
+      getRadioFavorites();
+    }
   }, [token]);
 
   // Handle audio events
@@ -287,17 +276,7 @@ export const RadioContextProvider = ({ children }) => {
   // Toggle favorite for radio station
   const toggleFavorite = async (station) => {
     if (!token) {
-      // fallback to localStorage for guests
-      setFavorites(prev => {
-        const isFavorite = prev.some(s => s.stationuuid === station.stationuuid);
-        if (isFavorite) {
-          toast.info('Removed from favorites');
-          return prev.filter(s => s.stationuuid !== station.stationuuid);
-        } else {
-          toast.success('Added to favorites');
-          return [...prev, station];
-        }
-      });
+      toast.info('Please log in to add favorites.');
       return;
     }
     // If logged in, sync with backend

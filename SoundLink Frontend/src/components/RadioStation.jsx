@@ -1,13 +1,16 @@
 import React, { useContext, useState, useEffect } from "react";
 import { RadioContext } from "../context/RadioContext";
 import { PlayerContext } from "../context/PlayerContext";
+import { AuthContext } from "../context/AuthContext";
 import { AnimatePresence } from "framer-motion";
 import { MdPlayArrow, MdPause, MdRadio, MdMusicNote, MdExpandMore, MdChevronRight, MdSearch, MdLanguage, MdWeb, MdSpeed, MdCode, MdStar, MdStarBorder, MdKeyboardArrowDown, MdFavorite, MdFavoriteBorder } from "react-icons/md";
 import PremiumRadioPlayer from "./PremiumRadioPlayer";
+import { toast } from 'react-toastify';
 
 const RadioStation = () => {
   const radioContext = useContext(RadioContext);
-  const { currentStation, isPlaying, playStation, stopStation, isLoading } = radioContext || {};
+  const { currentStation, isPlaying, playStation, stopStation, isLoading, toggleFavorite, isFavorite } = radioContext || {};
+  const { token } = useContext(AuthContext);
   const [localPlayingState, setLocalPlayingState] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -16,42 +19,8 @@ const RadioStation = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedStations, setExpandedStations] = useState({});
   const [pinnedGenres, setPinnedGenres] = useState([]);
-  const [favoriteStations, setFavoriteStations] = useState([]);
   const [isQuickSelectOpen, setIsQuickSelectOpen] = useState(false);
   const STATIONS_PER_PAGE = 10;
-
-  // Load favorites from localStorage on component mount
-  useEffect(() => {
-    const savedFavorites = localStorage.getItem('favoriteStations');
-    if (savedFavorites) {
-      setFavoriteStations(JSON.parse(savedFavorites));
-    }
-  }, []);
-
-  // Save favorites to localStorage whenever they change
-  useEffect(() => {
-    localStorage.setItem('favoriteStations', JSON.stringify(favoriteStations));
-  }, [favoriteStations]);
-
-  const toggleFavorite = (station) => {
-    setFavoriteStations(prev => {
-      if (prev.some(s => s.stationuuid === station.stationuuid)) {
-        return prev.filter(s => s.stationuuid !== station.stationuuid);
-      } else {
-        return [...prev, station];
-      }
-    });
-  };
-
-  // Sync local state with context state
-  useEffect(() => {
-    if (currentStation) {
-      setLocalPlayingState(prev => ({
-        ...prev,
-        [currentStation.stationuuid]: isPlaying
-      }));
-    }
-  }, [currentStation, isPlaying]);
 
   useEffect(() => {
     fetchStations();
@@ -214,7 +183,7 @@ const RadioStation = () => {
           [station.stationuuid]: true
         });
       }
-    } catch (error) {
+    } catch {
       setLocalPlayingState(prev => ({
         ...prev,
         [station.stationuuid]: false
@@ -344,11 +313,11 @@ const RadioStation = () => {
         </div>
 
         {/* Favorites Section */}
-        {favoriteStations.length > 0 && (
+        {radioContext.favorites.length > 0 && (
           <div className="mb-8">
             <h2 className="text-xl font-bold text-white mb-4">Favorites</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {favoriteStations.map((station) => (
+              {radioContext.favorites.map((station) => (
                 <div
                   key={`favorite-${station.stationuuid}`}
                   className="bg-neutral-900/50 rounded-lg p-4 border border-neutral-800 hover:border-fuchsia-500/50 transition-colors"
@@ -361,10 +330,22 @@ const RadioStation = () => {
                       )}
                     </div>
                     <button
-                      onClick={() => toggleFavorite(station)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        console.log('Favorite button clicked', token, station);
+                        if (!token) {
+                          toast.info('Please log in to add favorites.');
+                          return;
+                        }
+                        toggleFavorite(station);
+                      }}
                       className="p-1 hover:bg-white/10 rounded-full ml-2"
                     >
-                      <MdFavorite className="text-fuchsia-500" size={20} />
+                      {isFavorite(station) ? (
+                        <MdFavorite className="text-fuchsia-500" size={20} />
+                      ) : (
+                        <MdFavoriteBorder className="text-neutral-400" size={20} />
+                      )}
                     </button>
                   </div>
                   <div className="flex items-center justify-between">
@@ -513,7 +494,6 @@ const RadioStation = () => {
                         {visibleStations.map((station) => {
                           const isStationPlaying = currentStation?.stationuuid === station.stationuuid && isPlaying;
                           const isThisStationLoading = isLoading && currentStation?.stationuuid === station.stationuuid;
-                          const isFavorite = favoriteStations.some(s => s.stationuuid === station.stationuuid);
 
                           return (
                             <div
@@ -570,11 +550,16 @@ const RadioStation = () => {
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
+                                      console.log('Favorite button clicked', token, station);
+                                      if (!token) {
+                                        toast.info('Please log in to add favorites.');
+                                        return;
+                                      }
                                       toggleFavorite(station);
                                     }}
                                     className="p-1 hover:bg-white/10 rounded-full"
                                   >
-                                    {isFavorite ? (
+                                    {isFavorite(station) ? (
                                       <MdFavorite className="text-fuchsia-500" size={20} />
                                     ) : (
                                       <MdFavoriteBorder className="text-neutral-400" size={20} />
