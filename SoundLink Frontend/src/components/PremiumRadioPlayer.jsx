@@ -1,5 +1,6 @@
 import React, { useContext, useState, useEffect, useRef } from "react";
 import { RadioContext } from "../context/RadioContext";
+import { PlayerContext } from "../context/PlayerContext";
 import { AnimatePresence } from "framer-motion";
 import { FaPlay, FaPause, FaVolumeUp, FaVolumeMute, FaBroadcastTower } from "react-icons/fa";
 import { toast } from "react-toastify";
@@ -15,6 +16,8 @@ const PremiumRadioPlayer = () => {
     updateVolume,
     toggleMute,
   } = useContext(RadioContext);
+
+  const { track: currentTrack } = useContext(PlayerContext);
 
   const [isLoading, setIsLoading] = useState(false);
   const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth < 768);
@@ -126,7 +129,8 @@ const PremiumRadioPlayer = () => {
     updateVolume(newVolume);
   };
 
-  if (!currentStation) return null;
+  // Only hide if there's no current station AND a song is playing
+  if (!currentStation && currentTrack) return null;
 
   return (
     <div 
@@ -173,8 +177,8 @@ const PremiumRadioPlayer = () => {
               )}
             </div>
             <div className="flex flex-col min-w-0">
-              <span className="text-sm font-bold truncate max-w-[120px] text-white">{currentStation.name}</span>
-              <span className="text-xs truncate max-w-[120px] text-neutral-400">{currentStation.language || 'Live Radio'}</span>
+              <span className="text-sm font-bold truncate max-w-[120px] text-white">{currentStation?.name}</span>
+              <span className="text-xs truncate max-w-[120px] text-neutral-400">{currentStation?.language || 'Live Radio'}</span>
             </div>
           </div>
 

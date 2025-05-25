@@ -45,7 +45,7 @@ export const RadioContextProvider = ({ children }) => {
 
     const handleEnded = () => {
       setIsPlaying(false);
-      setCurrentStation(null);
+      // Don't clear the current station when audio ends
     };
 
     const handleVolumeChange = () => {
@@ -130,6 +130,34 @@ export const RadioContextProvider = ({ children }) => {
       audio.src = station.url_resolved;
       audio.crossOrigin = 'anonymous';
       audio.volume = isMuted ? 0 : volume;
+
+      // Set up media session metadata for lockscreen controls
+      if ('mediaSession' in navigator) {
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: station.name,
+          artist: 'Live Radio',
+          album: station.language || 'Radio Station',
+          artwork: [
+            { 
+              src: station.favicon || station.logo || 'https://your-default-radio-logo.png',
+              sizes: '512x512',
+              type: 'image/png'
+            }
+          ]
+        });
+
+        // Set up media session action handlers
+        navigator.mediaSession.setActionHandler('play', () => {
+          playStation(station);
+        });
+
+        navigator.mediaSession.setActionHandler('pause', () => {
+          stopStation();
+        });
+
+        // Update playback state
+        navigator.mediaSession.playbackState = 'playing';
+      }
       
       // Start playback
       const playPromise = audio.play();
@@ -191,9 +219,14 @@ export const RadioContextProvider = ({ children }) => {
       audioRef.current.pause();
       audioRef.current.src = '';
     }
+    // Update media session state
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.playbackState = 'paused';
+    }
     setIsPlaying(false);
     setError(null);
     setIsLoading(false);
+    // Don't clear the current station when pausing
   };
 
   const forceStopRadio = () => {
