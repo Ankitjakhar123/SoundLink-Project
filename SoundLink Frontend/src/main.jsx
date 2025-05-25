@@ -37,7 +37,21 @@ createRoot(document.getElementById("root")).render(
         <RadioContextProvider>
           <PlayerContextProvider>
             <App />
-            <ToastContainer position="bottom-right" theme="dark" />
+            <ToastContainer
+              position="top-right"
+              autoClose={1800}
+              hideProgressBar={true}
+              newestOnTop={true}
+              closeOnClick
+              rtl={false}
+              pauseOnFocusLoss={false}
+              draggable={false}
+              pauseOnHover={false}
+              theme="dark"
+              toastClassName="!rounded-xl !bg-neutral-900 !text-white !shadow-lg !border !border-fuchsia-500/40 !backdrop-blur-md !p-4 !text-base !max-w-xs sm:!max-w-sm md:!max-w-md !w-full !m-2"
+              bodyClassName="!font-semibold !text-base !p-0"
+              style={{ zIndex: 9999 }}
+            />
           </PlayerContextProvider>
         </RadioContextProvider>
       </AuthProvider>
