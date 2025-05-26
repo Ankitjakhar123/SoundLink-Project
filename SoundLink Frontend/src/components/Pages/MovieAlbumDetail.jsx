@@ -4,9 +4,9 @@ import axios from 'axios';
 import { MdArrowBack, MdMovie, MdPlayArrow, MdPause, MdAccessTime, MdFavorite, MdFavoriteBorder, MdPlaylistAdd, MdMoreVert, MdQueueMusic, MdMusicNote } from 'react-icons/md';
 // eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
-import { PlayerContext } from '../context/PlayerContext';
-import AddToPlaylistModal from './AddToPlaylistModal';
-import Skeleton from './Skeleton';
+import { PlayerContext } from '../../context/PlayerContext';
+import AddToPlaylistModal from '../AddToPlaylistModal';
+import Skeleton from '../Skeleton';
 
 const MovieAlbumDetail = () => {
   const { id } = useParams();

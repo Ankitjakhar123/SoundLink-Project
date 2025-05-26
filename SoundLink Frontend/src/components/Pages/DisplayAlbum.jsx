@@ -1,13 +1,13 @@
 import React, { useContext, useEffect, useState, useRef } from 'react';
 // import Navbar from './Navbar';
 import { useParams, Link } from 'react-router-dom';
-import { PlayerContext } from '../context/PlayerContext';
+import { PlayerContext } from '../../context/PlayerContext';
 // eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
 import { useExtractColors } from 'react-extract-colors';
 import { MdPlayArrow, MdPause, MdFavorite, MdFavoriteBorder, MdPlaylistAdd, MdMoreVert, MdArrowBack, MdQueueMusic, MdMusicNote } from 'react-icons/md';
-import AddToPlaylistModal from './AddToPlaylistModal';
-import "../components/MobileStyles.css"; // Import mobile-specific styles
+import AddToPlaylistModal from '../AddToPlaylistModal';
+import "../../styles/MobileStyles.css"; // Import mobile-specific styles
 
 const DisplayAlbum = () => {
   const { id } = useParams();

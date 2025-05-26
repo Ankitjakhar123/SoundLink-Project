@@ -4,10 +4,10 @@ import axios from "axios";
 // eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion";
 import { MdPerson, MdPlayArrow, MdPause, MdFavorite, MdFavoriteBorder, MdPlaylistAdd, MdArrowBack, MdQueueMusic, MdMoreVert } from "react-icons/md";
-import { PlayerContext } from "../context/PlayerContext";
-import AddToPlaylistModal from "./AddToPlaylistModal";
-import "../components/MobileStyles.css"; // Import mobile-specific styles
-import Skeleton from "./Skeleton";
+import { PlayerContext } from "../../context/PlayerContext";
+import AddToPlaylistModal from "../AddToPlaylistModal";
+import "../../styles/MobileStyles.css"; // Import mobile-specific styles
+import Skeleton from "../Skeleton";
 
 const ArtistDetail = () => {
   const { id } = useParams();

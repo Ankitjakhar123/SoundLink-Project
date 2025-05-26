@@ -4,16 +4,16 @@ import { motion } from "framer-motion";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
 import { MdTrendingUp, MdAlbum, MdPerson, MdMovie, MdPlayArrow, MdFavorite, MdFavoriteBorder, MdPlaylistAdd, MdQueueMusic, MdPause, MdMoreVert, MdMusicNote } from "react-icons/md";
-import AlbumItem from "./AlbumItem";
-import SongItem from "./SongItem";
-import MovieAlbumItem from "./MovieAlbumItem";
-import { PlayerContext } from "../context/PlayerContext";
-import { AuthContext } from "../context/AuthContext";
-import AddToPlaylistModal from "./AddToPlaylistModal";
+import AlbumItem from "../AlbumItem";
+import SongItem from "../SongItem";
+import MovieAlbumItem from "../MovieAlbumItem";
+import { PlayerContext } from "../../context/PlayerContext";
+import { AuthContext } from "../../context/AuthContext";
+import AddToPlaylistModal from "../AddToPlaylistModal";
 import { toast } from "react-toastify";
-import "./MobileStyles.css"; // Import mobile-specific styles
-import SEO from './SEO'; // Import SEO component
-import Footer from './Footer'; // Import Footer component
+import "../../styles/MobileStyles.css"; // Import mobile-specific styles
+import SEO from '../SEO'; // Import SEO component
+import Footer from '../Footer'; // Import Footer component
 
 // Cache for storing fetched data
 let cachedData = {

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { MdPerson, MdSearch, MdClear, MdArrowBack } from 'react-icons/md';
 // eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
-import Skeleton from './Skeleton';
+import Skeleton from '../Skeleton';
 
 const Artists = () => {
   const [artists, setArtists] = useState([]);

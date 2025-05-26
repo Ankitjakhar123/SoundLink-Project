@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { AuthContext } from '../context/AuthContext';
+import { AuthContext } from '../../context/AuthContext';
 import { Link } from 'react-router-dom';
 import { FaArrowLeft, FaSun, FaMoon, FaBell, FaBellSlash, FaLock, FaCheck, FaEye, FaEyeSlash, FaVolumeUp, FaVolumeMute } from 'react-icons/fa';
 import axios from 'axios';

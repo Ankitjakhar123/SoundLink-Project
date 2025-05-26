@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { AuthContext } from '../context/AuthContext';
-import { PlayerContext } from '../context/PlayerContext';
+import { AuthContext } from '../../context/AuthContext';
+import { PlayerContext } from '../../context/PlayerContext';
 import axios from 'axios';
 import { 
   MdPlaylistAdd, 
@@ -12,7 +12,7 @@ import {
 } from 'react-icons/md';
 import { FaPlay, FaHeadphones } from 'react-icons/fa';
 import { motion } from 'framer-motion';
-import Skeleton from './Skeleton';
+import Skeleton from '../Skeleton';
 
 const PlaylistsPage = () => {
   const { user, token } = useContext(AuthContext);

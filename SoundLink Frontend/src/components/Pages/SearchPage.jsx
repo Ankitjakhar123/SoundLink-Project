@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MdSearch, MdPlayArrow, MdPause, MdFavorite, MdFavoriteBorder, MdPlaylistAdd, MdQueueMusic } from 'react-icons/md';
 import { useContext } from 'react';
-import { PlayerContext } from '../context/PlayerContext';
-import { AuthContext } from '../context/AuthContext';
+import { PlayerContext } from '../../context/PlayerContext';
+import { AuthContext } from '../../context/AuthContext';
 import axios from 'axios';
 import { Link, useLocation } from 'react-router-dom';
-import AddToPlaylistModal from './AddToPlaylistModal';
-import SEO from './SEO';
-import AccessibleFormInput from './AccessibleFormInput';
-import AccessibleIconButton from './AccessibleIconButton';
-import Skeleton from './Skeleton';
+import AddToPlaylistModal from '../AddToPlaylistModal';
+import SEO from '../SEO';
+import AccessibleFormInput from '../AccessibleFormInput';
+import AccessibleIconButton from '../AccessibleIconButton';
+import Skeleton from '../Skeleton';
 
 const SearchPage = () => {
   const [query, setQuery] = useState('');

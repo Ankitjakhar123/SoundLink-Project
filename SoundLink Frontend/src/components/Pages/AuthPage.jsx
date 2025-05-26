@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import AuthForm from "./AuthForm";
+import AuthForm from "../AuthForm";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaMusic, FaHeadphones, FaCompactDisc, FaGuitar } from "react-icons/fa";
 import { useLocation } from "react-router-dom";

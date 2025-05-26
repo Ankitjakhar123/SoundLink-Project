@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { MdFavorite, MdPlaylistPlay, MdHistory, MdPlayArrow, MdPause, MdFavoriteBorder, MdPlaylistAdd, MdQueueMusic, MdMoreVert, MdArrowBack } from 'react-icons/md';
-import { PlayerContext } from '../context/PlayerContext';
-import { AuthContext } from '../context/AuthContext';
-import AddToPlaylistModal from './AddToPlaylistModal';
+import { PlayerContext } from '../../context/PlayerContext';
+import { AuthContext } from '../../context/AuthContext';
+import AddToPlaylistModal from '../AddToPlaylistModal';
 // eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
 

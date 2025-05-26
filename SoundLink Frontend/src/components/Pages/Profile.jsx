@@ -1,8 +1,8 @@
 import React, { useContext, useState, useEffect } from 'react';
-import { AuthContext } from '../context/AuthContext';
-import AdminDashboard from "./Admin/Dashboard/AdminDashboard";
+import { AuthContext } from '../../context/AuthContext';
+import AdminDashboard from "../Admin/Dashboard/AdminDashboard";
 import axios from 'axios';
-import Skeleton from './Skeleton';
+import Skeleton from '../Skeleton';
 
 const Profile = () => {
   const { user, updateUserData } = useContext(AuthContext);

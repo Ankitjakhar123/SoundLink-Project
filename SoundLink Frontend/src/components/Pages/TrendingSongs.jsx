@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { MdPlayArrow, MdFavorite, MdFavoriteBorder, MdPlaylistAdd, MdArrowBack, MdSearch, MdClear, MdPause, MdQueueMusic, MdMusicNote } from 'react-icons/md';
-import { PlayerContext } from '../context/PlayerContext';
-import AddToPlaylistModal from './AddToPlaylistModal';
+import { PlayerContext } from '../../context/PlayerContext';
+import AddToPlaylistModal from '../AddToPlaylistModal';
 import { toast } from 'react-toastify';
 // eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
-import Skeleton from './Skeleton';
+import Skeleton from '../Skeleton';
 
 const TrendingSongs = () => {
   const { playWithId, track, playStatus, toggleFavorite, favorites, addToQueue } = useContext(PlayerContext);
