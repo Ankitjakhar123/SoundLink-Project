@@ -1,7 +1,7 @@
 import React, { useContext, useState, useEffect, useRef } from "react";
-import Sidebar from "./components/Sidebar";
+import Sidebar from "./components/Layout/Sidebar";
 import PremiumPlayer from "./components/PremiumPlayer";
-import BottomNavigation from "./components/BottomNavigation";
+import BottomNavigation from "./components/Layout/BottomNavigation";
 import { PlayerContext } from "./context/PlayerContext";
 import { RadioContext } from "./context/RadioContext";
 import { Routes, Route, useLocation, Navigate } from "react-router-dom";
@@ -22,7 +22,7 @@ import ListSong from "./components/Admin/Songs/ListSong";
 import AddSong from "./components/Admin/Songs/AddSong";
 import BulkUpload from "./components/Admin/Songs/BulkUpload";
 import BulkSongUpload from "./components/Admin/Songs/BulkSongUpload";
-import Navbar from "./components/Navbar";
+import Navbar from "./components/Layout/Navbar";
 import PlaylistView from "./components/PlaylistView";
 import PlaylistsPage from "./components/Pages/PlaylistsPage";
 import Profile from "./components/Pages/Profile";

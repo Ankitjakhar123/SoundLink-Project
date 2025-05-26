@@ -1,10 +1,10 @@
 import React, { useState, useRef, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom'
-import { AuthContext } from '../context/AuthContext'
+import { AuthContext } from '../../context/AuthContext'
 import { FaCrown, FaBars, FaUser, FaSignOutAlt, FaUserShield, FaCog, FaSearch, FaTimes, FaMusic, FaHeadphones, FaHeart, FaHome, FaList, FaEllipsisH, FaChevronUp, FaChevronDown } from 'react-icons/fa';
 import axios from 'axios';
-import { PlayerContext } from '../context/PlayerContext';
-import QueueComponent from './QueueComponent';
+import { PlayerContext } from '../../context/PlayerContext';
+import QueueComponent from '../QueueComponent';
 import { MdRadio } from 'react-icons/md';
 
 // Default avatar path - ensure this SVG file exists in the public directory

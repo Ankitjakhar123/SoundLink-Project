@@ -13,7 +13,7 @@ import AddToPlaylistModal from "../AddToPlaylistModal";
 import { toast } from "react-toastify";
 import "../../styles/MobileStyles.css"; // Import mobile-specific styles
 import SEO from '../SEO'; // Import SEO component
-import Footer from '../Footer'; // Import Footer component
+import Footer from '../Layout/Footer'; // Import Footer component
 
 // Cache for storing fetched data
 let cachedData = {

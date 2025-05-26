@@ -1,5 +1,5 @@
 import React, { useContext, useState, useEffect } from 'react';
-import { AuthContext } from '../context/AuthContext';
+import { AuthContext } from '../../context/AuthContext';
 import { FaFire, FaRegClock, FaUser, FaVideo, FaMusic, FaChartBar, FaThLarge, FaHeart, FaStar, FaPodcast, FaPlus, FaListUl, FaBars, FaTimes, FaHome } from 'react-icons/fa';
 import { MdRadio } from 'react-icons/md';
 import { useNavigate, Link, useLocation } from 'react-router-dom';

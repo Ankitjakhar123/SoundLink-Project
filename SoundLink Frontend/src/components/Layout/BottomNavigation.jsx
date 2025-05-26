@@ -1,6 +1,6 @@
 import React, { useContext } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { PlayerContext } from '../context/PlayerContext';
+import { PlayerContext } from '../../context/PlayerContext';
 import { AiFillHome, AiFillDatabase } from 'react-icons/ai';
 import { MdQueueMusic, MdRadio } from 'react-icons/md';
 import { IoMusicalNotesSharp } from 'react-icons/io5';
