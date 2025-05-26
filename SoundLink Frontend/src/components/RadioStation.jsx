@@ -4,7 +4,7 @@ import { PlayerContext } from "../context/PlayerContext";
 import { AuthContext } from "../context/AuthContext";
 import { AnimatePresence } from "framer-motion";
 import { MdPlayArrow, MdPause, MdRadio, MdMusicNote, MdExpandMore, MdChevronRight, MdSearch, MdLanguage, MdWeb, MdSpeed, MdCode, MdStar, MdStarBorder, MdKeyboardArrowDown, MdFavorite, MdFavoriteBorder } from "react-icons/md";
-import PremiumRadioPlayer from "./PremiumRadioPlayer";
+import PremiumRadioPlayer from "./Player/PremiumRadioPlayer";
 import { toast } from 'react-toastify';
 
 const RadioStation = () => {

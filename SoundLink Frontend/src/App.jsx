@@ -1,6 +1,6 @@
 import React, { useContext, useState, useEffect, useRef } from "react";
 import Sidebar from "./components/Layout/Sidebar";
-import PremiumPlayer from "./components/PremiumPlayer";
+import PremiumPlayer from "./components/Player/PremiumPlayer";
 import BottomNavigation from "./components/Layout/BottomNavigation";
 import { PlayerContext } from "./context/PlayerContext";
 import { RadioContext } from "./context/RadioContext";
@@ -46,7 +46,7 @@ import InstallPwaPrompt from "./components/InstallPwaPrompt";
 import InstallPWAButton from "./components/InstallPWAButton";
 import PremiumLoading from './components/PremiumLoading';
 import RadioStation from './components/RadioStation';
-import PremiumRadioPlayer from './components/PremiumRadioPlayer';
+import PremiumRadioPlayer from './components/Player/PremiumRadioPlayer';
 import SongDetail from './components/SongDetail';
 
 // Protected route component that requires authentication

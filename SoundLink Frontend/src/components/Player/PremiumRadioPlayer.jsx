@@ -1,6 +1,6 @@
 import React, { useContext, useState, useEffect, useRef } from "react";
-import { RadioContext } from "../context/RadioContext";
-import { PlayerContext } from "../context/PlayerContext";
+import { RadioContext } from "../../context/RadioContext";
+import { PlayerContext } from "../../context/PlayerContext";
 import { AnimatePresence } from "framer-motion";
 import { FaPlay, FaPause, FaVolumeUp, FaVolumeMute, FaBroadcastTower } from "react-icons/fa";
 import { toast } from "react-toastify";

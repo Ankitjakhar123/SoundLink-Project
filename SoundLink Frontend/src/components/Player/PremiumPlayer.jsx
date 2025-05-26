@@ -1,14 +1,14 @@
 import React, { useContext, useState, useEffect, useRef } from "react";
-import { PlayerContext } from "../context/PlayerContext";
+import { PlayerContext } from "../../context/PlayerContext";
 // eslint-disable-next-line no-unused-vars
 import { AnimatePresence, motion } from "framer-motion";
 import { FaPlay, FaPause, FaStepForward, FaStepBackward, FaVolumeUp, FaVolumeMute, FaHeart } from "react-icons/fa";
 import { MdQueueMusic, MdDevices, MdShuffle, MdRepeat, MdOutlineLyrics, MdMoreVert } from "react-icons/md";
-import QueueComponent from "./QueueComponent";
-import LyricsPanel from "./LyricsPanel";
-import ArtistExplorer from "./ArtistExplorer";
-import CreditsSection from "./CreditsSection";
-import MoreOptionsSheet from "./MoreOptionsSheet";
+import QueueComponent from "../QueueComponent";
+import LyricsPanel from "../LyricsPanel";
+import ArtistExplorer from "../ArtistExplorer";
+import CreditsSection from "../CreditsSection";
+import MoreOptionsSheet from "../MoreOptionsSheet";
 
 const formatTime = (min, sec) => `${min}:${sec < 10 ? "0" : ""}${sec}`;
 
