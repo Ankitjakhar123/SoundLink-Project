@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { motion } from "framer-motion";
-import Skeleton from './Skeleton';
+import Skeleton from '../../Skeleton';
 
 const BulkUpload = ({ token, type }) => {
   const [json, setJson] = useState("");

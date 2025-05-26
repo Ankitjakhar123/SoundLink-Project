@@ -4,7 +4,7 @@ import { MdAlbum } from 'react-icons/md';
 import axios from "axios";
 import { AnimatePresence } from "framer-motion";
 import { useNavigate } from 'react-router-dom';
-import Skeleton from './Skeleton';
+import Skeleton from '../../Skeleton';
 const url = import.meta.env.VITE_BACKEND_URL;
 
 const AddAlbum = ({ token }) => {

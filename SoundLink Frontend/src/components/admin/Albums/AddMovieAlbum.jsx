@@ -3,7 +3,7 @@ import { MdLocalMovies, MdFileUpload } from 'react-icons/md';
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useNavigate } from 'react-router-dom';
-import Skeleton from './Skeleton';
+import Skeleton from '../../Skeleton';
 const url = import.meta.env.VITE_BACKEND_URL;
 
 const AddMovieAlbum = ({ token }) => {

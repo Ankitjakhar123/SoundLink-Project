@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
-import { AuthContext } from '../context/AuthContext';
+import { AuthContext } from '../../../context/AuthContext';
 import { MdAdd, MdEdit, MdDelete, MdPerson, MdSearch, MdClear } from 'react-icons/md';
-import Skeleton from './Skeleton';
+import Skeleton from '../../Skeleton';
 
 const AdminArtists = () => {
   const { token } = useContext(AuthContext);

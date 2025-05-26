@@ -3,8 +3,8 @@ import { MdMusicNote, MdFileUpload, MdOutlineLyrics, MdDownload } from 'react-ic
 import axios from "axios";
 import { toast } from "react-toastify";
 import { parseBlob } from 'music-metadata-browser';
-import { PlayerContext } from "../context/PlayerContext";
-import Skeleton from "../components/Skeleton";
+import { PlayerContext } from "../../../context/PlayerContext";
+import Skeleton from "../../Skeleton";
 const url = import.meta.env.VITE_BACKEND_URL;
 
 // Add export functionality

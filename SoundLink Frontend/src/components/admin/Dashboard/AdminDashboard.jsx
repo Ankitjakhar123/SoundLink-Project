@@ -4,17 +4,17 @@ import { useNavigate } from 'react-router-dom';
 
 // eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from "framer-motion";
-import AddSong from "./AddSong";
-import AddAlbum from "./AddAlbum";
-import ListSong from "./ListSong";
-import ListAlbum from "./ListAlbum";
-import BulkUpload from "./BulkUpload";
-import BulkSongUpload from "./BulkSongUpload";
-import AddMovieAlbum from "./AddMovieAlbum";
-import ListMovieAlbum from "./ListMovieAlbum";
-import AdminArtists from "./AdminArtists";
+import AddSong from "../Songs/AddSong";
+import AddAlbum from "../Albums/AddAlbum";
+import ListSong from "../Songs/ListSong";
+import ListAlbum from "../Albums/ListAlbum";
+import BulkUpload from "../Songs/BulkUpload";
+import BulkSongUpload from "../Songs/BulkSongUpload";
+import AddMovieAlbum from "../Albums/AddMovieAlbum";
+import ListMovieAlbum from "../Albums/ListMovieAlbum";
+import AdminArtists from "../Artists/AdminArtists";
 import { MdMusicNote } from "react-icons/md";
-import Skeleton from './Skeleton';
+import Skeleton from '../../Skeleton';
 
 const adminActions = [
   { label: "Add Song", key: "addSong" },
@@ -191,4 +191,4 @@ const AdminDashboard = ({ token }) => {
   );
 };
 
-export default AdminDashboard; 
+export default AdminDashboard;

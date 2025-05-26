@@ -1,6 +1,6 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { AuthContext } from '../context/AuthContext';
-import AdminDashboard from './AdminDashboard';
+import AdminDashboard from "./Admin/Dashboard/AdminDashboard";
 import axios from 'axios';
 import Skeleton from './Skeleton';
 
@@ -325,4 +325,4 @@ const Profile = () => {
   );
 };
 
-export default Profile; 
+export default Profile;
