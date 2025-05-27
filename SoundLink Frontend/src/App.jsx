@@ -10,7 +10,7 @@ import DisplayAlbum from "./components/Pages/DisplayAlbum";
 import { AuthContext } from "./context/AuthContext";
 import AuthPage from "./components/Pages/AuthPage";
 import AdminDashboard from "./components/Admin/Dashboard/AdminDashboard.jsx";
-import SearchAdmin from "./components/Admin/Dashboard/SearchAdmin";
+import SearchAdmin from "./components/Admin/Dashboard/SearchAdmin.jsx";
 import FavoritesAdmin from "./components/Admin/Dashboard/FavoritesAdmin";
 import CommentsAdmin from "./components/Admin/Dashboard/CommentsAdmin";
 import AdminArtists from "./components/Admin/Artists/AdminArtists";
