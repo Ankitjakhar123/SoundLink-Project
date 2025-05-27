@@ -4,6 +4,11 @@
   overflow: hidden;
   position: relative;
   transition: transform 0.2s ease;
+  will-change: transform;
+  contain: content;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  -webkit-font-smoothing: subpixel-antialiased;
 }
 
 /* Swipe animation effects */
@@ -47,7 +52,12 @@
 .mobile-song-list {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  padding-bottom: 80px; /* Extra space for comfortable scrolling */
+  padding-bottom: 80px;
+  overscroll-behavior-y: contain;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  will-change: transform;
+  contain: content;
 }
 
 /* Tap highlight color */
@@ -75,6 +85,8 @@
   backface-visibility: hidden;
   transform: translateZ(0);
   -webkit-font-smoothing: subpixel-antialiased;
+  will-change: transform;
+  contain: content;
 }
 
 /* Favorites animation */
@@ -98,6 +110,7 @@
 
 .favorite-animation {
   animation: heartBeat 1s ease-in-out;
+  will-change: transform;
 }
 
 /* Mobile pagination styling */
@@ -106,11 +119,13 @@
   justify-content: center;
   margin-top: 20px;
   gap: 8px;
+  contain: content;
 }
 
 .mobile-pagination button {
   min-height: 44px;
   touch-action: manipulation;
+  will-change: transform;
 }
 
 /* Active now playing indicator */
@@ -122,6 +137,7 @@
   width: 3px;
   background: linear-gradient(to bottom, #f472b6, #c084fc);
   border-radius: 3px;
+  will-change: transform;
 }
 
 /* Song duration label */
@@ -135,6 +151,7 @@
 .options-menu {
   position: relative;
   z-index: 40;
+  contain: content;
 }
 
 /* Dropdown menu styling */
@@ -142,6 +159,8 @@
   animation: menuFadeIn 0.2s ease-out forwards;
   transform-origin: top right;
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.8), 0 10px 10px -5px rgba(0, 0, 0, 0.5);
+  will-change: transform, opacity;
+  contain: content;
 }
 
 @keyframes menuFadeIn {
@@ -161,11 +180,13 @@
   width: 100%;
   display: flex;
   align-items: center;
+  touch-action: manipulation;
 }
 
 /* Add a slight pulse effect to the three dots icon when active */
 .options-menu-active {
   animation: dotsPulse 0.5s ease;
+  will-change: transform;
 }
 
 @keyframes dotsPulse {
@@ -193,5 +214,73 @@
   
   .menu-options {
     animation: none !important;
+  }
+}
+
+/* Performance optimizations for mobile */
+@media (max-width: 768px) {
+  /* Reduce repaints */
+  .mobile-song-item {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000;
+    will-change: transform;
+  }
+  
+  /* Optimize animations */
+  .mobile-song-item,
+  .favorite-animation,
+  .menu-options {
+    animation-duration: 0.2s !important;
+    transition-duration: 0.2s !important;
+  }
+  
+  /* Reduce layout shifts */
+  .mobile-song-list {
+    contain: content;
+    content-visibility: auto;
+  }
+  
+  /* Optimize touch interactions */
+  button,
+  a,
+  input[type="checkbox"],
+  input[type="radio"],
+  input[type="submit"],
+  select {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  /* Reduce memory usage */
+  .mobile-song-item img {
+    content-visibility: auto;
+  }
+  
+  /* Optimize scrolling */
+  .mobile-song-list {
+    overscroll-behavior-y: contain;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Battery-aware optimizations */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+/* Low power mode optimizations */
+@media (prefers-reduced-data: reduce) {
+  .mobile-song-item img {
+    content-visibility: auto;
+  }
+  
+  .mobile-song-list {
+    content-visibility: auto;
   }
 } 

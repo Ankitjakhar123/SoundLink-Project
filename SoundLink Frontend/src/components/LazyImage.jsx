@@ -6,6 +6,8 @@ import React, { useState, useEffect, useRef } from 'react';
  * - Blur-up loading effect
  * - Error handling with fallbacks
  * - Automatic WebP detection and usage
+ * - Responsive image sizes
+ * - Mobile-first optimization
  */
 const LazyImage = ({
   src,
@@ -18,7 +20,8 @@ const LazyImage = ({
   objectFit = 'cover',
   onLoad = () => {},
   onError = () => {},
-  eager = false, // Set to true for above-the-fold images
+  eager = false,
+  sizes = '100vw', // Default to full viewport width
   ...props
 }) => {
   const [loaded, setLoaded] = useState(false);
@@ -30,7 +33,6 @@ const LazyImage = ({
   const determineFallback = () => {
     if (fallbackSrc) return fallbackSrc;
     
-    // Detect the type of image from alt text or src and provide appropriate fallback
     if (alt?.toLowerCase().includes('avatar') || src?.includes('avatar')) {
       return '/default-avatar.svg';
     } else if (alt?.toLowerCase().includes('album') || src?.includes('album')) {
@@ -38,7 +40,7 @@ const LazyImage = ({
     } else if (alt?.toLowerCase().includes('artist') || src?.includes('artist')) {
       return '/default-artist.png';
     } else {
-      return '/default-album.png'; // Default fallback
+      return '/default-album.png';
     }
   };
   
@@ -65,24 +67,40 @@ const LazyImage = ({
     });
   };
   
-  // Modify cloudinary URLs to use WebP format if supported
+  // Generate responsive image sizes
+  const generateResponsiveSrcSet = (url) => {
+    if (!url || !url.includes('cloudinary.com')) return url;
+    
+    const sizes = [320, 640, 960, 1280, 1920];
+    return sizes
+      .map(size => `${url.replace('/upload/', `/upload/w_${size},c_scale/`)} ${size}w`)
+      .join(', ');
+  };
+  
+  // Optimize image URL for different devices and formats
   const optimizeImageUrl = async (url) => {
     if (!url) return url;
     
-    // Only transform Cloudinary URLs
     if (url.includes('cloudinary.com')) {
       const webpSupported = await checkWebpSupport();
+      const isMobile = window.innerWidth <= 768;
       
+      // Base transformations
+      let transformations = 'f_auto,q_auto';
+      
+      // Add format optimization
       if (webpSupported) {
-        // Convert to WebP format if supported
-        if (url.includes('upload/')) {
-          return url.replace('upload/', 'upload/f_auto,q_auto/');
-        }
+        transformations += ',f_webp';
       }
       
-      // Add quality optimization even if WebP not supported
-      if (!url.includes('q_auto')) {
-        return url.replace('upload/', 'upload/q_auto/');
+      // Add mobile-specific optimizations
+      if (isMobile) {
+        transformations += ',w_auto,dpr_auto';
+      }
+      
+      // Apply transformations
+      if (url.includes('upload/')) {
+        return url.replace('upload/', `upload/${transformations}/`);
       }
     }
     
@@ -90,13 +108,11 @@ const LazyImage = ({
   };
   
   useEffect(() => {
-    // Reset states when src changes
     if (src) {
       setLoaded(false);
       setError(false);
       setUsedFallback(false);
       
-      // Optimize the image URL if possible
       (async () => {
         if (imgRef.current) {
           const optimizedUrl = await optimizeImageUrl(src);
@@ -113,12 +129,10 @@ const LazyImage = ({
   
   const handleImageError = (e) => {
     if (!usedFallback) {
-      // Try the fallback image
       const fallback = determineFallback();
       e.target.src = fallback;
       setUsedFallback(true);
     } else {
-      // If even the fallback fails, show error state
       setError(true);
       onError(e);
     }
@@ -130,7 +144,7 @@ const LazyImage = ({
       style={{ 
         width: width || '100%', 
         height: height || '100%',
-        aspectRatio: !height && width ? '1' : undefined  // Maintain aspect ratio if only width provided
+        aspectRatio: !height && width ? '1' : undefined
       }}
     >
       <img
@@ -138,12 +152,15 @@ const LazyImage = ({
         src={src}
         alt={alt}
         loading={eager ? "eager" : "lazy"}
+        decoding={eager ? "sync" : "async"}
         className={`${className} ${loaded ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}
         style={{ 
           objectFit, 
           width: '100%', 
           height: '100%' 
         }}
+        srcSet={generateResponsiveSrcSet(src)}
+        sizes={sizes}
         onLoad={handleImageLoad}
         onError={handleImageError}
         {...props}

@@ -6,11 +6,22 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://res.cloudinary.com" crossorigin>
+    <link rel="preconnect" href="https://api.soundlink.com" crossorigin>
+    <link rel="preconnect" href="https://www.googletagmanager.com" crossorigin>
+    <link rel="dns-prefetch" href="https://api.soundlink.com">
+    <link rel="dns-prefetch" href="https://res.cloudinary.com">
+    <link rel="dns-prefetch" href="https://www.googletagmanager.com">
     
     <!-- Preload critical resources with correct 'as' attributes -->
     <link rel="preload" href="/src/index.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <link rel="preload" href="/src/theme.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <link rel="preload" href="/icons/soundlink-icon-192.png?v=2" as="image" type="image/png">
+    <link rel="preload" href="/icons/soundlink-icon-512.png?v=2" as="image" type="image/png">
+    
+    <!-- Preload critical JavaScript -->
+    <link rel="modulepreload" href="/src/main.jsx">
+    <link rel="modulepreload" href="/src/App.jsx">
     
     <!-- Fallback for browsers that don't support preload -->
     <noscript>
@@ -37,6 +48,14 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="SoundLink" />
+    
+    <!-- Performance Meta Tags -->
+    <meta http-equiv="x-dns-prefetch-control" content="on">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="HandheldFriendly" content="true">
+    <meta name="MobileOptimized" content="width">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
     <!-- Chrome PWA Install Dialog Image Override -->
     <meta name="msapplication-TileImage" content="/icons/soundlink-icon-192.png?v=2">
@@ -156,13 +175,69 @@
       })();
     </script>
     
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-W08CHTLBPV"></script>
+    <!-- Optimized Google Analytics -->
     <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-W08CHTLBPV');
+      // Initialize Google Analytics with performance optimizations
+      (function() {
+        // Check if user has opted out of analytics
+        if (localStorage.getItem('analytics-opt-out') === 'true') return;
+        
+        // Load GA script with low priority
+        const gaScript = document.createElement('script');
+        gaScript.src = 'https://www.googletagmanager.com/gtag/js?id=G-W08CHTLBPV';
+        gaScript.async = true;
+        gaScript.defer = true;
+        gaScript.setAttribute('importance', 'low');
+        
+        // Initialize GA with performance optimizations
+        window.dataLayer = window.dataLayer || [];
+        function gtag() {
+          dataLayer.push(arguments);
+        }
+        
+        // Set default parameters for better performance
+        gtag('js', new Date());
+        gtag('config', 'G-W08CHTLBPV', {
+          'send_page_view': false, // Disable automatic page views
+          'anonymize_ip': true, // Anonymize IP addresses
+          'allow_google_signals': false, // Disable Google signals
+          'allow_ad_personalization_signals': false, // Disable ad personalization
+          'transport_url': 'https://www.google-analytics.com', // Use HTTPS
+          'cookie_flags': 'SameSite=None;Secure', // Secure cookies
+          'cookie_domain': 'auto', // Automatic cookie domain
+          'cookie_expires': 28 * 24 * 60 * 60, // 28 days
+          'cookie_update': false, // Don't update cookies
+          'linker': {
+            'domains': ['soundlink.com'] // Specify domains for cross-domain tracking
+          }
+        });
+        
+        // Add script to document
+        document.head.appendChild(gaScript);
+        
+        // Track page views manually after load
+        window.addEventListener('load', function() {
+          // Use requestIdleCallback for non-critical tracking
+          if ('requestIdleCallback' in window) {
+            requestIdleCallback(function() {
+              gtag('event', 'page_view', {
+                'page_title': document.title,
+                'page_location': window.location.href,
+                'page_path': window.location.pathname
+              });
+            });
+          } else {
+            // Fallback for browsers that don't support requestIdleCallback
+            setTimeout(function() {
+              gtag('event', 'page_view', {
+                'page_title': document.title,
+                'page_location': window.location.href,
+                'page_path': window.location.pathname
+              });
+            }, 1000);
+          }
+        });
+      })();
     </script>
   </head>
   <body>

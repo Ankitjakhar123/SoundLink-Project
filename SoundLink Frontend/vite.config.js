@@ -73,7 +73,7 @@ export default defineConfig({
               cacheName: 'google-fonts-cache',
               expiration: {
                 maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365 // <== 365 days
+                maxAgeSeconds: 60 * 60 * 24 * 365
               },
               cacheableResponse: {
                 statuses: [0, 200]
@@ -86,8 +86,8 @@ export default defineConfig({
             options: {
               cacheName: 'images-cache',
               expiration: {
-                maxEntries: 100, // Increased from 50
-                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60 * 24 * 30
               }
             }
           },
@@ -98,7 +98,7 @@ export default defineConfig({
               cacheName: 'svg-cache',
               expiration: {
                 maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24 // 24 hours
+                maxAgeSeconds: 60 * 60 * 24
               }
             }
           },
@@ -109,7 +109,7 @@ export default defineConfig({
               cacheName: 'api-cache',
               expiration: {
                 maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24 // 24 hours
+                maxAgeSeconds: 60 * 60 * 24
               },
               cacheableResponse: {
                 statuses: [0, 200]
@@ -131,20 +131,23 @@ export default defineConfig({
     }
   },
   server: {
-    historyApiFallback: true, // 👈 this is the fix for white screen on refresh
+    historyApiFallback: true,
   },
-  // Add build optimization configuration
   build: {
-    target: 'esnext', // Modern browsers - better performance
+    target: 'esnext',
     outDir: 'dist',
-    minify: 'terser', // More aggressive minification
+    minify: 'terser',
     terserOptions: {
       compress: {
-        drop_console: true, // Remove console statements in production
-        drop_debugger: true
+        drop_console: true,
+        drop_debugger: true,
+        pure_funcs: ['console.log', 'console.info'],
+        passes: 2
+      },
+      mangle: {
+        safari10: true
       }
     },
-    // Code splitting and bundling strategy
     rollupOptions: {
       output: {
         manualChunks: {
@@ -152,17 +155,42 @@ export default defineConfig({
           ui: ['framer-motion', 'react-icons', 'react-slick', 'slick-carousel'],
           player: ['react-extract-colors'],
           utils: ['axios', 'js-cookie']
-        }
+        },
+        chunkFileNames: 'assets/js/[name]-[hash].js',
+        entryFileNames: 'assets/js/[name]-[hash].js',
+        assetFileNames: 'assets/[ext]/[name]-[hash].[ext]'
       }
     },
-    // Split chunks for better caching
-    chunkSizeWarningLimit: 1000, // Increase warning limit
+    chunkSizeWarningLimit: 1000,
     cssCodeSplit: true,
-    sourcemap: false, // Disable sourcemaps in production for smaller files
-    reportCompressedSize: false, // Speed up build
+    sourcemap: false,
+    reportCompressedSize: false,
     commonjsOptions: {
       include: [/node_modules/],
       transformMixedEsModules: true
+    },
+    modulePreload: {
+      polyfill: true
+    },
+    assetsInlineLimit: 4096,
+    cssMinify: true,
+    dynamicImportVarsOptions: {
+      warnOnError: false
     }
+  },
+  optimizeDeps: {
+    include: [
+      'react',
+      'react-dom',
+      'react-router-dom',
+      'framer-motion',
+      'react-icons',
+      'react-slick',
+      'slick-carousel',
+      'react-extract-colors',
+      'axios',
+      'js-cookie'
+    ],
+    exclude: ['@ffmpeg/ffmpeg', '@ffmpeg/util']
   }
 })
