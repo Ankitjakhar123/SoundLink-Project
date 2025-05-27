@@ -41,7 +41,11 @@ app.use(cors({
     const allowedOrigins = [
       'http://localhost:5173',    // Local development
       'http://localhost:3000',    // Alternative local port
-      'https://ankitsoundlink.netlify.app' // Netlify deployment
+      'https://ankitsoundlink.netlify.app', // Netlify deployment
+      'http://soundlink.live',    // Non-www domain
+      'https://soundlink.live',   // Non-www domain with HTTPS
+      'http://www.soundlink.live', // www domain
+      'https://www.soundlink.live' // www domain with HTTPS
     ];
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin || allowedOrigins.indexOf(origin) !== -1) {

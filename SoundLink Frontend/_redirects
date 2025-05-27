@@ -1,0 +1,9 @@
+# Redirect all HTTP traffic to HTTPS
+http://soundlink.live/* https://www.soundlink.live/:splat 301!
+http://www.soundlink.live/* https://www.soundlink.live/:splat 301!
+
+# Redirect non-www to www
+https://soundlink.live/* https://www.soundlink.live/:splat 301!
+
+# Catch all other routes and serve the SPA
+/* /index.html 200
