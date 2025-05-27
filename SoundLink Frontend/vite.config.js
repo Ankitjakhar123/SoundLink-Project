@@ -1,6 +1,10 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
+import path from 'path'
+import { fileURLToPath } from 'url'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
   plugins: [
@@ -118,6 +122,14 @@ export default defineConfig({
       }
     })
   ],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+      '@components': path.resolve(__dirname, './src/components'),
+      '@context': path.resolve(__dirname, './src/context'),
+      '@pages': path.resolve(__dirname, './src/components/Pages')
+    }
+  },
   server: {
     historyApiFallback: true, // 👈 this is the fix for white screen on refresh
   },
@@ -148,5 +160,9 @@ export default defineConfig({
     cssCodeSplit: true,
     sourcemap: false, // Disable sourcemaps in production for smaller files
     reportCompressedSize: false, // Speed up build
+    commonjsOptions: {
+      include: [/node_modules/],
+      transformMixedEsModules: true
+    }
   }
 })
