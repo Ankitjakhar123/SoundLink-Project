@@ -187,45 +187,30 @@ const Navbar = (props) => {
             return null;
         }
         
-        // Add cache-busting parameter to prevent browser caching
-        const addCacheBuster = (url) => {
-            if (!url) return url;
-            const separator = url.includes('?') ? '&' : '?';
-            return `${url}${separator}t=${new Date().getTime()}`;
-        };
-        
         // Check if it's a Cloudinary URL and ensure it's using HTTPS
         if (avatarUrl.includes('cloudinary.com')) {
-            const fixedUrl = avatarUrl.replace('http://', 'https://');
-            return addCacheBuster(fixedUrl);
+            return avatarUrl.replace('http://', 'https://');
         }
         
         // If it's a data URL or base64 image, return it directly
         if (avatarUrl.startsWith('data:') || avatarUrl.startsWith('blob:')) {
-            return avatarUrl; // No need for cache buster on blob URLs
+            return avatarUrl;
         }
         
         // If it's a local path starting with /uploads, prepend the backend URL
         if (avatarUrl.startsWith('/uploads')) {
             const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
-            const fullUrl = `${backendUrl}${avatarUrl}`;
-            return addCacheBuster(fullUrl);
+            return `${backendUrl}${avatarUrl}`;
         }
         
         // Handle full URLs
         if (avatarUrl.startsWith('http://') || avatarUrl.startsWith('https://')) {
-            return addCacheBuster(avatarUrl);
+            return avatarUrl;
         }
         
         // For other relative paths, also prepend backend URL
-        if (!avatarUrl.startsWith('/')) {
-            const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
-            const fullUrl = `${backendUrl}/${avatarUrl}`;
-            return addCacheBuster(fullUrl);
-        }
-        
-        // For any other case, just return the URL as is
-        return addCacheBuster(avatarUrl);
+        const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
+        return `${backendUrl}${avatarUrl}`;
     };
 
     const handleTouchStart = (e) => {

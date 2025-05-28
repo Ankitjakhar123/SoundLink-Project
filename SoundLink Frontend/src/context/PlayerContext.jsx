@@ -139,6 +139,10 @@ export const PlayerContextProvider = ({ children }) => {
   // Add this after the other state declarations
   const [lastPlayedSong, setLastPlayedSong] = useState(null);
 
+  const [crossfadeDuration] = useState(1000); // 1 second crossfade
+  const [isCrossfading, setIsCrossfading] = useState(false);
+  const nextAudioRef = useRef(null);
+
   // Initialize audio context
   const initAudioContext = () => {
     // Only create once
@@ -583,30 +587,70 @@ export const PlayerContextProvider = ({ children }) => {
     }
   };
 
+  // Add crossfade function
+  const crossfadeToNextTrack = async (nextTrack) => {
+    if (!audioRef.current || !nextTrack) return;
+    
+    setIsCrossfading(true);
+    
+    // Create a new audio element for the next track
+    const nextAudio = new Audio(nextTrack.file);
+    nextAudioRef.current = nextAudio;
+    nextAudio.volume = 0;
+    
+    // Start playing the next track
+    try {
+      await nextAudio.play();
+      
+      // Crossfade between tracks
+      const startTime = Date.now();
+      const fadeInterval = setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / crossfadeDuration, 1);
+        
+        // Fade out current track
+        audioRef.current.volume = 1 - progress;
+        // Fade in next track
+        nextAudio.volume = progress;
+        
+        if (progress >= 1) {
+          clearInterval(fadeInterval);
+          // Clean up old audio
+          audioRef.current.pause();
+          audioRef.current.src = '';
+          // Set the new audio as current
+          audioRef.current = nextAudio;
+          nextAudioRef.current = null;
+          setIsCrossfading(false);
+        }
+      }, 20); // Update every 20ms for smooth transition
+    } catch (error) {
+      console.error('Error during crossfade:', error);
+      setIsCrossfading(false);
+    }
+  };
+
+  // Modify Next function to use crossfade
   const Next = () => {
+    if (isCrossfading) return; // Prevent multiple crossfades
+    
     if (queueSongs.length > 0) {
-      // Play next from queue
+      // Play next from queue with crossfade
       const nextTrack = queueSongs[0];
+      crossfadeToNextTrack(nextTrack);
       setTrack(nextTrack);
       // Remove from queue
       setQueueSongs(prevQueue => prevQueue.slice(1));
       setAutoplayEnabled(true);
-      // Reset progress bar
-      if (audioRef.current) {
-        audioRef.current.currentTime = 0;
-      }
       return;
     }
     
     const currentIndex = songsData.findIndex(item => item._id === track._id);
     if (currentIndex < songsData.length - 1) {
       const nextTrack = songsData[currentIndex + 1];
+      crossfadeToNextTrack(nextTrack);
       setTrack(nextTrack);
       setAutoplayEnabled(true);
-      // Reset progress bar
-      if (audioRef.current) {
-        audioRef.current.currentTime = 0;
-      }
     }
   };
 
@@ -992,7 +1036,7 @@ export const PlayerContextProvider = ({ children }) => {
     };
 
     const handleEnded = () => {
-      if (!audio.loop) {
+      if (!audio.loop && !isCrossfading) {
         Next();
       }
     };
@@ -1037,7 +1081,7 @@ export const PlayerContextProvider = ({ children }) => {
       audio.removeEventListener("waiting", handleWaiting);
       audio.removeEventListener("canplay", handleCanPlay);
     };
-  }, [track]);
+  }, [track, isCrossfading]);
 
   // Modified useEffect to implement lazy loading with prefetching
   useEffect(() => {
@@ -1250,30 +1294,15 @@ export const PlayerContextProvider = ({ children }) => {
     return formattedLyrics;
   };
 
-  // Add event listener for when song ends
+  // Clean up nextAudioRef on unmount
   useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    const handleEnded = () => {
-      if (!audio.loop) {
-        Next();
-        // Ensure the next song starts playing
-        setTimeout(() => {
-          if (audioRef.current) {
-            audioRef.current.play().catch(error => {
-              console.error('Error playing next song:', error);
-            });
-          }
-        }, 100);
+    return () => {
+      if (nextAudioRef.current) {
+        nextAudioRef.current.pause();
+        nextAudioRef.current.src = '';
       }
     };
-
-    audio.addEventListener("ended", handleEnded);
-    return () => {
-      audio.removeEventListener("ended", handleEnded);
-    };
-  }, [track]);
+  }, []);
 
   // Add the new buffering states and functions to the context
   const contextValue = {

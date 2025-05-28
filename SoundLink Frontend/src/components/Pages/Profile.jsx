@@ -254,13 +254,13 @@ const Profile = () => {
         <div className="flex flex-col items-center gap-4">
           <div className="relative">
             <LazyImage
-              src={addCacheBuster(preview)}
+              src={preview}
               alt="Profile"
               className="w-32 h-32 rounded-full object-cover border-4 border-fuchsia-700 shadow-lg"
               fallbackSrc="/default-avatar.svg"
               width={128}
               height={128}
-              loadingStyles="bg-neutral-800 animate-pulse"
+              loadingStyles="bg-neutral-800"
               onLoad={(e) => {
                 console.log("Avatar image loaded successfully:", e.target.src);
               }}
