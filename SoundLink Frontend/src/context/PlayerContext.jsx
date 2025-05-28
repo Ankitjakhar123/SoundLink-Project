@@ -19,49 +19,187 @@ export const PlayerContextProvider = ({ children }) => {
 
   // Add sleep timer state
   const [sleepTimer, setSleepTimerState] = useState(null);
+  const [sleepTimerRemaining, setSleepTimerRemaining] = useState(null);
   const sleepTimerRef = useRef(null);
+  const sleepTimerIntervalRef = useRef(null);
+  const sleepTimerEndTimeRef = useRef(null);
 
   // Add sleep timer function
   const setSleepTimer = (minutes) => {
-    // Clear any existing timer
+    // Clear any existing timers
     if (sleepTimerRef.current) {
       clearTimeout(sleepTimerRef.current);
       sleepTimerRef.current = null;
     }
+    if (sleepTimerIntervalRef.current) {
+      clearInterval(sleepTimerIntervalRef.current);
+      sleepTimerIntervalRef.current = null;
+    }
 
     if (minutes === 0) {
       setSleepTimerState(null);
+      setSleepTimerRemaining(null);
+      sleepTimerEndTimeRef.current = null;
       return;
     }
 
     const milliseconds = minutes * 60 * 1000;
     setSleepTimerState(minutes);
+    setSleepTimerRemaining(minutes * 60); // Set initial remaining time in seconds
+    sleepTimerEndTimeRef.current = Date.now() + milliseconds;
 
+    // Start countdown interval
+    sleepTimerIntervalRef.current = setInterval(() => {
+      const remaining = Math.max(0, Math.floor((sleepTimerEndTimeRef.current - Date.now()) / 1000));
+      setSleepTimerRemaining(remaining);
+      
+      if (remaining <= 0) {
+        clearInterval(sleepTimerIntervalRef.current);
+        sleepTimerIntervalRef.current = null;
+      }
+    }, 1000);
+
+    // Start the main timer
     sleepTimerRef.current = setTimeout(() => {
       // Fade out volume over 5 seconds
+      let currentVolume = audioRef.current?.volume || 1;
       const fadeInterval = setInterval(() => {
-        if (audioRef.current && audioRef.current.volume > 0.1) {
-          audioRef.current.volume -= 0.1;
+        if (audioRef.current && currentVolume > 0.1) {
+          currentVolume -= 0.1;
+          audioRef.current.volume = currentVolume;
         } else {
           clearInterval(fadeInterval);
           pause();
           setSleepTimerState(null);
+          setSleepTimerRemaining(null);
+          sleepTimerEndTimeRef.current = null;
         }
       }, 500);
 
       // Clear the timer reference
       sleepTimerRef.current = null;
     }, milliseconds);
+
+    // Add visibility change handler for iOS
+    const handleVisibilityChange = () => {
+      if (document.hidden && sleepTimerEndTimeRef.current) {
+        const remainingTime = sleepTimerEndTimeRef.current - Date.now();
+        if (remainingTime <= 0) {
+          // Timer has expired while in background
+          if (audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current.volume = 1;
+          }
+          setSleepTimerState(null);
+          setSleepTimerRemaining(null);
+          sleepTimerEndTimeRef.current = null;
+        } else {
+          // Reschedule the timer
+          if (sleepTimerRef.current) {
+            clearTimeout(sleepTimerRef.current);
+          }
+          sleepTimerRef.current = setTimeout(() => {
+            if (audioRef.current) {
+              audioRef.current.pause();
+              audioRef.current.volume = 1;
+            }
+            setSleepTimerState(null);
+            setSleepTimerRemaining(null);
+            sleepTimerEndTimeRef.current = null;
+          }, remainingTime);
+        }
+      }
+    };
+
+    // Add event listener for visibility changes
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Clean up on unmount
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (sleepTimerRef.current) {
+        clearTimeout(sleepTimerRef.current);
+      }
+      if (sleepTimerIntervalRef.current) {
+        clearInterval(sleepTimerIntervalRef.current);
+      }
+    };
   };
 
-  // Clean up sleep timer on unmount
+  // Add effect to handle sleep timer cleanup
   useEffect(() => {
     return () => {
       if (sleepTimerRef.current) {
         clearTimeout(sleepTimerRef.current);
       }
+      if (sleepTimerIntervalRef.current) {
+        clearInterval(sleepTimerIntervalRef.current);
+      }
     };
   }, []);
+
+  // Add effect to handle sleep timer state persistence
+  useEffect(() => {
+    if (sleepTimer) {
+      // Store sleep timer state
+      localStorage.setItem('sleepTimer', JSON.stringify({
+        minutes: sleepTimer,
+        endTime: sleepTimerEndTimeRef.current
+      }));
+    } else {
+      localStorage.removeItem('sleepTimer');
+    }
+  }, [sleepTimer]);
+
+  // Add effect to restore sleep timer state on mount
+  useEffect(() => {
+    const savedSleepTimer = localStorage.getItem('sleepTimer');
+    if (savedSleepTimer) {
+      try {
+        const { minutes, endTime } = JSON.parse(savedSleepTimer);
+        const remainingTime = endTime - Date.now();
+        if (remainingTime > 0) {
+          setSleepTimerState(minutes);
+          setSleepTimerRemaining(Math.floor(remainingTime / 1000));
+          sleepTimerEndTimeRef.current = endTime;
+          
+          // Restart countdown interval
+          sleepTimerIntervalRef.current = setInterval(() => {
+            const remaining = Math.max(0, Math.floor((sleepTimerEndTimeRef.current - Date.now()) / 1000));
+            setSleepTimerRemaining(remaining);
+            
+            if (remaining <= 0) {
+              clearInterval(sleepTimerIntervalRef.current);
+              sleepTimerIntervalRef.current = null;
+            }
+          }, 1000);
+
+          sleepTimerRef.current = setTimeout(() => {
+            if (audioRef.current) {
+              audioRef.current.pause();
+              audioRef.current.volume = 1;
+            }
+            setSleepTimerState(null);
+            setSleepTimerRemaining(null);
+            sleepTimerEndTimeRef.current = null;
+          }, remainingTime);
+        } else {
+          localStorage.removeItem('sleepTimer');
+        }
+      } catch (error) {
+        console.error('Error restoring sleep timer:', error);
+        localStorage.removeItem('sleepTimer');
+      }
+    }
+  }, []);
+
+  // Format remaining time for display
+  const formatRemainingTime = (seconds) => {
+    if (!seconds) return '';
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
 
   // Helper function to extract the artist name from any possible field
   const getArtistName = (trackObj) => {
@@ -1272,6 +1410,8 @@ export const PlayerContextProvider = ({ children }) => {
     saveLastPlayedSong,
     sleepTimer,
     setSleepTimer,
+    sleepTimerRemaining,
+    formatRemainingTime,
   };
 
   return (
