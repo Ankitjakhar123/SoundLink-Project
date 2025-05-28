@@ -6,6 +6,7 @@ import axios from 'axios';
 import { PlayerContext } from '../../context/PlayerContext';
 import QueueComponent from '../QueueComponent';
 import { MdRadio } from 'react-icons/md';
+import LazyImage from '../LazyImage';
 
 // Default avatar path - ensure this SVG file exists in the public directory
 const DEFAULT_AVATAR = '/default-avatar.svg';
@@ -393,14 +394,15 @@ const Navbar = (props) => {
                                     className="flex items-center justify-center w-10 h-10 rounded-full overflow-hidden border-2 border-fuchsia-500 hover:border-fuchsia-400 transition-colors"
                                 >
                                     {getUserAvatar() ? (
-                                        <img 
+                                        <LazyImage 
                                             src={getUserAvatar()} 
                                             alt={user.username || 'User'} 
                                             className="w-full h-full object-cover"
-                                            loading="eager"
+                                            fallbackSrc="/default-avatar.svg"
+                                            width={40}
+                                            height={40}
+                                            loadingStyles="bg-neutral-800 animate-pulse"
                                             onError={(e) => {
-                                                e.target.onerror = null; // Prevent infinite error loop
-                                                e.target.style.display = 'none';
                                                 e.target.parentNode.classList.add('bg-fuchsia-600');
                                             }}
                                         />
@@ -420,17 +422,18 @@ const Navbar = (props) => {
                                         <div className="px-4 py-2 border-b border-neutral-700 flex items-center gap-2">
                                             <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
                                                 {getUserAvatar() ? (
-                                                <img 
-                                                    src={getUserAvatar()} 
-                                                    alt={user.username || 'User'} 
-                                                    className="w-full h-full object-cover"
-                                                    loading="eager"
-                                                    onError={(e) => {
-                                                            e.target.onerror = null; // Prevent infinite error loop
-                                                            e.target.style.display = 'none';
+                                                    <LazyImage 
+                                                        src={getUserAvatar()} 
+                                                        alt={user.username || 'User'} 
+                                                        className="w-full h-full object-cover"
+                                                        fallbackSrc="/default-avatar.svg"
+                                                        width={32}
+                                                        height={32}
+                                                        loadingStyles="bg-neutral-800 animate-pulse"
+                                                        onError={(e) => {
                                                             e.target.parentNode.classList.add('bg-fuchsia-600');
-                                                    }}
-                                                />
+                                                        }}
+                                                    />
                                                 ) : (
                                                     <div className="w-full h-full bg-fuchsia-600 flex items-center justify-center text-white font-bold text-sm">
                                                         {user.username ? user.username.charAt(0).toUpperCase() : 'U'}

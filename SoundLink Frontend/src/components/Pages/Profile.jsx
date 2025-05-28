@@ -3,6 +3,7 @@ import { AuthContext } from '../../context/AuthContext';
 import AdminDashboard from "../Admin/Dashboard/AdminDashboard";
 import axios from 'axios';
 import Skeleton from '../Skeleton';
+import LazyImage from '../LazyImage';
 
 const Profile = () => {
   const { user, updateUserData } = useContext(AuthContext);
@@ -247,23 +248,24 @@ const Profile = () => {
   if (!displayUser) return <div className="text-white p-8">No user data found.</div>;
 
   return (
-    <div className="flex-1 min-h-screen bg-black rounded-2xl shadow-2xl p-8 text-white flex flex-col gap-8">
+    <div className="flex-1 min-h-screen bg-black rounded-2xl shadow-2xl p-8 text-white flex flex-col gap-8 pb-32">
       <h2 className="text-3xl font-bold mb-4">Profile</h2>
       <form className="flex flex-col gap-6" onSubmit={handleSave}>
         <div className="flex flex-col items-center gap-4">
           <div className="relative">
-            <img
-              src={addCacheBuster(preview) || '/default-avatar.svg'}
+            <LazyImage
+              src={addCacheBuster(preview)}
               alt="Profile"
               className="w-32 h-32 rounded-full object-cover border-4 border-fuchsia-700 shadow-lg"
-              loading="eager"
+              fallbackSrc="/default-avatar.svg"
+              width={128}
+              height={128}
+              loadingStyles="bg-neutral-800 animate-pulse"
               onLoad={(e) => {
                 console.log("Avatar image loaded successfully:", e.target.src);
               }}
               onError={(e) => {
                 console.error("Failed to load avatar:", e.target.src);
-                e.target.onerror = null;
-                e.target.src = '/default-avatar.svg';
               }}
             />
             <label htmlFor="profile-image-upload" className="absolute bottom-2 right-2 bg-fuchsia-700 text-white px-3 py-1 rounded-full cursor-pointer text-xs font-semibold hover:bg-fuchsia-800 transition">

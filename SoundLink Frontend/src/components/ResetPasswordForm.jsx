@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { FaLock } from "react-icons/fa";
 import axios from "axios";
@@ -13,6 +13,19 @@ const ResetPasswordForm = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  // Check if we're in a PWA context
+  useEffect(() => {
+    const isInPWA = window.matchMedia('(display-mode: standalone)').matches || 
+                    window.navigator.standalone || 
+                    document.referrer.includes('android-app://');
+    
+    // If we're not in PWA and the token is in the URL, redirect to PWA
+    if (!isInPWA && token) {
+      const pwaUrl = `${window.location.origin}/reset-password/${token}`;
+      window.location.href = pwaUrl;
+    }
+  }, [token]);
 
   const handleChange = (e) => {
     setFormData({
