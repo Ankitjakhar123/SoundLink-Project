@@ -65,26 +65,13 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
   
-  // 1. Handle API requests - don't cache but provide fallback for offline
+  // Handle API requests
   if (url.pathname.startsWith('/api/')) {
-    event.respondWith(
-      fetch(event.request)
-        .catch(() => {
-          // Return a custom offline message for API requests
-          if (event.request.method === 'GET') {
-            return new Response(JSON.stringify({
-              success: false,
-              message: 'You are currently offline. Please check your connection.'
-            }), {
-              headers: { 'Content-Type': 'application/json' }
-            });
-          }
-        })
-    );
+    event.respondWith(fetch(event.request));
     return;
   }
   
-  // 2. Cache music files with a dedicated cache
+  // Cache music files with a dedicated cache
   if (url.pathname.includes('.mp3') || url.pathname.includes('/audio/')) {
     event.respondWith(
       caches.open(MUSIC_CACHE_NAME)
@@ -96,19 +83,12 @@ self.addEventListener('fetch', (event) => {
                 return response;
               }
               
-              // Fetch and cache music file if online
+              // Fetch and cache music file
               return fetch(event.request)
                 .then(networkResponse => {
                   // Cache copy of the response
                   cache.put(event.request, networkResponse.clone());
                   return networkResponse;
-                })
-                .catch(() => {
-                  // Provide a fallback silent audio file or error message
-                  return new Response('No audio available offline', {
-                    status: 503,
-                    statusText: 'Service Unavailable'
-                  });
                 });
             });
         })

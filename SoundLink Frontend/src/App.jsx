@@ -78,7 +78,6 @@ const App = () => {
   const { user } = useContext(AuthContext);
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [backendStatus, setBackendStatus] = useState('checking');
   const [retryCount, setRetryCount] = useState(0);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
@@ -93,20 +92,6 @@ const App = () => {
       contentContainerRef.current.scrollTo(0, 0);
     }
   }, [location.pathname]);
-
-  // Handle online/offline status
-  useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-    
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
 
   // Setup Media Session API for lock screen controls
   useEffect(() => {
@@ -287,13 +272,6 @@ const App = () => {
       <DisclaimerPopup />
       <InstallPwaPrompt />
       <InstallPWAButton />
-      
-      {/* Offline indicator */}
-      {!isOnline && (
-        <div className="fixed top-0 left-0 right-0 bg-amber-600 text-black z-50 py-1 px-4 text-center text-sm font-medium">
-          You're offline. Some features may be limited.
-        </div>
-      )}
       
       <Sidebar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
       <div ref={contentContainerRef} className={`flex-1 flex flex-col h-screen overflow-y-auto transition-all duration-300 w-full content-container bg-black touch-scroll no-scrollbar ${mobileOpen ? 'opacity-30 pointer-events-none select-none' : ''} md:opacity-100 md:pointer-events-auto md:select-auto`}>
