@@ -39,7 +39,6 @@ export const PlayerContextProvider = ({ children }) => {
 
     sleepTimerRef.current = setTimeout(() => {
       // Fade out volume over 5 seconds
-      const startVolume = audioRef.current?.volume || 1;
       const fadeInterval = setInterval(() => {
         if (audioRef.current && audioRef.current.volume > 0.1) {
           audioRef.current.volume -= 0.1;
@@ -142,6 +141,7 @@ export const PlayerContextProvider = ({ children }) => {
     return 'Unknown Album';
   };
 
+  // Remove unused state variables
   const [songsData, setSongsData] = useState([]);
   const [albumsData, setAlbumsData] = useState([]);
   const [favorites, setFavorites] = useState([]);
@@ -151,13 +151,7 @@ export const PlayerContextProvider = ({ children }) => {
   const [loop, setLoop] = useState(false);
   const [queueSongs, setQueueSongs] = useState([]);
   const [autoplayEnabled, setAutoplayEnabled] = useState(false);
-  const [firstLoad, setFirstLoad] = useState(true);
   const [hidePlayer, setHidePlayer] = useState(false);
-  // Buffering and lazy loading states
-  const [buffering, setBuffering] = useState(false);
-  const [loadingProgress, setLoadingProgress] = useState(0);
-  const [prefetchedTracks, setPrefetchedTracks] = useState({});
-  const [bufferingStrategy, setBufferingStrategy] = useState('conservative'); // Changed to conservative by default
   const [loading, setLoading] = useState({
     songs: true,
     albums: true,
@@ -177,7 +171,7 @@ export const PlayerContextProvider = ({ children }) => {
   
   // Theme colors extracted from album art
   const [themeColors, setThemeColors] = useState({
-    primary: '#a855f7', // Default fuchsia color
+    primary: '#a855f7',
     secondary: '#121212',
     text: '#ffffff',
     accent: '#ec4899'
@@ -186,44 +180,38 @@ export const PlayerContextProvider = ({ children }) => {
   // Add this after the other state declarations
   const [lastPlayedSong, setLastPlayedSong] = useState(null);
 
-  const [crossfadeDuration] = useState(1000); // 1 second crossfade
+  const [crossfadeDuration] = useState(1000);
   const [isCrossfading, setIsCrossfading] = useState(false);
   const nextAudioRef = useRef(null);
 
   // Initialize audio context
   const initAudioContext = () => {
-    // Only create once
     if (!window._audioContext) {
       try {
-        // Create the audio context
-          const AudioContext = window.AudioContext || window.webkitAudioContext;
-          window._audioContext = new AudioContext();
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        window._audioContext = new AudioContext();
       } catch {
         // Error handled silently - audio might still work
-        }
-        
-        // Resume the AudioContext if it's suspended
-        if (window._audioContext && window._audioContext.state === 'suspended') {
-          window._audioContext.resume()
+      }
+      
+      if (window._audioContext && window._audioContext.state === 'suspended') {
+        window._audioContext.resume()
           .then(() => {/* Audio context resumed */})
           .catch(() => {/* Failed to resume, but continue anyway */});
-        }
+      }
+      
+      if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+        const unlockIOSAudio = () => {
+          if (window._audioContext) {
+            const buffer = window._audioContext.createBuffer(1, 1, 22050);
+            const source = window._audioContext.createBufferSource();
+            source.buffer = buffer;
+            source.connect(window._audioContext.destination);
+            source.start(0);
+            source.stop(0.001);
+          }
+        };
         
-        // iOS Safari specific unlock
-        if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-          // Create and play a silent buffer for iOS
-          const unlockIOSAudio = () => {
-            if (window._audioContext) {
-              const buffer = window._audioContext.createBuffer(1, 1, 22050);
-              const source = window._audioContext.createBufferSource();
-              source.buffer = buffer;
-              source.connect(window._audioContext.destination);
-              source.start(0);
-              source.stop(0.001); // Very short play
-            }
-          };
-          
-        // Try to unlock on first user interaction
         const unlockOnFirstTouch = () => {
           unlockIOSAudio();
           document.body.removeEventListener('touchstart', unlockOnFirstTouch);
@@ -239,101 +227,35 @@ export const PlayerContextProvider = ({ children }) => {
         document.body.addEventListener('mouseup', unlockOnFirstTouch, false);
         document.body.addEventListener('click', unlockOnFirstTouch, false);
         
-        // Also try with a silent sound element
-          const silentSound = document.createElement('audio');
-          silentSound.controls = false;
-          silentSound.preload = 'auto';
-          silentSound.loop = false;
-        silentSound.src = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RSU0UAAAAPAAADTGF2ZjU4LjQ1LjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAAwAAAbAAkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQ19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX1/////////////////////////////////8AAAA5TEFNRTMuMTAwAQAAADkAAABRiCJGmDgAAgAAABYAYOoA/////////////////////////////////8wAAAAATEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV'; // empty mp3 file
+        const silentSound = document.createElement('audio');
+        silentSound.controls = false;
+        silentSound.preload = 'auto';
+        silentSound.loop = false;
+        silentSound.src = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RSU0UAAAAPAAADTGF2ZjU4LjQ1LjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAAwAAAbAAkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQ19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX1/////////////////////////////////8AAAA5TEFNRTMuMTAwAQAAADkAAABRiCJGmDgAAgAAABYAYOoA/////////////////////////////////8wAAAAATEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV';
         silentSound.setAttribute('style', 'display: none;');
         document.body.appendChild(silentSound);
-          
-          silentSound.play()
-            .then(() => {
-              setTimeout(() => {
-                silentSound.pause();
-                silentSound.remove();
-            }, 1000);
-            })
-          .catch(() => {
-              silentSound.remove();
-            });
-      }
-    }
-  };
-
-  // Prefetch a track's audio data
-  const prefetchTrack = async (trackId) => {
-    // Skip if already prefetched
-    if (prefetchedTracks[trackId]) {
-      return;
-    }
-    
-    const trackToPrefetch = songsData.find(song => song._id === trackId);
-    if (!trackToPrefetch) {
-      console.error(`Cannot prefetch track ${trackId}: not found in songData`);
-      return;
-    }
-    
-    try {
-      // Create an audio element for prefetching
-      const prefetchAudio = new Audio();
-      prefetchAudio.preload = 'metadata';
-      
-      // Set up progress tracking
-      prefetchAudio.addEventListener('progress', () => {
-        if (prefetchAudio.buffered.length > 0) {
-          const bufferedEnd = prefetchAudio.buffered.end(prefetchAudio.buffered.length - 1);
-          const duration = prefetchAudio.duration;
-          if (duration > 0) {
-            const progress = (bufferedEnd / duration) * 100;
-            
-            // When prefetch is complete enough, mark as prefetched
-            if (progress > 15) {
-              setPrefetchedTracks(prev => ({
-                ...prev,
-                [trackId]: {
-                  timestamp: Date.now(),
-                  progress
-                }
-              }));
-            }
-          }
-        }
-      });
-      
-      // Handle successful prefetch
-      prefetchAudio.addEventListener('canplaythrough', () => {
-        setPrefetchedTracks(prev => ({
-          ...prev,
-          [trackId]: {
-            timestamp: Date.now(),
-            progress: 100
-          }
-        }));
         
-        // Remove the temporary audio element
-        prefetchAudio.src = '';
-        prefetchAudio.remove();
-      });
-      
-      // Start the prefetch
-      prefetchAudio.src = trackToPrefetch.file;
-      
-    } catch (error) {
-      console.error(`Error prefetching track ${trackToPrefetch.name}:`, error);
+        silentSound.play()
+          .then(() => {
+            setTimeout(() => {
+              silentSound.pause();
+              silentSound.remove();
+            }, 1000);
+          })
+          .catch(() => {
+            silentSound.remove();
+          });
+      }
     }
   };
 
   // Modified play function with audio context initialization and buffering control
   const play = () => {
-    initAudioContext(); // Initialize audio context
+    initAudioContext();
 
     if (audioRef.current) {
       try {
-        // Fix for cross-origin issues and potential src problems
         if (!audioRef.current.src || audioRef.current.src === '') {
-          console.error('No audio source URL set!');
           if (track && track.file) {
             audioRef.current.src = track.file;
             audioRef.current.load();
@@ -343,28 +265,22 @@ export const PlayerContextProvider = ({ children }) => {
           }
         }
         
-        // Set the playing state to true before starting playback
+        // Ensure audio is loaded before playing
+        if (audioRef.current.readyState < 3) { // HAVE_FUTURE_DATA
+          audioRef.current.load();
+        }
+        
         setPlayStatus(true);
-        
-        // Set buffering to true - will be set to false when playback starts
-        setBuffering(true);
-        
-        // The actual play call
         const playPromise = audioRef.current.play();
         
-        // Modern browsers return a promise
         if (playPromise !== undefined) {
           playPromise
             .then(() => {
-              // Playback started successfully
-              setBuffering(false);
               setPlayStatus(true);
             })
             .catch(err => {
               console.error('Play promise error:', err);
-              // Set playStatus to false if autoplay was prevented
               setPlayStatus(false);
-              setBuffering(false);
               
               // Try to resume audio context if it was suspended
               if (window._audioContext && window._audioContext.state === 'suspended') {
@@ -372,33 +288,22 @@ export const PlayerContextProvider = ({ children }) => {
                   .then(() => {
                     // Try playing again after resuming context
                     audioRef.current.play()
-                      .then(() => {
-                        setBuffering(false);
-                        setPlayStatus(true);
-                      })
+                      .then(() => setPlayStatus(true))
                       .catch(retryErr => {
                         console.error('Failed to play after context resume:', retryErr);
                         setPlayStatus(false);
-                        setBuffering(false);
                       });
                   })
                   .catch(err => {
                     console.error('Failed to resume audio context:', err);
                     setPlayStatus(false);
-                    setBuffering(false);
                   });
               }
             });
-        } else {
-          // Old browsers might not return a promise
-          // Assume playback was successful
-          setBuffering(false);
-          setPlayStatus(true);
         }
       } catch (error) {
         console.error('Error in play function:', error);
         setPlayStatus(false);
-        setBuffering(false);
       }
     }
   };
@@ -408,11 +313,9 @@ export const PlayerContextProvider = ({ children }) => {
       try {
         audioRef.current.pause();
         setPlayStatus(false);
-        setBuffering(false);
       } catch (error) {
         console.error('Error pausing audio:', error);
         setPlayStatus(false);
-        setBuffering(false);
       }
     }
   };
@@ -520,9 +423,8 @@ export const PlayerContextProvider = ({ children }) => {
     }
   };
 
-  // Modified playWithId function to save the last played song
+  // Modify playWithId function to be simpler
   const playWithId = async (id) => {
-    // First check if we're just reloading the current track
     if (track && track._id === id) {
       if (playStatus) {
         pause();
@@ -532,7 +434,6 @@ export const PlayerContextProvider = ({ children }) => {
       return;
     }
     
-    // Find the track in our data
     const selectedTrack = songsData.find((song) => song._id === id);
     
     if (!selectedTrack) {
@@ -540,14 +441,11 @@ export const PlayerContextProvider = ({ children }) => {
       return;
     }
 
-    // Always force stop any playing radio before playing a song
     if (radioContext?.forceStopRadio) {
       radioContext.forceStopRadio();
     }
 
-    // Add a short delay to ensure currentStation is cleared before setting the new track
     setTimeout(async () => {
-      // Reset audio element completely
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current.currentTime = 0;
@@ -555,18 +453,12 @@ export const PlayerContextProvider = ({ children }) => {
         audioRef.current.load();
         audioRef.current.removeAttribute('src');
       }
-
-      // Set buffering state while we set up the track
-      setBuffering(true);
-      setLoadingProgress(0);
       
-      // Extract colors from the album art to use for UI theming
       try {
         const colorTheme = await extractColorsFromTrack(selectedTrack);
         setThemeColors(colorTheme);
       } catch (error) {
         console.error('Error extracting colors:', error);
-        // Use fallback colors if extraction fails
         setThemeColors({
           primary: '#8b5cf6',
           secondary: '#0f172a',
@@ -574,11 +466,9 @@ export const PlayerContextProvider = ({ children }) => {
         });
       }
       
-      // Set the track in state and save as last played
       setTrack(selectedTrack);
       saveLastPlayedSong(selectedTrack);
       
-      // Record this song in history if user is logged in
       if (user && user._id && token) {
         try {
           await axios.post(
@@ -587,37 +477,17 @@ export const PlayerContextProvider = ({ children }) => {
             { headers: { Authorization: `Bearer ${token}` } }
           );
         } catch (error) {
-          // Non-critical error, just log it
           console.error('Failed to record play history:', error);
         }
       }
       
-      // Set a short timeout to ensure the track state is updated before playing
       setTimeout(() => {
         if (audioRef.current) {
-          // Ensure the audio element has the correct source
           audioRef.current.src = selectedTrack.file;
           audioRef.current.load();
           play();
         }
       }, 100);
-      
-      // Auto-prefetch the next few songs for smoother playback
-      if (selectedTrack && bufferingStrategy === 'aggressive') {
-        // Find next songs to prefetch
-        // Could be next in album, related by artist, or based on user's history
-        const relatedSongs = songsData
-          .filter(s => 
-            s._id !== selectedTrack._id && // Not the current song
-            (s.artist === selectedTrack.artist || s.album === selectedTrack.album) // Same artist or album
-          )
-          .slice(0, 3); // Limit to 3 songs to prefetch
-        
-        // Start prefetching them
-        relatedSongs.forEach(song => {
-          prefetchTrack(song._id);
-        });
-      }
     }, 50);
   };
 
@@ -629,45 +499,62 @@ export const PlayerContextProvider = ({ children }) => {
     
     const currentIndex = songsData.findIndex(item => item._id === track._id);
     if (currentIndex > 0) {
-      setTrack(songsData[currentIndex - 1]);
+      // Immediately pause current track
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
+      
+      // Reset time state
+      setTime({
+        currentTime: { second: 0, minute: 0 },
+        totalTime: { second: 0, minute: 0 }
+      });
+      
+      // Reset seek bar
+      if (seekBar.current) {
+        seekBar.current.style.width = '0%';
+      }
+      
+      const previousTrack = songsData[currentIndex - 1];
+      setTrack(previousTrack);
       setAutoplayEnabled(true);
+      
+      // Small delay to ensure state updates before playing
+      setTimeout(() => {
+        if (audioRef.current) {
+          audioRef.current.src = previousTrack.file;
+          audioRef.current.load();
+          play();
+        }
+      }, 50);
     }
   };
 
-  // Modify Next function to properly reset state
+  // Modify Next function to be simpler
   const Next = () => {
-    if (isCrossfading) return; // Prevent multiple crossfades
+    if (isCrossfading) return;
     
-    // Immediately pause current track to prevent overlap
     if (audioRef.current) {
       audioRef.current.pause();
-      audioRef.current.currentTime = 0; // Reset current time
+      audioRef.current.currentTime = 0;
     }
     
-    // Reset time state
     setTime({
       currentTime: { second: 0, minute: 0 },
       totalTime: { second: 0, minute: 0 }
     });
     
-    // Reset seek bar if it exists
     if (seekBar.current) {
       seekBar.current.style.width = '0%';
     }
     
     if (queueSongs.length > 0) {
-      // Play next from queue
       const nextTrack = queueSongs[0];
       setTrack(nextTrack);
-      // Remove from queue
       setQueueSongs(prevQueue => prevQueue.slice(1));
       setAutoplayEnabled(true);
       
-      // Reset buffering state
-      setBuffering(true);
-      setLoadingProgress(0);
-      
-      // Small delay to ensure state updates before playing
       setTimeout(() => {
         if (audioRef.current) {
           audioRef.current.src = nextTrack.file;
@@ -684,11 +571,6 @@ export const PlayerContextProvider = ({ children }) => {
       setTrack(nextTrack);
       setAutoplayEnabled(true);
       
-      // Reset buffering state
-      setBuffering(true);
-      setLoadingProgress(0);
-      
-      // Small delay to ensure state updates before playing
       setTimeout(() => {
         if (audioRef.current) {
           audioRef.current.src = nextTrack.file;
@@ -698,88 +580,6 @@ export const PlayerContextProvider = ({ children }) => {
       }, 50);
     }
   };
-
-  // Optimize crossfade function
-  const crossfadeToNextTrack = async (nextTrack) => {
-    if (!audioRef.current || !nextTrack) return;
-    
-    setIsCrossfading(true);
-    
-    // Immediately pause current track
-    audioRef.current.pause();
-    
-    // Create a new audio element for the next track
-    const nextAudio = new Audio();
-    nextAudioRef.current = nextAudio;
-    nextAudio.volume = 0;
-    nextAudio.preload = 'metadata'; // Only load metadata initially
-    
-    try {
-      // Set source and start loading
-      nextAudio.src = nextTrack.file;
-      await nextAudio.load();
-      
-      // Start playing the next track
-      await nextAudio.play();
-      
-      // Crossfade between tracks
-      const startTime = Date.now();
-      const fadeInterval = setInterval(() => {
-        const elapsed = Date.now() - startTime;
-        const progress = Math.min(elapsed / crossfadeDuration, 1);
-        
-        // Fade out current track
-        if (audioRef.current) {
-          audioRef.current.volume = 1 - progress;
-        }
-        // Fade in next track
-        nextAudio.volume = progress;
-        
-        if (progress >= 1) {
-          clearInterval(fadeInterval);
-          // Clean up old audio
-          if (audioRef.current) {
-            audioRef.current.pause();
-            audioRef.current.src = '';
-          }
-          // Set the new audio as current
-          audioRef.current = nextAudio;
-          nextAudioRef.current = null;
-          setIsCrossfading(false);
-        }
-      }, 20); // Update every 20ms for smooth transition
-    } catch (error) {
-      console.error('Error during crossfade:', error);
-      setIsCrossfading(false);
-      // Clean up on error
-      if (nextAudio) {
-        nextAudio.pause();
-        nextAudio.src = '';
-      }
-    }
-  };
-
-  // Add preload optimization
-  useEffect(() => {
-    if (track && audioRef.current) {
-      // Set appropriate preload attribute based on buffering strategy
-      if (bufferingStrategy === 'conservative') {
-        audioRef.current.preload = 'metadata'; // Minimal preloading
-      } else if (bufferingStrategy === 'aggressive') {
-        audioRef.current.preload = 'auto'; // Full preloading
-      }
-      
-      // Preload next track if available
-      const currentIndex = songsData.findIndex(item => item._id === track._id);
-      if (currentIndex < songsData.length - 1) {
-        const nextTrack = songsData[currentIndex + 1];
-        const nextAudio = new Audio();
-        nextAudio.preload = 'metadata';
-        nextAudio.src = nextTrack.file;
-        nextAudio.load();
-      }
-    }
-  }, [track, bufferingStrategy]);
 
   const shuffle = () => {
     const randomIndex = Math.floor(Math.random() * songsData.length);
@@ -1132,7 +932,7 @@ export const PlayerContextProvider = ({ children }) => {
     }
   }, [user, token]);
 
-  // Update the time update handler to be more robust
+  // Simplify the time update handler
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -1141,18 +941,15 @@ export const PlayerContextProvider = ({ children }) => {
       const currentTime = audio.currentTime;
       const duration = audio.duration || 0;
 
-      // Ensure we have a valid duration before updating UI
       if (isNaN(duration) || duration === 0 || duration === Infinity) {
         return;
       }
 
-      // Update seek bar
       if (seekBar.current) {
         const progress = (currentTime / duration) * 100;
         seekBar.current.style.width = `${progress}%`;
       }
 
-      // Update the time state with current and total times
       setTime({
         currentTime: {
           second: Math.floor(currentTime % 60),
@@ -1166,13 +963,11 @@ export const PlayerContextProvider = ({ children }) => {
     };
 
     const handleLoadedMetadata = () => {
-      // Reset time state when new track is loaded
       setTime({
         currentTime: { second: 0, minute: 0 },
         totalTime: { second: 0, minute: 0 }
       });
       
-      // Reset seek bar
       if (seekBar.current) {
         seekBar.current.style.width = '0%';
       }
@@ -1186,134 +981,6 @@ export const PlayerContextProvider = ({ children }) => {
       audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
     };
   }, [track]);
-
-  // Modified useEffect to implement lazy loading with prefetching
-  useEffect(() => {
-    // Add a reference to track the last loaded track to prevent reloading the same track
-    if (!window._lastLoadedTrack) {
-      window._lastLoadedTrack = null;
-    }
-    
-    if (track && audioRef.current) {
-      // Skip if this is the same track that was just loaded (prevents infinite loops)
-      if (window._lastLoadedTrack === track._id) {
-        return;
-      }
-      
-      // Update last loaded track
-      window._lastLoadedTrack = track._id;
-      
-      // Reset time information
-      audioRef.current.currentTime = 0;
-      
-      // Set appropriate preload attribute based on buffering strategy
-      if (bufferingStrategy === 'conservative') {
-        audioRef.current.preload = 'metadata'; // Minimal preloading
-      } else if (bufferingStrategy === 'aggressive') {
-        audioRef.current.preload = 'auto'; // Full preloading
-      }
-      
-      // Add event listeners for buffering indication
-      const handleLoadStart = () => setBuffering(true);
-      const handleCanPlay = () => setBuffering(false);
-      const handlePlaying = () => setBuffering(false);
-      const handleWaiting = () => setBuffering(true);
-      const handleProgress = () => {
-        // Update loading progress only if we have a duration
-        if (audioRef.current && audioRef.current.duration) {
-          if (audioRef.current.buffered.length > 0) {
-            const bufferedEnd = audioRef.current.buffered.end(audioRef.current.buffered.length - 1);
-            const duration = audioRef.current.duration;
-            const loadPercentage = (bufferedEnd / duration) * 100;
-            setLoadingProgress(loadPercentage);
-            
-            // Automatically mark as not buffering if we've loaded enough
-            if (loadPercentage > 15) {
-              setBuffering(false);
-            }
-          }
-        }
-      };
-      
-      // Register event listeners for buffering state
-      audioRef.current.addEventListener('loadstart', handleLoadStart);
-      audioRef.current.addEventListener('canplay', handleCanPlay);
-      audioRef.current.addEventListener('playing', handlePlaying);
-      audioRef.current.addEventListener('waiting', handleWaiting);
-      audioRef.current.addEventListener('progress', handleProgress);
-      
-      // Clean up event listeners
-      return () => {
-        if (audioRef.current) {
-          audioRef.current.removeEventListener('loadstart', handleLoadStart);
-          audioRef.current.removeEventListener('canplay', handleCanPlay);
-          audioRef.current.removeEventListener('playing', handlePlaying);
-          audioRef.current.removeEventListener('waiting', handleWaiting);
-          audioRef.current.removeEventListener('progress', handleProgress);
-        }
-      };
-    }
-  }, [track, bufferingStrategy]);
-  
-  // Effect for automatically adjusting buffering strategy based on network conditions
-  useEffect(() => {
-    // Only run this if bufferingStrategy is set to 'auto'
-    if (bufferingStrategy !== 'auto') return;
-    
-    // Function to detect network connection quality
-    const detectNetworkQuality = () => {
-      // Use the Network Information API if available
-      const connection = navigator.connection || 
-                         navigator.mozConnection || 
-                         navigator.webkitConnection;
-      
-      if (connection) {
-        // Adjust strategy based on network type
-        if (connection.saveData) {
-          // User has requested to save data
-          setBufferingStrategy('conservative');
-        } else if (connection.effectiveType === '4g' && connection.downlink > 5) {
-          // Fast connection
-          setBufferingStrategy('aggressive');
-        } else if (connection.effectiveType === '2g' || connection.downlink < 1) {
-          // Slow connection
-          setBufferingStrategy('conservative');
-        }
-      } else {
-        // Fallback if Network Information API is not available
-        // We could add more sophisticated detection here if needed
-      }
-    };
-    
-    // Run detection immediately
-    detectNetworkQuality();
-    
-    // Set up event listener for connection changes
-    const connection = navigator.connection || 
-                      navigator.mozConnection || 
-                      navigator.webkitConnection;
-    
-    if (connection) {
-      connection.addEventListener('change', detectNetworkQuality);
-      
-      // Cleanup
-      return () => {
-        connection.removeEventListener('change', detectNetworkQuality);
-      };
-    }
-  }, [bufferingStrategy]);
-
-  // Prevent autoplay on initial load
-  useEffect(() => {
-    if (firstLoad && track) {
-      setFirstLoad(false);
-      // Don't automatically play the track on first load
-      if (audioRef.current) {
-        audioRef.current.pause();
-        setPlayStatus(false);
-      }
-    }
-  }, [track, firstLoad]);
 
   // Load and manage player visibility preference
   useEffect(() => {
@@ -1536,7 +1203,25 @@ export const PlayerContextProvider = ({ children }) => {
     };
   }, [playStatus]);
 
-  // Add the new buffering states and functions to the context
+  // Add event listener for audio loading
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const handleCanPlay = () => {
+      if (autoplayEnabled) {
+        play();
+      }
+    };
+
+    audio.addEventListener('canplay', handleCanPlay);
+
+    return () => {
+      audio.removeEventListener('canplay', handleCanPlay);
+    };
+  }, [track, autoplayEnabled]);
+
+  // Update context value to remove buffering-related values
   const contextValue = {
     audioRef,
     seekBar,
@@ -1564,10 +1249,6 @@ export const PlayerContextProvider = ({ children }) => {
     getArtistName,
     getAlbumName,
     formatLyricsWithTimestamps,
-    buffering,
-    loadingProgress,
-    bufferingStrategy,
-    setBufferingStrategy,
     favorites,
     toggleFavorite,
     isFavorite,
@@ -1600,7 +1281,7 @@ export const PlayerContextProvider = ({ children }) => {
         <audio 
           key={`audio-${track._id}`}
           ref={audioRef} 
-          preload={bufferingStrategy === 'conservative' ? 'metadata' : 'auto'}
+          preload="metadata"
           autoPlay={false}
           crossOrigin="anonymous"
           onError={(e) => console.error("Audio error:", e.target.error)}
