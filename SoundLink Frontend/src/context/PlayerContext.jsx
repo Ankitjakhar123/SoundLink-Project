@@ -17,6 +17,53 @@ export const PlayerContextProvider = ({ children }) => {
   const { user, token } = useContext(AuthContext);
   const radioContext = useContext(RadioContext);
 
+  // Add sleep timer state
+  const [sleepTimer, setSleepTimerState] = useState(null);
+  const sleepTimerRef = useRef(null);
+
+  // Add sleep timer function
+  const setSleepTimer = (minutes) => {
+    // Clear any existing timer
+    if (sleepTimerRef.current) {
+      clearTimeout(sleepTimerRef.current);
+      sleepTimerRef.current = null;
+    }
+
+    if (minutes === 0) {
+      setSleepTimerState(null);
+      return;
+    }
+
+    const milliseconds = minutes * 60 * 1000;
+    setSleepTimerState(minutes);
+
+    sleepTimerRef.current = setTimeout(() => {
+      // Fade out volume over 5 seconds
+      const startVolume = audioRef.current?.volume || 1;
+      const fadeInterval = setInterval(() => {
+        if (audioRef.current && audioRef.current.volume > 0.1) {
+          audioRef.current.volume -= 0.1;
+        } else {
+          clearInterval(fadeInterval);
+          pause();
+          setSleepTimerState(null);
+        }
+      }, 500);
+
+      // Clear the timer reference
+      sleepTimerRef.current = null;
+    }, milliseconds);
+  };
+
+  // Clean up sleep timer on unmount
+  useEffect(() => {
+    return () => {
+      if (sleepTimerRef.current) {
+        clearTimeout(sleepTimerRef.current);
+      }
+    };
+  }, []);
+
   // Helper function to extract the artist name from any possible field
   const getArtistName = (trackObj) => {
     if (!trackObj) {
@@ -1357,6 +1404,8 @@ export const PlayerContextProvider = ({ children }) => {
     themeColors,
     lastPlayedSong,
     saveLastPlayedSong,
+    sleepTimer,
+    setSleepTimer,
   };
 
   return (

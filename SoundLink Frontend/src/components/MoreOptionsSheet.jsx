@@ -13,7 +13,9 @@ import {
   MdDownload,
   MdClose,
   MdPlaylistAdd,
-  MdInfoOutline
+  MdInfoOutline,
+  MdTimer,
+  MdAdd
 } from 'react-icons/md';
 import axios from 'axios';
 
@@ -29,16 +31,50 @@ const MoreOptionsSheet = ({ isOpen, onClose, trackId }) => {
     addToQueue,
     playlists,
     addToPlaylist,
-    songsData
+    songsData,
+    sleepTimer,
+    setSleepTimer
   } = useContext(PlayerContext);
   
   const [showPlaylists, setShowPlaylists] = useState(false);
+  const [showSleepTimer, setShowSleepTimer] = useState(false);
+  const [showCustomTime, setShowCustomTime] = useState(false);
+  const [customMinutes, setCustomMinutes] = useState('');
 
   if (!isOpen || !track) return null;
 
   // Get the current song from songsData based on trackId
   const currentSong = trackId ? songsData.find(song => song._id === trackId) : track;
   if (!currentSong) return null;
+
+  // Format remaining time
+  const formatRemainingTime = () => {
+    if (!sleepTimer) return null;
+    const now = new Date();
+    const endTime = new Date(now.getTime() + sleepTimer * 60000);
+    const diff = endTime - now;
+    const minutes = Math.floor(diff / 60000);
+    const seconds = Math.floor((diff % 60000) / 1000);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  // Handle custom time submission
+  const handleCustomTime = () => {
+    const minutes = parseInt(customMinutes);
+    if (minutes > 0 && minutes <= 180) { // Max 3 hours
+      setSleepTimer(minutes);
+      if (window.toast) {
+        window.toast.success(`Sleep timer set for ${minutes} minutes`);
+      }
+      setShowCustomTime(false);
+      setCustomMinutes('');
+      onClose();
+    } else {
+      if (window.toast) {
+        window.toast.error('Please enter a time between 1 and 180 minutes');
+      }
+    }
+  };
 
   // Handle navigation to artist page
   const goToArtist = async () => {
@@ -283,6 +319,13 @@ const MoreOptionsSheet = ({ isOpen, onClose, trackId }) => {
       }
     },
     {
+      icon: <MdTimer />,
+      label: 'Sleep Timer',
+      action: () => {
+        setShowSleepTimer(true);
+      }
+    },
+    {
       icon: <MdRadio />,
       label: 'Go to radio',
       action: goToRadio
@@ -372,14 +415,160 @@ const MoreOptionsSheet = ({ isOpen, onClose, trackId }) => {
             
             {/* Options list */}
             <div className="py-2">
-              {!showPlaylists ? (
+              {showSleepTimer ? (
+                /* Sleep Timer sub-menu */
+                <>
+                  {/* Back button */}
+                  <div className="px-4 py-2 mb-2 border-b" style={{ borderColor: `${themeColors.text}20` }}>
+                    <button
+                      className="w-full flex items-center"
+                      onClick={() => setShowSleepTimer(false)}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M15 18l-6-6 6-6" />
+                      </svg>
+                      <span className="ml-2 font-medium">Sleep Timer</span>
+                    </button>
+                  </div>
+
+                  {/* Active timer display */}
+                  {sleepTimer && (
+                    <div className="px-4 py-3 mb-2 border-b" style={{ borderColor: `${themeColors.text}20` }}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <MdTimer size={24} style={{ color: themeColors.primary }} />
+                          <span className="ml-2 text-base" style={{ color: themeColors.text }}>
+                            Timer active
+                          </span>
+                        </div>
+                        <span className="text-lg font-medium" style={{ color: themeColors.primary }}>
+                          {formatRemainingTime()}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Timer options */}
+                  {!showCustomTime ? (
+                    <>
+                      {[15, 30, 45, 60, 90].map((minutes) => (
+                        <button
+                          key={minutes}
+                          className="w-full flex items-center px-4 py-3 hover:bg-white/5"
+                          onClick={() => {
+                            setSleepTimer(minutes);
+                            if (window.toast) {
+                              window.toast.success(`Sleep timer set for ${minutes} minutes`);
+                            }
+                            onClose();
+                          }}
+                        >
+                          <div className="w-8 h-8 flex items-center justify-center mr-4" 
+                            style={{ 
+                              color: sleepTimer === minutes ? themeColors.primary : themeColors.text 
+                            }}
+                          >
+                            <MdTimer size={24} />
+                          </div>
+                          <span className="text-base" style={{ color: themeColors.text }}>
+                            {minutes} minutes
+                          </span>
+                          {sleepTimer === minutes && (
+                            <span className="ml-auto w-2 h-2 rounded-full" 
+                              style={{ backgroundColor: themeColors.primary }} 
+                            />
+                          )}
+                        </button>
+                      ))}
+
+                      {/* Custom time button */}
+                      <button
+                        className="w-full flex items-center px-4 py-3 hover:bg-white/5"
+                        onClick={() => setShowCustomTime(true)}
+                      >
+                        <div className="w-8 h-8 flex items-center justify-center mr-4" 
+                          style={{ color: themeColors.text }}
+                        >
+                          <MdAdd size={24} />
+                        </div>
+                        <span className="text-base" style={{ color: themeColors.text }}>
+                          Custom time
+                        </span>
+                      </button>
+                    </>
+                  ) : (
+                    /* Custom time input */
+                    <div className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          min="1"
+                          max="180"
+                          value={customMinutes}
+                          onChange={(e) => setCustomMinutes(e.target.value)}
+                          placeholder="Enter minutes (1-180)"
+                          className="flex-1 px-3 py-2 rounded-lg bg-white/5 border"
+                          style={{ 
+                            color: themeColors.text,
+                            borderColor: `${themeColors.text}30`
+                          }}
+                        />
+                        <button
+                          onClick={handleCustomTime}
+                          className="px-4 py-2 rounded-lg"
+                          style={{ 
+                            backgroundColor: themeColors.primary,
+                            color: themeColors.text
+                          }}
+                        >
+                          Set
+                        </button>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setShowCustomTime(false);
+                          setCustomMinutes('');
+                        }}
+                        className="w-full mt-2 text-sm text-center"
+                        style={{ color: `${themeColors.text}99` }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  )}
+                  
+                  {/* Cancel timer option */}
+                  {sleepTimer && !showCustomTime && (
+                    <button
+                      className="w-full flex items-center px-4 py-3 hover:bg-white/5 mt-2 border-t"
+                      style={{ borderColor: `${themeColors.text}20` }}
+                      onClick={() => {
+                        setSleepTimer(null);
+                        if (window.toast) {
+                          window.toast.success('Sleep timer cancelled');
+                        }
+                        onClose();
+                      }}
+                    >
+                      <div className="w-8 h-8 flex items-center justify-center mr-4" 
+                        style={{ color: themeColors.text }}
+                      >
+                        <MdClose size={24} />
+                      </div>
+                      <span className="text-base" style={{ color: themeColors.text }}>
+                        Cancel Timer
+                      </span>
+                    </button>
+                  )}
+                </>
+              ) : !showPlaylists ? (
                 /* Main menu options */
                 mainMenuItems.map((item, index) => (
-                <button
-                  key={index}
-                  className="w-full flex items-center px-4 py-3 hover:bg-white/5"
-                  onClick={item.action}
-                >
+                  <button
+                    key={index}
+                    className="w-full flex items-center px-4 py-3 hover:bg-white/5"
+                    onClick={item.action}
+                  >
                     <div 
                       className="w-8 h-8 flex items-center justify-center mr-4" 
                       style={{ 
@@ -388,12 +577,17 @@ const MoreOptionsSheet = ({ isOpen, onClose, trackId }) => {
                           : themeColors.text 
                       }}
                     >
-                    {item.icon}
-                  </div>
-                  <span className="text-base" style={{ color: themeColors.text }}>
-                    {item.label}
-                  </span>
-                </button>
+                      {item.icon}
+                    </div>
+                    <span className="text-base" style={{ color: themeColors.text }}>
+                      {item.label}
+                    </span>
+                    {item.label === 'Sleep Timer' && sleepTimer && (
+                      <span className="ml-auto text-sm" style={{ color: themeColors.primary }}>
+                        {formatRemainingTime()}
+                      </span>
+                    )}
+                  </button>
                 ))
               ) : (
                 /* Playlist selection sub-menu */
