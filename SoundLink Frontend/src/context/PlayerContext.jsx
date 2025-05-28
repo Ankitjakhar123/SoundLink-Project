@@ -634,19 +634,92 @@ export const PlayerContextProvider = ({ children }) => {
     }
   };
 
-  // Add crossfade function
+  // Modify Next function to properly reset state
+  const Next = () => {
+    if (isCrossfading) return; // Prevent multiple crossfades
+    
+    // Immediately pause current track to prevent overlap
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0; // Reset current time
+    }
+    
+    // Reset time state
+    setTime({
+      currentTime: { second: 0, minute: 0 },
+      totalTime: { second: 0, minute: 0 }
+    });
+    
+    // Reset seek bar if it exists
+    if (seekBar.current) {
+      seekBar.current.style.width = '0%';
+    }
+    
+    if (queueSongs.length > 0) {
+      // Play next from queue
+      const nextTrack = queueSongs[0];
+      setTrack(nextTrack);
+      // Remove from queue
+      setQueueSongs(prevQueue => prevQueue.slice(1));
+      setAutoplayEnabled(true);
+      
+      // Reset buffering state
+      setBuffering(true);
+      setLoadingProgress(0);
+      
+      // Small delay to ensure state updates before playing
+      setTimeout(() => {
+        if (audioRef.current) {
+          audioRef.current.src = nextTrack.file;
+          audioRef.current.load();
+          play();
+        }
+      }, 50);
+      return;
+    }
+    
+    const currentIndex = songsData.findIndex(item => item._id === track._id);
+    if (currentIndex < songsData.length - 1) {
+      const nextTrack = songsData[currentIndex + 1];
+      setTrack(nextTrack);
+      setAutoplayEnabled(true);
+      
+      // Reset buffering state
+      setBuffering(true);
+      setLoadingProgress(0);
+      
+      // Small delay to ensure state updates before playing
+      setTimeout(() => {
+        if (audioRef.current) {
+          audioRef.current.src = nextTrack.file;
+          audioRef.current.load();
+          play();
+        }
+      }, 50);
+    }
+  };
+
+  // Optimize crossfade function
   const crossfadeToNextTrack = async (nextTrack) => {
     if (!audioRef.current || !nextTrack) return;
     
     setIsCrossfading(true);
     
+    // Immediately pause current track
+    audioRef.current.pause();
+    
     // Create a new audio element for the next track
-    const nextAudio = new Audio(nextTrack.file);
+    const nextAudio = new Audio();
     nextAudioRef.current = nextAudio;
     nextAudio.volume = 0;
+    nextAudio.preload = 'metadata'; // Only load metadata initially
     
-    // Start playing the next track
     try {
+      // Set source and start loading
+      nextAudio.src = nextTrack.file;
+      await nextAudio.load();
+      
+      // Start playing the next track
       await nextAudio.play();
       
       // Crossfade between tracks
@@ -656,15 +729,19 @@ export const PlayerContextProvider = ({ children }) => {
         const progress = Math.min(elapsed / crossfadeDuration, 1);
         
         // Fade out current track
-        audioRef.current.volume = 1 - progress;
+        if (audioRef.current) {
+          audioRef.current.volume = 1 - progress;
+        }
         // Fade in next track
         nextAudio.volume = progress;
         
         if (progress >= 1) {
           clearInterval(fadeInterval);
           // Clean up old audio
-          audioRef.current.pause();
-          audioRef.current.src = '';
+          if (audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current.src = '';
+          }
           // Set the new audio as current
           audioRef.current = nextAudio;
           nextAudioRef.current = null;
@@ -674,32 +751,35 @@ export const PlayerContextProvider = ({ children }) => {
     } catch (error) {
       console.error('Error during crossfade:', error);
       setIsCrossfading(false);
+      // Clean up on error
+      if (nextAudio) {
+        nextAudio.pause();
+        nextAudio.src = '';
+      }
     }
   };
 
-  // Modify Next function to use crossfade
-  const Next = () => {
-    if (isCrossfading) return; // Prevent multiple crossfades
-    
-    if (queueSongs.length > 0) {
-      // Play next from queue with crossfade
-      const nextTrack = queueSongs[0];
-      crossfadeToNextTrack(nextTrack);
-      setTrack(nextTrack);
-      // Remove from queue
-      setQueueSongs(prevQueue => prevQueue.slice(1));
-      setAutoplayEnabled(true);
-      return;
+  // Add preload optimization
+  useEffect(() => {
+    if (track && audioRef.current) {
+      // Set appropriate preload attribute based on buffering strategy
+      if (bufferingStrategy === 'conservative') {
+        audioRef.current.preload = 'metadata'; // Minimal preloading
+      } else if (bufferingStrategy === 'aggressive') {
+        audioRef.current.preload = 'auto'; // Full preloading
+      }
+      
+      // Preload next track if available
+      const currentIndex = songsData.findIndex(item => item._id === track._id);
+      if (currentIndex < songsData.length - 1) {
+        const nextTrack = songsData[currentIndex + 1];
+        const nextAudio = new Audio();
+        nextAudio.preload = 'metadata';
+        nextAudio.src = nextTrack.file;
+        nextAudio.load();
+      }
     }
-    
-    const currentIndex = songsData.findIndex(item => item._id === track._id);
-    if (currentIndex < songsData.length - 1) {
-      const nextTrack = songsData[currentIndex + 1];
-      crossfadeToNextTrack(nextTrack);
-      setTrack(nextTrack);
-      setAutoplayEnabled(true);
-    }
-  };
+  }, [track, bufferingStrategy]);
 
   const shuffle = () => {
     const randomIndex = Math.floor(Math.random() * songsData.length);
@@ -1052,6 +1132,7 @@ export const PlayerContextProvider = ({ children }) => {
     }
   }, [user, token]);
 
+  // Update the time update handler to be more robust
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -1065,8 +1146,10 @@ export const PlayerContextProvider = ({ children }) => {
         return;
       }
 
-      if (seekBar.current && duration > 0) {
-        seekBar.current.style.width = `${(currentTime / duration) * 100}%`;
+      // Update seek bar
+      if (seekBar.current) {
+        const progress = (currentTime / duration) * 100;
+        seekBar.current.style.width = `${progress}%`;
       }
 
       // Update the time state with current and total times
@@ -1082,53 +1165,27 @@ export const PlayerContextProvider = ({ children }) => {
       });
     };
 
-    const handleEnded = () => {
-      if (!audio.loop && !isCrossfading) {
-        Next();
+    const handleLoadedMetadata = () => {
+      // Reset time state when new track is loaded
+      setTime({
+        currentTime: { second: 0, minute: 0 },
+        totalTime: { second: 0, minute: 0 }
+      });
+      
+      // Reset seek bar
+      if (seekBar.current) {
+        seekBar.current.style.width = '0%';
       }
-    };
-    
-    // Monitor buffering progress
-    const handleProgress = () => {
-      if (audio.buffered.length > 0) {
-        const bufferedEnd = audio.buffered.end(audio.buffered.length - 1);
-        const duration = audio.duration;
-        if (duration > 0) {
-          const bufferedPercent = (bufferedEnd / duration) * 100;
-          setLoadingProgress(bufferedPercent);
-          
-          // Consider no longer buffering once we have enough data
-          if (bufferedPercent > 15 && buffering) {
-            setBuffering(false);
-          }
-        }
-      }
-    };
-    
-    // Handle waiting/buffering events
-    const handleWaiting = () => {
-      setBuffering(true);
-    };
-    
-    // Handle when enough data is available
-    const handleCanPlay = () => {
-      setBuffering(false);
     };
 
     audio.addEventListener("timeupdate", handleTimeUpdate);
-    audio.addEventListener("ended", handleEnded);
-    audio.addEventListener("progress", handleProgress);
-    audio.addEventListener("waiting", handleWaiting);
-    audio.addEventListener("canplay", handleCanPlay);
+    audio.addEventListener("loadedmetadata", handleLoadedMetadata);
 
     return () => {
       audio.removeEventListener("timeupdate", handleTimeUpdate);
-      audio.removeEventListener("ended", handleEnded);
-      audio.removeEventListener("progress", handleProgress);
-      audio.removeEventListener("waiting", handleWaiting);
-      audio.removeEventListener("canplay", handleCanPlay);
+      audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
     };
-  }, [track, isCrossfading]);
+  }, [track]);
 
   // Modified useEffect to implement lazy loading with prefetching
   useEffect(() => {
