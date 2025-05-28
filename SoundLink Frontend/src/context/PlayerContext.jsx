@@ -1351,6 +1351,134 @@ export const PlayerContextProvider = ({ children }) => {
     };
   }, []);
 
+  // Initialize media session
+  useEffect(() => {
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.setActionHandler('play', () => {
+        if (audioRef.current) {
+          audioRef.current.play();
+          setPlayStatus(true);
+        }
+      });
+
+      navigator.mediaSession.setActionHandler('pause', () => {
+        if (audioRef.current) {
+          audioRef.current.pause();
+          setPlayStatus(false);
+        }
+      });
+
+      navigator.mediaSession.setActionHandler('previoustrack', () => {
+        if (audioRef.current) {
+          audioRef.current.currentTime = 0;
+        }
+      });
+
+      navigator.mediaSession.setActionHandler('nexttrack', () => {
+        if (audioRef.current) {
+          audioRef.current.currentTime = audioRef.current.duration;
+        }
+      });
+
+      navigator.mediaSession.setActionHandler('seekto', (details) => {
+        if (audioRef.current && details.seekTime) {
+          audioRef.current.currentTime = details.seekTime;
+        }
+      });
+    }
+  }, []);
+
+  // Update media session metadata when track changes
+  useEffect(() => {
+    if ('mediaSession' in navigator && track) {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: track.name,
+        artist: getArtistName(track),
+        album: getAlbumName(track),
+        artwork: [
+          { src: track.image, sizes: '512x512', type: 'image/jpeg' }
+        ]
+      });
+    }
+  }, [track]);
+
+  // Handle audio state changes
+  useEffect(() => {
+    if (audioRef.current) {
+      const handlePlay = () => {
+        setPlayStatus(true);
+        if ('mediaSession' in navigator) {
+          navigator.mediaSession.playbackState = 'playing';
+        }
+      };
+
+      const handlePause = () => {
+        setPlayStatus(false);
+        if ('mediaSession' in navigator) {
+          navigator.mediaSession.playbackState = 'paused';
+        }
+      };
+
+      const handleEnded = () => {
+        setPlayStatus(false);
+        if ('mediaSession' in navigator) {
+          navigator.mediaSession.playbackState = 'none';
+        }
+      };
+
+      audioRef.current.addEventListener('play', handlePlay);
+      audioRef.current.addEventListener('pause', handlePause);
+      audioRef.current.addEventListener('ended', handleEnded);
+
+      return () => {
+        if (audioRef.current) {
+          audioRef.current.removeEventListener('play', handlePlay);
+          audioRef.current.removeEventListener('pause', handlePause);
+          audioRef.current.removeEventListener('ended', handleEnded);
+        }
+      };
+    }
+  }, []);
+
+  // Handle visibility change
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden && audioRef.current && playStatus) {
+        // Keep the audio playing in the background
+        audioRef.current.play().catch(error => {
+          console.error('Error playing audio in background:', error);
+        });
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [playStatus]);
+
+  // Handle audio focus
+  useEffect(() => {
+    const handleAudioFocus = async () => {
+      try {
+        if (audioRef.current && playStatus) {
+          await audioRef.current.play();
+        }
+      } catch (error) {
+        console.error('Error handling audio focus:', error);
+      }
+    };
+
+    window.addEventListener('focus', handleAudioFocus);
+    window.addEventListener('blur', handleAudioFocus);
+
+    return () => {
+      window.removeEventListener('focus', handleAudioFocus);
+      window.removeEventListener('blur', handleAudioFocus);
+    };
+  }, [playStatus]);
+
   // Add the new buffering states and functions to the context
   const contextValue = {
     audioRef,
