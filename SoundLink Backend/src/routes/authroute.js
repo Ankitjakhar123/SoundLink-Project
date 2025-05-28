@@ -1,6 +1,6 @@
 import express from "express";
-import { register, login, getCurrentUser } from "../controllers/authController.js";
-import { authenticate } from "../middleware/auth.js";
+import { register, login, getCurrentUser, forgotPassword, resetPassword, verifyOTP, resendOTP } from "../controllers/authController.js";
+import { protect } from "../middleware/authMiddleware.js";
 import multer from "multer";
 import { v2 as cloudinary } from 'cloudinary';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
@@ -60,8 +60,15 @@ const handleMulterError = (err, req, res, next) => {
   next();
 };
 
+// Auth routes
 router.post("/register", upload.single('avatar'), handleMulterError, register);
 router.post("/login", login);
-router.get("/me", authenticate, getCurrentUser);
+router.get("/me", protect, getCurrentUser);
+router.post("/forgot-password", forgotPassword);
+router.post("/reset-password", resetPassword);
+
+// OTP routes
+router.post("/verify-otp", verifyOTP);
+router.post("/resend-otp", resendOTP);
 
 export default router; 

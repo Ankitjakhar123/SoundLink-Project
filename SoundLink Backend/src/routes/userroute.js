@@ -1,5 +1,5 @@
 import express from 'express';
-import { verifyToken } from '../middleware/authMiddleware.js';
+import { protect } from '../middleware/authMiddleware.js';
 import multer from 'multer';
 import path from 'path';
 import userModel from '../models/userModel.js';
@@ -85,7 +85,7 @@ const upload = multer({
 });
 
 // Update user profile
-router.post('/update', verifyToken, upload.single('image'), async (req, res) => {
+router.post('/update', protect, upload.single('image'), async (req, res) => {
   try {
     console.log('Update route called, req.file:', req.file);
     console.log('Request body:', req.body);
@@ -159,7 +159,7 @@ router.post('/update', verifyToken, upload.single('image'), async (req, res) => 
 });
 
 // Get user settings
-router.get('/settings', verifyToken, async (req, res) => {
+router.get('/settings', protect, async (req, res) => {
   try {
     const userId = req.user.id;
     
@@ -198,7 +198,7 @@ router.get('/settings', verifyToken, async (req, res) => {
 });
 
 // Update user settings
-router.post('/settings', verifyToken, async (req, res) => {
+router.post('/settings', protect, async (req, res) => {
   try {
     const userId = req.user.id;
     const { settings } = req.body;

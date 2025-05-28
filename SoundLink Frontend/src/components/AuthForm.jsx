@@ -2,6 +2,8 @@ import React, { useState, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { FaUser, FaLock, FaEnvelope, FaUserCircle } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import ForgotPasswordForm from "./ForgotPasswordForm";
+import OTPVerificationForm from "./OTPVerificationForm";
 
 // Default avatars for user selection
 const DEFAULT_AVATARS = [
@@ -14,16 +16,17 @@ const DEFAULT_AVATARS = [
 ];
 
 const AuthForm = ({ mode = "login", returnTo }) => {
-  const { login, register, isIOS } = useContext(AuthContext);
+  const { login, register } = useContext(AuthContext);
   const navigate = useNavigate();
-  const [form, setForm] = useState({ username: "", email: "", password: "" });
+  const [form, setForm] = useState({ username: "", email: "", password: "", confirmPassword: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [customAvatar, setCustomAvatar] = useState(null);
   const [selectedAvatar, setSelectedAvatar] = useState(null);
   const [showAvatars, setShowAvatars] = useState(false);
-  const [loginAttempts, setLoginAttempts] = useState(0);
+  const [currentMode, setCurrentMode] = useState(mode);
+  const [userId, setUserId] = useState(null);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -49,85 +52,28 @@ const AuthForm = ({ mode = "login", returnTo }) => {
     setSuccess("");
     
     try {
-      if (mode === "login") {
-        // Set specific timeouts based on device type
-        const timeoutDuration = isIOS ? 8000 : 5000; // Longer timeout for iOS
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error("Login request timed out")), timeoutDuration)
-        );
-
-        // iOS-specific success message
-        const successMessage = isIOS ? "Welcome back! iOS login successful." : "Welcome back!";
+      if (currentMode === "login") {
+        const result = await login(form.email, form.password);
+        console.log("Login result:", result); // Add logging to debug
         
-        // Increment login attempts counter
-        setLoginAttempts(prev => prev + 1);
-        
-        try {
-          // Race between the login request and the timeout
-          const result = await Promise.race([
-            login(form.email, form.password),
-            timeoutPromise
-          ]);
-          
-          if (result.success) {
-            setSuccess(successMessage);
-            
-            // For iOS, we need a small delay before navigation to ensure token is saved
-            const navigationDelay = isIOS ? 800 : 500;
-            setTimeout(() => {
-              // Navigate to returnTo path if provided, otherwise to home
-              if (isIOS && loginAttempts > 0) {
-                window.location.href = returnTo || "/";
-              } else {
-                navigate(returnTo || "/");
-              }
-            }, navigationDelay);
-          } else {
-            // Login failed handling
-            const maxAttempts = isIOS ? 2 : 3; // Fewer attempts for iOS before special handling
-            
-            if (loginAttempts >= maxAttempts) {
-              if (isIOS) {
-                setError("iOS login issue detected. Trying alternative method...");
-                
-                // Force a refresh of token storage on iOS
-                localStorage.removeItem("token");
-                document.cookie = "auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-                
-                // Try once more with the iOS-optimized login
-                const retryResult = await login(form.email, form.password);
-                if (retryResult.success) {
-                  setSuccess(successMessage);
-                  // Using location.href instead of navigate for a full page reload
-                  setTimeout(() => window.location.href = "/", 800);
-                } else {
-                  setError("Login failed. Please check your details or try again.");
-                }
-              } else {
-                // For non-iOS devices
-                const retryResult = await login(form.email, form.password);
-                if (retryResult.success) {
-                  setSuccess("Welcome back!");
-                  setTimeout(() => navigate("/"), 500);
-                } else {
-                  setError("Multiple login failures. Please check your details or try again later.");
-                }
-              }
-            } else {
-              setError(result.message || "Invalid credentials");
-            }
-          }
-        } catch (err) {
-          // Handle timeout or other errors
-          console.error("Login error:", err);
-          if (err.message === "Login request timed out") {
-            setError(isIOS ? "Login timed out on iOS device. Please try again." : "Login request timed out. Please try again.");
-          } else {
-            setError("Login failed. Please try again.");
-          }
+        if (result.success) {
+          setSuccess("Welcome back!");
+          setTimeout(() => navigate(returnTo || "/"), 500);
+        } else if (result.requiresVerification) {
+          console.log("Verification required, userId:", result.userId); // Add logging
+          setUserId(result.userId);
+          setCurrentMode("verify-otp");
+          setError("Please verify your email to continue.");
+        } else {
+          setError(result.message || "Invalid credentials");
         }
-      } else {
-        // For registration
+      } else if (currentMode === "register") {
+        if (form.password !== form.confirmPassword) {
+          setError("Passwords do not match");
+          setLoading(false);
+          return;
+        }
+
         let avatarFile = customAvatar;
         
         // If a default avatar was selected (not a custom upload)
@@ -151,13 +97,15 @@ const AuthForm = ({ mode = "login", returnTo }) => {
         });
         
         if (result.success) {
-          setSuccess("Registration successful! Please log in.");
-          setTimeout(() => {
-            window.location.href = "/auth"; // Full reload to login page
-          }, 1500);
+          setUserId(result.userId);
+          setCurrentMode("verify-otp");
         } else {
           setError(result.message || "Registration failed");
         }
+      } else if (currentMode === "verify-otp") {
+        // OTP verification logic
+        // This is a placeholder and should be implemented
+        setError("OTP verification logic not implemented");
       }
     } catch (err) {
       console.error("Auth error:", err);
@@ -166,6 +114,15 @@ const AuthForm = ({ mode = "login", returnTo }) => {
       setLoading(false);
     }
   };
+
+  if (currentMode === "forgot-password") {
+    return <ForgotPasswordForm onBack={() => setCurrentMode("login")} />;
+  }
+
+  if (currentMode === "verify-otp") {
+    console.log("Rendering OTP form with userId:", userId); // Add logging
+    return <OTPVerificationForm userId={userId} onBack={() => setCurrentMode("login")} />;
+  }
 
   return (
     <>
@@ -183,11 +140,11 @@ const AuthForm = ({ mode = "login", returnTo }) => {
       
       <div className="backdrop-blur-sm bg-black/40 rounded-2xl shadow-2xl p-8 w-full">
         <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-fuchsia-400 to-pink-300 text-center mb-8">
-          {mode === "login" ? "Welcome Back" : "Create Account"}
+          {currentMode === "login" ? "Welcome Back" : "Create Account"}
         </h2>
         
         {/* Avatar selection (register only) */}
-        {mode === "register" && (
+        {currentMode === "register" && (
           <div className="flex flex-col items-center gap-4 mb-6">
             <div 
               className="relative w-24 h-24 rounded-full bg-black/50 flex items-center justify-center border-2 border-fuchsia-500 cursor-pointer overflow-hidden shadow-lg hover:shadow-fuchsia-500/20 transition"
@@ -241,23 +198,23 @@ const AuthForm = ({ mode = "login", returnTo }) => {
           </div>
         )}
         
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-6">
           {/* Username field (register only) */}
-      {mode === "register" && (
+          {currentMode === "register" && (
             <div className="space-y-1">
               <label className="text-sm text-neutral-300 font-medium pl-1">Username</label>
               <div className="relative">
                 <div className="absolute left-3 top-1/2 -translate-y-1/2 text-fuchsia-400">
                   <FaUser />
                 </div>
-        <input
-          name="username"
-          type="text"
+                <input
+                  name="username"
+                  type="text"
                   placeholder="Choose a username"
-          value={form.username}
-          onChange={handleChange}
+                  value={form.username}
+                  onChange={handleChange}
                   className="bg-black/50 text-white border border-neutral-800 rounded-lg px-10 py-3 w-full focus:outline-none focus:ring-2 focus:ring-fuchsia-500 focus:border-transparent transition-all hover:bg-black/70"
-          required
+                  required
                   autoComplete="username"
                 />
               </div>
@@ -271,14 +228,14 @@ const AuthForm = ({ mode = "login", returnTo }) => {
               <div className="absolute left-3 top-1/2 -translate-y-1/2 text-fuchsia-400">
                 <FaEnvelope />
               </div>
-      <input
-        name="email"
-        type="email"
+              <input
+                name="email"
+                type="email"
                 placeholder="Your email address"
-        value={form.email}
-        onChange={handleChange}
+                value={form.email}
+                onChange={handleChange}
                 className="bg-black/50 text-white border border-neutral-800 rounded-lg px-10 py-3 w-full focus:outline-none focus:ring-2 focus:ring-fuchsia-500 focus:border-transparent transition-all hover:bg-black/70"
-        required
+                required
                 autoComplete="email"
               />
             </div>
@@ -291,25 +248,51 @@ const AuthForm = ({ mode = "login", returnTo }) => {
               <div className="absolute left-3 top-1/2 -translate-y-1/2 text-fuchsia-400">
                 <FaLock />
               </div>
-      <input
-        name="password"
-        type="password"
+              <input
+                name="password"
+                type="password"
                 placeholder="Your password"
-        value={form.password}
-        onChange={handleChange}
+                value={form.password}
+                onChange={handleChange}
                 className="bg-black/50 text-white border border-neutral-800 rounded-lg px-10 py-3 w-full focus:outline-none focus:ring-2 focus:ring-fuchsia-500 focus:border-transparent transition-all hover:bg-black/70"
-        required
-                autoComplete={mode === "login" ? "current-password" : "new-password"}
+                required
+                autoComplete={currentMode === "login" ? "current-password" : "new-password"}
               />
             </div>
           </div>
           
+          {/* Confirm Password field */}
+          {currentMode === "register" && (
+            <div className="space-y-1">
+              <label className="text-sm text-neutral-300 font-medium pl-1">Confirm Password</label>
+              <div className="relative">
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-fuchsia-400">
+                  <FaLock />
+                </div>
+                <input
+                  name="confirmPassword"
+                  type="password"
+                  placeholder="Confirm your password"
+                  value={form.confirmPassword}
+                  onChange={handleChange}
+                  className="bg-black/50 text-white border border-neutral-800 rounded-lg px-10 py-3 w-full focus:outline-none focus:ring-2 focus:ring-fuchsia-500 focus:border-transparent transition-all hover:bg-black/70"
+                  required
+                  minLength="6"
+                />
+              </div>
+            </div>
+          )}
+          
           {/* Forgotten password link (login only) */}
-          {mode === "login" && (
+          {currentMode === "login" && (
             <div className="text-right">
-              <a href="#" className="text-fuchsia-400 text-sm hover:text-fuchsia-300 transition">
+              <button
+                type="button"
+                onClick={() => setCurrentMode("forgot-password")}
+                className="text-fuchsia-400 text-sm hover:text-fuchsia-300 transition"
+              >
                 Forgot password?
-              </a>
+              </button>
             </div>
           )}
           
@@ -327,11 +310,11 @@ const AuthForm = ({ mode = "login", returnTo }) => {
           )}
           
           {/* Submit button */}
-      <button
-        type="submit"
-        disabled={loading}
+          <button
+            type="submit"
+            disabled={loading}
             className="w-full bg-gradient-to-r from-fuchsia-600 to-purple-600 text-white font-medium py-3 rounded-lg hover:shadow-lg hover:from-fuchsia-500 hover:to-purple-500 transition-all disabled:opacity-70 disabled:cursor-not-allowed relative overflow-hidden group mt-2"
-      >
+          >
             <span className="relative z-10 flex items-center justify-center gap-2">
               {loading ? (
                 <>
@@ -342,11 +325,11 @@ const AuthForm = ({ mode = "login", returnTo }) => {
                   <span>Processing...</span>
                 </>
               ) : (
-                mode === "login" ? "Sign In" : "Create Account"
+                currentMode === "login" ? "Sign In" : "Create Account"
               )}
             </span>
             <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-fuchsia-600 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
-      </button>
+          </button>
         </form>
       </div>
     </>

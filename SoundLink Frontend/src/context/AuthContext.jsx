@@ -248,9 +248,17 @@ export const AuthProvider = ({ children }) => {
         setIsEmailVerified(res.data.user.isEmailVerified || false);
         
         return { success: true };
+      } else if (res.data.requiresVerification) {
+        // Handle case where email verification is required
+        return {
+          success: false,
+          requiresVerification: true,
+          userId: res.data.userId,
+          message: res.data.message
+        };
       }
       
-      return { success: false, message: "Invalid credentials" };
+      return { success: false, message: res.data.message || "Login failed" };
     } catch (error) {
       console.error("iOS login error:", error);
       return { 
@@ -262,85 +270,40 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      // For iOS devices, use dedicated method
-      if (isIOS) {
-        return await iOSLogin(email, password);
+      const res = await axios.post(`${API_BASE_URL}/api/auth/login`, { email, password });
+      
+      if (res.data.success) {
+        const newToken = res.data.token;
+        saveTokenToStorage(newToken);
+        setToken(newToken);
+        setUser(res.data.user);
+        setIsEmailVerified(res.data.user.isEmailVerified || false);
+        return { success: true };
+      } else if (res.data.requiresVerification) {
+        // Handle case where email verification is required
+        return { 
+          success: false, 
+          requiresVerification: true,
+          userId: res.data.userId,
+          message: "Please verify your email to continue."
+        };
+      } else {
+        return { success: false, message: res.data.message || "Login failed" };
       }
-      
-      // Regular login flow for non-iOS devices
-      // Clear any existing tokens first to avoid conflicts
-      saveTokenToStorage("");
-      
-      let retryCount = 0;
-      const maxRetries = 2;
-      let lastError = null;
-      
-      // Retry logic for login
-      while (retryCount <= maxRetries) {
-        try {
-          // Add a slight delay on retry attempts
-          if (retryCount > 0) {
-            await new Promise(resolve => setTimeout(resolve, 500));
-            console.log(`Retry attempt ${retryCount}...`);
-          }
-          
-          const res = await axios.post(`${API_BASE_URL}/api/auth/login`, { email, password });
-          
-          if (res.data.success) {
-            const newToken = res.data.token;
-            
-            // Clear the token storage first
-            Cookies.remove('auth_token');
-            localStorage.removeItem("token");
-            
-            // Small delay before setting the new token
-            await new Promise(resolve => setTimeout(resolve, 100));
-            
-            // Now set the token in both places
-            setToken(newToken);
-            saveTokenToStorage(newToken);
-            setUser(res.data.user);
-            setIsEmailVerified(res.data.user.isEmailVerified || false);
-            
-            console.log("Login successful");
-            
-            // Clear any previous errors
-            lastError = null;
-            
-            return { success: true };
-          }
-          
-          lastError = { success: false, message: "Invalid credentials" };
-          return lastError;
-        } catch (error) {
-          console.error(`Login attempt ${retryCount + 1} failed:`, error.message);
-          
-          lastError = { 
-            success: false, 
-            message: error.response?.data?.message || "Login failed" 
-          };
-          
-          // Only retry if it's a network or server error, not for invalid credentials
-          if (error.response?.status >= 500 || !error.response) {
-            retryCount++;
-            
-            // If we've reached max retries, break out
-            if (retryCount > maxRetries) {
-              break;
-            }
-          } else {
-            // Client error (like invalid credentials) - don't retry
-            break;
-          }
-        }
-      }
-      
-      return lastError;
     } catch (error) {
       console.error("Login error:", error);
+      // Handle 403 Forbidden response for unverified email
+      if (error.response?.status === 403 && error.response?.data?.requiresVerification) {
+        return {
+          success: false,
+          requiresVerification: true,
+          userId: error.response.data.userId,
+          message: error.response.data.message || "Please verify your email to continue."
+        };
+      }
       return { 
         success: false, 
-        message: error.response?.data?.message || "Login failed" 
+        message: error.response?.data?.message || "Login failed. Please try again." 
       };
     }
   };

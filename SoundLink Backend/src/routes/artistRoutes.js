@@ -1,7 +1,7 @@
 import express from "express";
 import multer from "multer";
 import { addArtist, listArtists, getArtist, updateArtist, deleteArtist, bulkAddArtists } from "../controllers/artistController.js";
-import { verifyToken } from "../middleware/authMiddleware.js";
+import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
@@ -21,11 +21,11 @@ const upload = multer({
 });
 
 // Artist routes
-router.post("/add", verifyToken, upload.single("image"), addArtist);
+router.post("/add", protect, upload.single("image"), addArtist);
 router.get("/list", listArtists);
 router.get("/:id", getArtist);
-router.put("/update/:id", verifyToken, upload.single("image"), updateArtist);
-router.delete("/delete/:id", verifyToken, deleteArtist);
-router.post("/bulk-add", verifyToken, bulkAddArtists);
+router.put("/update/:id", protect, upload.single("image"), updateArtist);
+router.delete("/delete/:id", protect, deleteArtist);
+router.post("/bulk-add", protect, bulkAddArtists);
 
 export default router; 

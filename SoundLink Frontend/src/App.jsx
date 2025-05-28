@@ -48,6 +48,7 @@ import PremiumLoading from './components/PremiumLoading';
 import RadioStation from './components/RadioStation';
 import PremiumRadioPlayer from './components/Player/PremiumRadioPlayer';
 import SongDetail from './components/SongDetail';
+import ResetPasswordForm from "./components/ResetPasswordForm";
 
 // Protected route component that requires authentication
 const ProtectedRoute = ({ children }) => {
@@ -313,6 +314,7 @@ const App = () => {
               <Route path="/song/:id/info" element={<SongDetail />} />
               <Route path="/artists" element={<Artists />} />
               <Route path="/trending" element={<TrendingSongs />} />
+              <Route path="/reset-password/:token" element={<ResetPasswordForm />} />
               {/* Redirect search to home since we're using popup search only */}
               <Route path="/search" element={<Navigate to="/" />} />
               <Route path="/premium" element={<Premium />} />

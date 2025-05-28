@@ -93,7 +93,7 @@ const AuthPage = () => {
       </div>
       
       {/* Right side - Authentication form */}
-      <div className="w-full md:w-1/2 flex items-center justify-center p-6">
+      <div className="w-full md:w-1/2 flex items-center justify-center p-6 pb-32">
         <AnimatePresence mode="wait">
           <motion.div
             key={mode}
