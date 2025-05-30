@@ -3,7 +3,7 @@ import { PlayerContext } from "../../context/PlayerContext";
 // eslint-disable-next-line no-unused-vars
 import { AnimatePresence, motion } from "framer-motion";
 import { FaPlay, FaPause, FaStepForward, FaStepBackward, FaVolumeUp, FaVolumeMute, FaHeart } from "react-icons/fa";
-import { MdQueueMusic, MdDevices, MdShuffle, MdRepeat, MdOutlineLyrics, MdMoreVert } from "react-icons/md";
+import { MdQueueMusic, MdDevices, MdShuffle, MdRepeat, MdOutlineLyrics, MdMoreVert, MdAutorenew } from "react-icons/md";
 import QueueComponent from "../QueueComponent";
 import LyricsPanel from "../LyricsPanel";
 import ArtistExplorer from "../ArtistExplorer";
@@ -200,6 +200,8 @@ const PremiumPlayer = () => {
     getArtistName,
     getAlbumName,
     playWithId,
+    autoplayEnabled,
+    setAutoplayEnabled,
   } = useContext(PlayerContext);
 
   const [volume, setVolume] = useState(0.7);
@@ -761,6 +763,14 @@ const PremiumPlayer = () => {
                     <MdShuffle className="text-xl" />
                 </button>
                 <button 
+                  onClick={() => setAutoplayEnabled(!autoplayEnabled)}
+                  className="w-10 h-10 flex items-center justify-center"
+                  style={{ color: autoplayEnabled ? themeColors.primary : `${themeColors.text}99` }}
+                  title={autoplayEnabled ? "Autoplay enabled" : "Autoplay disabled"}
+                >
+                  <MdAutorenew className="text-xl" />
+                </button>
+                <button 
                   onClick={Previous}
                     className="w-10 h-10 flex items-center justify-center"
                     style={{ color: themeColors.text }}
@@ -1288,6 +1298,14 @@ const PremiumPlayer = () => {
               >
                     <MdShuffle size={20} />
               </button>
+                  <button
+                    onClick={() => setAutoplayEnabled(!autoplayEnabled)}
+                    className="text-base transition"
+                    style={autoplayEnabled ? { color: themeColors.primary } : { color: `${themeColors.text}99` }}
+                    title={autoplayEnabled ? "Autoplay enabled" : "Autoplay disabled"}
+                  >
+                    <MdAutorenew size={20} />
+                  </button>
                   <button
                     onClick={toggleLoop}
                     className="text-base transition"

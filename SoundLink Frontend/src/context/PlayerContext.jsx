@@ -288,7 +288,11 @@ export const PlayerContextProvider = ({ children }) => {
   const [playStatus, setPlayStatus] = useState(false);
   const [loop, setLoop] = useState(false);
   const [queueSongs, setQueueSongs] = useState([]);
-  const [autoplayEnabled, setAutoplayEnabled] = useState(false);
+  const [autoplayEnabled, setAutoplayEnabled] = useState(() => {
+    // Get saved preference from localStorage, default to true if not set
+    const savedAutoplay = localStorage.getItem('autoplayEnabled');
+    return savedAutoplay === null ? true : savedAutoplay === 'true';
+  });
   const [hidePlayer, setHidePlayer] = useState(false);
   const [loading, setLoading] = useState({
     songs: true,
@@ -1286,6 +1290,39 @@ export const PlayerContextProvider = ({ children }) => {
         if ('mediaSession' in navigator) {
           navigator.mediaSession.playbackState = 'none';
         }
+        
+        // Check if autoplay is enabled and there's a next song to play
+        if (autoplayEnabled) {
+          if (queueSongs.length > 0) {
+            // Play next song from queue
+            const nextTrack = queueSongs[0];
+            setTrack(nextTrack);
+            setQueueSongs(prevQueue => prevQueue.slice(1));
+            
+            setTimeout(() => {
+              if (audioRef.current) {
+                audioRef.current.src = nextTrack.file;
+                audioRef.current.load();
+                play();
+              }
+            }, 50);
+          } else {
+            // Play next song from playlist
+            const currentIndex = songsData.findIndex(item => item._id === track._id);
+            if (currentIndex < songsData.length - 1) {
+              const nextTrack = songsData[currentIndex + 1];
+              setTrack(nextTrack);
+              
+              setTimeout(() => {
+                if (audioRef.current) {
+                  audioRef.current.src = nextTrack.file;
+                  audioRef.current.load();
+                  play();
+                }
+              }, 50);
+            }
+          }
+        }
       };
 
       audioRef.current.addEventListener('play', handlePlay);
@@ -1300,7 +1337,7 @@ export const PlayerContextProvider = ({ children }) => {
         }
       };
     }
-  }, []);
+  }, [track, autoplayEnabled]);
 
   // Handle visibility change
   useEffect(() => {
@@ -1413,6 +1450,11 @@ export const PlayerContextProvider = ({ children }) => {
     sleepTimerRemaining,
     formatRemainingTime,
   };
+
+  // Add effect to persist autoplay preference
+  useEffect(() => {
+    localStorage.setItem('autoplayEnabled', autoplayEnabled);
+  }, [autoplayEnabled]);
 
   return (
     <PlayerContext.Provider value={contextValue}>
