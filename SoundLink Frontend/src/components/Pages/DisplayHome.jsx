@@ -1,4 +1,4 @@
-import React, { useContext, useRef, useEffect, useState } from "react";
+import React, { useContext, useRef, useEffect, useState, useCallback, useMemo } from "react";
 // eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion";
 import axios from "axios";
@@ -15,8 +15,9 @@ import "../../styles/MobileStyles.css"; // Import mobile-specific styles
 import SEO from '../SEO'; // Import SEO component
 import Footer from '../Layout/Footer'; // Import Footer component
 
-// Cache for storing fetched data
-let cachedData = {
+// Cache configuration
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+const cachedData = {
   songs: null,
   movieAlbums: null,
   artists: null,
@@ -24,7 +25,8 @@ let cachedData = {
   lastFetch: null
 };
 
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
+// Memoized color array
+const THEME_COLORS = Object.freeze(['#8E24AA', '#1E88E5', '#43A047', '#FB8C00', '#E53935', '#3949AB']);
 
 const DisplayHome = () => {
   const navigate = useNavigate();
@@ -55,65 +57,66 @@ const DisplayHome = () => {
   const [movieAlbums, setMovieAlbums] = useState([]);
   const [trendingSongs, setTrendingSongs] = useState([]);
   const [artists, setArtists] = useState([]);
-  const [mainColor, setMainColor] = useState('#8E24AA');
+  const [mainColor, setMainColor] = useState(THEME_COLORS[0]);
   const [visibleSongs, setVisibleSongs] = useState([]);
   const observerRef = useRef(null);
   const [selectedSongId, setSelectedSongId] = useState(null);
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
 
-  // Calculate currentSongs before useEffect hooks
-  const indexOfLastSong = currentPage * songsPerPage;
-  const indexOfFirstSong = indexOfLastSong - songsPerPage;
-  const currentSongs = songsData.slice(indexOfFirstSong, indexOfLastSong);
-  const totalPages = Math.ceil(songsData.length / songsPerPage);
-
-  // Intersection Observer for lazy loading
-  useEffect(() => {
-    const options = {
-      root: null,
-      rootMargin: '50px',
-      threshold: 0.1
+  // Memoized calculations
+  const { indexOfLastSong, indexOfFirstSong, currentSongs, totalPages } = useMemo(() => {
+    const indexOfLast = currentPage * songsPerPage;
+    const indexOfFirst = indexOfLast - songsPerPage;
+    const current = songsData.slice(indexOfFirst, indexOfLast);
+    const total = Math.ceil(songsData.length / songsPerPage);
+    return { 
+      indexOfLastSong: indexOfLast, 
+      indexOfFirstSong: indexOfFirst, 
+      currentSongs: current, 
+      totalPages: total 
     };
+  }, [currentPage, songsPerPage, songsData]);
 
-    observerRef.current = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          const songId = entry.target.dataset.songId;
-          if (songId && !visibleSongs.includes(songId)) {
-            setVisibleSongs(prev => [...prev, songId]);
-          }
+  // Memoized intersection observer options
+  const observerOptions = useMemo(() => ({
+    root: null,
+    rootMargin: '50px',
+    threshold: 0.1
+  }), []);
+
+  // Intersection observer callback
+  const handleIntersection = useCallback((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const songId = entry.target.dataset.songId;
+        if (songId && !visibleSongs.includes(songId)) {
+          setVisibleSongs(prev => [...prev, songId]);
         }
-      });
-    }, options);
-
-    return () => {
-      if (observerRef.current) {
-        observerRef.current.disconnect();
       }
-    };
-  }, []);
+    });
+  }, [visibleSongs]);
+
+  // Setup intersection observer
+  useEffect(() => {
+    observerRef.current = new IntersectionObserver(handleIntersection, observerOptions);
+    return () => observerRef.current?.disconnect();
+  }, [handleIntersection, observerOptions]);
 
   // Observe song elements
   useEffect(() => {
     const songElements = document.querySelectorAll('.song-item');
-    songElements.forEach(element => {
-      if (observerRef.current) {
-        observerRef.current.observe(element);
-      }
-    });
+    if (observerRef.current) {
+      songElements.forEach(element => observerRef.current.observe(element));
+    }
+    return () => observerRef.current?.disconnect();
   }, [currentSongs]);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
+  // Data fetching
+  const fetchData = useCallback(async () => {
     try {
-      // Check if we have valid cached data
       const now = Date.now();
       if (cachedData.lastFetch && (now - cachedData.lastFetch < CACHE_DURATION)) {
-        // Use cached data
         setSongsData(cachedData.songs || []);
         setMovieAlbums(cachedData.movieAlbums || []);
         setArtists(cachedData.artists || []);
@@ -125,43 +128,34 @@ const DisplayHome = () => {
       setLoading(true);
       const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
       
-      // Fetch movie albums
-      const movieRes = await axios.get(`${backendUrl}/api/moviealbum/list`);
+      const [movieRes, songsRes, artistsRes] = await Promise.all([
+        axios.get(`${backendUrl}/api/moviealbum/list`),
+        axios.get(`${backendUrl}/api/song/list?all=true`),
+        axios.get(`${backendUrl}/api/artist/list`)
+      ]);
+
       if (movieRes.data.success) {
         setMovieAlbums(movieRes.data.movieAlbums);
         cachedData.movieAlbums = movieRes.data.movieAlbums;
       }
-      
-      // Fetch songs with pagination
-      const songsRes = await axios.get(`${backendUrl}/api/song/list?all=true`);
+
       if (songsRes.data.success) {
         setSongsData(songsRes.data.songs);
         cachedData.songs = songsRes.data.songs;
         
-        // Create trending songs
-        if (songsRes.data.songs && songsRes.data.songs.length) {
-          // Sort by some criteria to simulate trending
-          const sorted = [...songsRes.data.songs].sort(() => Math.random() - 0.5).slice(0, 10);
-          setTrendingSongs(sorted);
-          cachedData.trendingSongs = sorted;
-        }
-        
-        // Log the total count of songs for debugging
-        console.log(`Loaded ${songsRes.data.songs.length} total songs`);
+        const sorted = [...songsRes.data.songs]
+          .sort(() => Math.random() - 0.5)
+          .slice(0, 10);
+        setTrendingSongs(sorted);
+        cachedData.trendingSongs = sorted;
       }
-      
-      // Fetch artists from the new API endpoint
-      const artistsRes = await axios.get(`${backendUrl}/api/artist/list`);
+
       if (artistsRes.data.success) {
         setArtists(artistsRes.data.artists);
         cachedData.artists = artistsRes.data.artists;
       }
       
-      // Set a random vibrant color for the UI
-      const colors = ['#8E24AA', '#1E88E5', '#43A047', '#FB8C00', '#E53935', '#3949AB'];
-      setMainColor(colors[Math.floor(Math.random() * colors.length)]);
-      
-      // Update cache timestamp
+      setMainColor(THEME_COLORS[Math.floor(Math.random() * THEME_COLORS.length)]);
       cachedData.lastFetch = now;
       
     } catch (error) {
@@ -169,59 +163,41 @@ const DisplayHome = () => {
     } finally {
       setLoading(false);
     }
-  };
-  
-  // Scroll to top handler
-  const scrollToTop = () => {
-    // Use a more reliable method for scrolling
-    const scrollOptions = {
-      top: 0,
-      left: 0,
-      behavior: 'smooth'
-    };
-    
-    // Try to scroll the document first
-    document.documentElement.scrollTo(scrollOptions);
-    
-    // Fallback to window scroll
-    window.scrollTo(scrollOptions);
-    
-    // If ref exists, try that as well
-    if (topRef.current) {
-      topRef.current.scrollIntoView(scrollOptions);
-    }
-  };
+  }, [setSongsData]);
 
-  // Add scroll restoration effect
   useEffect(() => {
-    // Scroll to top when component mounts
-    scrollToTop();
-    
-    // Cleanup function
-    return () => {
-      // Reset scroll position when component unmounts
-      window.scrollTo(0, 0);
-    };
+    fetchData();
+  }, [fetchData]);
+
+  // Scroll handlers
+  const scrollToTop = useCallback(() => {
+    const scrollOptions = { top: 0, left: 0, behavior: 'smooth' };
+    document.documentElement.scrollTo(scrollOptions);
+    window.scrollTo(scrollOptions);
+    topRef.current?.scrollIntoView(scrollOptions);
   }, []);
 
-  // Update pagination to use the same scroll method
-  const paginate = (pageNumber) => {
+  useEffect(() => {
+    scrollToTop();
+    return () => window.scrollTo(0, 0);
+  }, [scrollToTop]);
+
+  const paginate = useCallback((pageNumber) => {
     setCurrentPage(pageNumber);
     scrollToTop();
-  };
+  }, [scrollToTop]);
 
-  // Check if a song is in favorites
-  const isFavorite = (songId) => {
-    return favorites && favorites.some(fav => fav._id === songId);
-  };
+  // Memoized handlers
+  const isFavorite = useCallback((songId) => {
+    return favorites?.some(fav => fav._id === songId);
+  }, [favorites]);
 
-  // Handlers for song actions
-  const handleToggleFavorite = (e, songId) => {
+  const handleToggleFavorite = useCallback((e, songId) => {
     e.stopPropagation();
-    toggleFavorite && toggleFavorite(songId);
-  };
+    toggleFavorite?.(songId);
+  }, [toggleFavorite]);
 
-  const handleAddToPlaylist = (e, songId) => {
+  const handleAddToPlaylist = useCallback((e, songId) => {
     e.stopPropagation();
     
     if (!user) {
@@ -239,17 +215,16 @@ const DisplayHome = () => {
     
     setSelectedSongId(songId);
     setShowPlaylistModal(true);
-  };
+  }, [user]);
 
-  const handleAddToQueue = (e, songId) => {
+  const handleAddToQueue = useCallback((e, songId) => {
     e.stopPropagation();
     addToQueue(songId);
-  };
+  }, [addToQueue]);
 
-  // Handler for artist click
-  const handleArtistClick = (artistId) => {
+  const handleArtistClick = useCallback((artistId) => {
     navigate(`/artist/${artistId}`);
-  };
+  }, [navigate]);
 
   // Check screen size and set view mode accordingly
   useEffect(() => {
@@ -872,4 +847,5 @@ const DisplayHome = () => {
   );
 };
 
-export default DisplayHome;
+// Memoize the entire component
+export default React.memo(DisplayHome);
