@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="400" height="400">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <!-- Gradient Background Circle -->
   <defs>
     <linearGradient id="bg-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -11,11 +11,14 @@
     </filter>
   </defs>
   
+  <!-- Safe zone for maskable icons - 10% padding -->
+  <rect x="0" y="0" width="512" height="512" fill="url(#bg-gradient)"/>
+  
   <!-- Background Circle with Gradient -->
   <circle cx="256" cy="256" r="246" fill="url(#bg-gradient)" stroke="#444" stroke-width="4"/>
   
   <!-- Modern Sound wave bars with glow effect -->
-  <g filter="url(#glow)">
+  <g filter="url(#glow)" transform="translate(0, 0)">
     <rect x="146" y="216" width="24" height="80" rx="12" fill="#F8B500" />
     <rect x="196" y="176" width="24" height="160" rx="12" fill="#FF4E33" />
     <rect x="246" y="196" width="24" height="120" rx="12" fill="#FF2C77" />
