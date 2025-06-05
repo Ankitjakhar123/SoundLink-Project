@@ -1,0 +1,26 @@
+name: Health Check Ping
+
+on:
+  schedule:
+    # Runs every 10 minutes
+    - cron: '*/10 * * * *'
+  workflow_dispatch: # Allows manual triggering
+
+jobs:
+  health_check:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Send health check ping
+        run: |
+          curl -X GET https://soundlink-project.onrender.com/api/health
+          echo "Health check completed at $(date)"
+        
+      - name: Check response
+        run: |
+          response=$(curl -s -o /dev/null -w "%{http_code}" https://soundlink-project.onrender.com/api/health)
+          if [ "$response" != "200" ]; then
+            echo "Health check failed with status code: $response"
+            exit 1
+          fi
+          echo "Health check successful with status code: $response" 
