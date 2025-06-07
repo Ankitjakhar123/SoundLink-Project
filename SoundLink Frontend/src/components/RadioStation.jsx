@@ -28,8 +28,7 @@ const RadioStation = () => {
 
   const fetchStations = async () => {
     try {
-      setLoading(true);
-      const response = await fetch('https://de1.api.radio-browser.info/json/stations/bycountry/India');
+      setLoading(const response = await fetch('https://corsproxy.io/?https://de1.api.radio-browser.info/json/stations/bycountry/India'); 
       if (!response.ok) {
         throw new Error('Failed to fetch radio stations');
       }
