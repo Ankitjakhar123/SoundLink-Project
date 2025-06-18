@@ -1,12 +1,14 @@
 import React, { useState, useRef, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom'
 import { AuthContext } from '../../context/AuthContext'
-import { FaCrown, FaBars, FaUser, FaSignOutAlt, FaUserShield, FaCog, FaSearch, FaTimes, FaMusic, FaHeadphones, FaHeart, FaHome, FaList, FaEllipsisH, FaChevronUp, FaChevronDown } from 'react-icons/fa';
+import { FaCrown, FaBars, FaUser, FaSignOutAlt, FaUserShield, FaCog, FaSearch, FaTimes, FaMusic, FaHeadphones, FaHeart, FaHome, FaList, FaEllipsisH, FaChevronUp, FaChevronDown, FaYoutube } from 'react-icons/fa';
 import axios from 'axios';
 import { PlayerContext } from '../../context/PlayerContext';
 import QueueComponent from '../QueueComponent';
 import { MdRadio } from 'react-icons/md';
 import LazyImage from '../LazyImage';
+import YouTubeService from '../../utils/youtubeService';
+import SearchResultsSection from '../SearchResultsSection';
 
 // Default avatar path - ensure this SVG file exists in the public directory
 const DEFAULT_AVATAR = '/default-avatar.svg';
@@ -21,13 +23,15 @@ const Navbar = (props) => {
     const inputRef = useRef(null)
     const searchResultsRef = useRef(null);
     const { user, logout } = useContext(AuthContext);
-    const { playWithId, track, hidePlayer, togglePlayerVisibility } = useContext(PlayerContext);
+    const { playWithId, track, hidePlayer, togglePlayerVisibility, useYouTubePlayer, setUseYouTubePlayer, playYouTubeVideo } = useContext(PlayerContext);
     const [showProfileDropdown, setShowProfileDropdown] = useState(false);
     const profileDropdownRef = useRef(null);
     const [showBottomNav, setShowBottomNav] = useState(true);
     const [showQueue, setShowQueue] = useState(false);
     const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
     const touchStartY = useRef(null);
+    const [youtubeResults, setYoutubeResults] = useState([]);
+    const [isYoutubeSearching, setIsYoutubeSearching] = useState(false);
 
     // Mobile keyboard detection for iOS and Android
     useEffect(() => {
@@ -99,28 +103,37 @@ const Navbar = (props) => {
         
         if (!search.trim()) {
             setSearchResults(null);
+            setYoutubeResults([]);
             setShowSearchResults(false);
             return;
         }
         
-        // Always perform the search in the popup, never redirect
         setIsSearching(true);
+        setIsYoutubeSearching(true);
+
         try {
+            // Regular database search
             const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
             const response = await axios.get(`${backendUrl}/api/search?q=${encodeURIComponent(search)}`);
             
             if (response.data.success) {
-                // Initial search is not a full search
                 setSearchResults({...response.data, isFullSearch: false});
                 setShowSearchResults(true);
             } else {
                 setSearchResults(null);
             }
+
+            // YouTube search
+            const ytResults = await YouTubeService.searchVideos(search, true);
+            setYoutubeResults(ytResults || []);
+
         } catch (error) {
             console.error('Search error:', error);
             setSearchResults(null);
+            setYoutubeResults([]);
         } finally {
             setIsSearching(false);
+            setIsYoutubeSearching(false);
         }
     };
 
@@ -152,11 +165,13 @@ const Navbar = (props) => {
     };
 
     const handleResultClick = (type, item) => {
+        console.log('Database result clicked:', { type, item });
         setShowSearchResults(false);
         setShowSearchBar(false);
         
         switch(type) {
             case 'song':
+                console.log('Playing song:', item._id);
                 // Play the song directly instead of navigating to a song page
                 playWithId(item._id);
                 break;
@@ -173,6 +188,14 @@ const Navbar = (props) => {
             default:
                 break;
         }
+    };
+
+    const handleYouTubeResultClick = (video) => {
+        console.log('YouTube result clicked:', video);
+        setShowSearchResults(false);
+        setShowSearchBar(false);
+        setUseYouTubePlayer(true);
+        playYouTubeVideo(video.id.videoId, video);
     };
 
     // Helper function to get the user's avatar URL
@@ -288,43 +311,17 @@ const Navbar = (props) => {
                     </form>
                     
                     {/* Search Results Dropdown */}
-                    {showSearchResults && searchResults && (
-                      <div
-                        ref={searchResultsRef}
-                        className="absolute left-0 right-0 top-full mt-2 w-full z-50 flex justify-center"
-                        style={{ pointerEvents: 'auto' }}
-                        onTouchStart={handleTouchStart}
-                        onTouchEnd={handleTouchEnd}
-                      >
-                        <div className="w-full mx-2 sm:mx-0 max-w-2xl bg-neutral-900 rounded-2xl shadow-2xl border border-neutral-700 overflow-y-auto max-h-[70vh] p-2">
-                          <SearchResults results={searchResults} onResultClick={handleResultClick} />
-                          <div className="mt-3 flex justify-center">
-                            <button
-                              onClick={() => {
-                                // Load more results instead of navigating
-                                const loadMoreResults = async () => {
-                                  setIsSearching(true);
-                                  try {
-                                    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
-                                    const response = await axios.get(`${backendUrl}/api/search?q=${encodeURIComponent(search)}&full=true`);
-                                    if (response.data.success) {
-                                      setSearchResults({ ...response.data, isFullSearch: true });
-                                    }
-                                  } catch (error) {
-                                    console.error('Error loading more results:', error);
-                                  } finally {
-                                    setIsSearching(false);
-                                  }
-                                };
-                                loadMoreResults();
-                              }}
-                              className="text-fuchsia-400 hover:text-fuchsia-300 text-sm font-medium"
-                            >
-                              {searchResults.isFullSearch ? 'All results loaded' : 'Load more results'}
-                            </button>
-                          </div>
+                    {showSearchResults && (
+                        <div ref={searchResultsRef} className="absolute top-full left-0 right-0 bg-black/95 backdrop-blur-xl border border-white/10 rounded-lg shadow-lg overflow-hidden max-h-[80vh] overflow-y-auto z-50">
+                            <SearchResultsSection 
+                                databaseResults={searchResults}
+                                youtubeResults={youtubeResults}
+                                onDatabaseResultClick={handleResultClick}
+                                onYouTubeResultClick={handleYouTubeResultClick}
+                                isSearching={isSearching}
+                                isYoutubeSearching={isYoutubeSearching}
+                            />
                         </div>
-                      </div>
                     )}
                 </div>
 
@@ -562,69 +559,62 @@ const Navbar = (props) => {
 
 // Search Results Component
 const SearchResults = ({ results, onResultClick }) => {
-    const hasResults = results.songs?.length > 0 || 
-                      results.albums?.length > 0 || 
-                      results.artists?.length > 0 || 
-                      results.users?.length > 0;
-                      
-    if (!hasResults) {
-        return (
-            <div className="text-center py-4">
-                <p className="text-neutral-400">No results found</p>
-            </div>
-        );
-    }
-    
-    // Function to determine how many items to show per category
-    const getItemsToShow = (items) => {
-        // If we have the full=true parameter in the response, show all items
-        // Otherwise, limit to 3 items for the initial search
-        if (results.isFullSearch) {
-            return items;
-        }
-        return items.slice(0, 3);
-    };
-    
     return (
-        <div className="grid gap-6 max-h-[70vh] overflow-y-auto">
-            {results.songs && results.songs.length > 0 && (
-                <ResultSection 
-                    title="Songs" 
-                    items={getItemsToShow(results.songs)} 
-                    type="song"
-                    onResultClick={onResultClick}
-                    showAll={results.isFullSearch}
-                />
+        <div className="search-results">
+            {/* Regular search results */}
+            {results && Object.entries(results).map(([category, items]) => (
+                items.length > 0 && (
+                    <ResultSection
+                        key={category}
+                        title={category.charAt(0).toUpperCase() + category.slice(1)}
+                        items={items}
+                        type={category}
+                        onResultClick={onResultClick}
+                        showAll={results.isFullSearch}
+                    />
+                )
+            ))}
+
+            {/* YouTube Results */}
+            {youtubeResults && youtubeResults.length > 0 && (
+                <div className="mt-4 border-t border-white/10 pt-4">
+                    <div className="flex items-center mb-2">
+                        <FaYoutube className="text-red-600 mr-2 text-xl" />
+                        <h3 className="text-white font-semibold">YouTube Results</h3>
+                    </div>
+                    <div className="space-y-2">
+                        {youtubeResults.map((video) => (
+                            <div
+                                key={video.id.videoId}
+                                className="flex items-center space-x-3 p-2 hover:bg-white/10 rounded-lg cursor-pointer transition-colors"
+                                onClick={() => handleYouTubeResultClick(video)}
+                            >
+                                <img
+                                    src={video.snippet.thumbnails.default.url}
+                                    alt={video.snippet.title}
+                                    className="w-12 h-12 object-cover rounded"
+                                />
+                                <div className="flex-1 min-w-0">
+                                    <h4 className="text-white text-sm font-medium truncate">
+                                        {video.snippet.title}
+                                    </h4>
+                                    <p className="text-gray-400 text-xs truncate">
+                                        {video.snippet.channelTitle}
+                                    </p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
             )}
-            
-            {results.albums && results.albums.length > 0 && (
-                <ResultSection 
-                    title="Albums" 
-                    items={getItemsToShow(results.albums)} 
-                    type="album"
-                    onResultClick={onResultClick}
-                    showAll={results.isFullSearch}
-                />
-            )}
-            
-            {results.artists && results.artists.length > 0 && (
-                <ResultSection 
-                    title="Artists" 
-                    items={getItemsToShow(results.artists)} 
-                    type="artist"
-                    onResultClick={onResultClick}
-                    showAll={results.isFullSearch}
-                />
-            )}
-            
-            {results.users && results.users.length > 0 && (
-                <ResultSection 
-                    title="Users" 
-                    items={getItemsToShow(results.users)} 
-                    type="user"
-                    onResultClick={onResultClick}
-                    showAll={results.isFullSearch}
-                />
+
+            {/* No Results Message */}
+            {!isSearching && !isYoutubeSearching && 
+             (!results || Object.values(results).every(arr => arr.length === 0)) && 
+             (!youtubeResults || youtubeResults.length === 0) && (
+                <div className="text-white text-center py-4">
+                    No results found
+                </div>
             )}
         </div>
     );

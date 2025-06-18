@@ -1,6 +1,7 @@
 import React, { useContext, useState, useEffect, useRef } from "react";
 import Sidebar from "./components/Layout/Sidebar";
 import PremiumPlayer from "./components/Player/PremiumPlayer";
+import YouTubePremiumPlayer from "./components/Player/YouTubePremiumPlayer";
 import BottomNavigation from "./components/Layout/BottomNavigation";
 import { PlayerContext } from "./context/PlayerContext";
 import { RadioContext } from "./context/RadioContext";
@@ -72,7 +73,10 @@ const App = () => {
     Next, 
     Previous,
     getArtistName,
-    getAlbumName 
+    getAlbumName,
+    useYouTubePlayer,
+    currentYouTubeVideo,
+    setUseYouTubePlayer
   } = useContext(PlayerContext);
   const radioContext = useContext(RadioContext);
   const { user } = useContext(AuthContext);
@@ -96,25 +100,41 @@ const App = () => {
   // Setup Media Session API for lock screen controls
   useEffect(() => {
     if ('mediaSession' in navigator) {
-      // Prioritize radio if it is playing
-      const currentTrack = (radioContext?.isPlaying && radioContext?.currentStation)
-        ? {
-            name: radioContext.currentStation.name,
-            singer: radioContext.currentStation.language || 'Live Radio',
-            albumName: 'Radio Station',
-            image: '/live-radio-artwork.svg',
-            isRadio: true
-          }
-        : track;
+      // Determine current media source (Radio, YouTube, or regular track)
+      let currentTrack;
+      
+      if (radioContext?.isPlaying && radioContext?.currentStation) {
+        currentTrack = {
+          name: radioContext.currentStation.name,
+          singer: radioContext.currentStation.language || 'Live Radio',
+          albumName: 'Radio Station',
+          image: '/live-radio-artwork.svg',
+          isRadio: true
+        };
+      } else if (useYouTubePlayer && currentYouTubeVideo) {
+        currentTrack = {
+          name: currentYouTubeVideo.title,
+          singer: currentYouTubeVideo.channelTitle,
+          albumName: 'YouTube',
+          image: currentYouTubeVideo.thumbnail,
+          isYouTube: true
+        };
+      } else if (track) {
+        currentTrack = track;
+      }
 
       if (currentTrack) {
         navigator.mediaSession.metadata = new MediaMetadata({
           title: currentTrack.name,
           artist: currentTrack.isRadio ? 
                  (currentTrack.singer || 'Live Radio') : 
+                 currentTrack.isYouTube ?
+                 currentTrack.singer :
                  (getArtistName(currentTrack) || 'Unknown Artist'),
           album: currentTrack.isRadio ? 
                  'Radio Station' : 
+                 currentTrack.isYouTube ?
+                 'YouTube' :
                  (getAlbumName(currentTrack) || 'Unknown Album'),
           artwork: [
             { src: currentTrack.image || '/icons/soundlink-icon.svg?v=2', sizes: '512x512', type: currentTrack.isRadio ? 'image/svg+xml' : 'image/png' }
@@ -196,7 +216,7 @@ const App = () => {
         }
       }
     }
-  }, [track, playStatus, play, pause, Next, Previous, radioContext?.currentStation, radioContext?.isPlaying, radioContext?.playStation, radioContext?.stopStation]);
+  }, [track, playStatus, play, pause, Next, Previous, radioContext?.currentStation, radioContext?.isPlaying, radioContext?.playStation, radioContext?.stopStation, useYouTubePlayer, currentYouTubeVideo]);
 
   // Screen orientation lock for landscape mode on video playback
   const lockOrientation = () => {
@@ -307,7 +327,7 @@ const App = () => {
               <Route path="/playlist/:id" element={<ProtectedRoute><PlaylistView /></ProtectedRoute>} />
               <Route path="/favorites" element={<ProtectedRoute><Favorites /></ProtectedRoute>} />
               <Route path="/library" element={<ProtectedRoute><Library /></ProtectedRoute>} />
-              <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+              <Route path="/settings" element={<ProtectedRoute><Settings useYouTubePlayer={useYouTubePlayer} setUseYouTubePlayer={setUseYouTubePlayer} /></ProtectedRoute>} />
               <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
               
               {/* Admin routes - login required */}
@@ -324,7 +344,9 @@ const App = () => {
         </div>
         {track && <div className="content-fade"></div>}
         {/* Only one player at a time: radio or premium */}
-        {radioContext?.currentStation ? (
+        {useYouTubePlayer ? (
+          <YouTubePremiumPlayer useYouTubePlayer={useYouTubePlayer} currentYouTubeVideo={currentYouTubeVideo} />
+        ) : radioContext?.isPlaying ? (
           <PremiumRadioPlayer />
         ) : track ? (
           <PremiumPlayer />

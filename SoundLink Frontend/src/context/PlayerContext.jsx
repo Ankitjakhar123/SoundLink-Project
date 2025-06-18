@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import { API_BASE_URL } from "../utils/api";
 import { extractColors } from 'extract-colors';
 import { RadioContext } from './RadioContext';
+import YouTubeService from '../utils/youtubeService';
 //import { assets } from "../assets/assets";
 
 export const PlayerContext = createContext();
@@ -326,6 +327,10 @@ export const PlayerContextProvider = ({ children }) => {
   const [isCrossfading, setIsCrossfading] = useState(false);
   const nextAudioRef = useRef(null);
 
+  const [useYouTubePlayer, setUseYouTubePlayer] = useState(false);
+  const [currentYouTubeVideo, setCurrentYouTubeVideo] = useState(null);
+  const [youtubeQueue, setYoutubeQueue] = useState([]);
+
   // Initialize audio context
   const initAudioContext = () => {
     if (!window._audioContext) {
@@ -565,9 +570,12 @@ export const PlayerContextProvider = ({ children }) => {
     }
   };
 
-  // Modify playWithId function to be simpler
+  // Modify playWithId function to fetch song data if needed
   const playWithId = async (id) => {
+    console.log('playWithId called with id:', id);
+    
     if (track && track._id === id) {
+      console.log('Same track, toggling play state');
       if (playStatus) {
         pause();
       } else {
@@ -576,61 +584,105 @@ export const PlayerContextProvider = ({ children }) => {
       return;
     }
     
-    const selectedTrack = songsData.find((song) => song._id === id);
+    let selectedTrack = songsData.find((song) => song._id === id);
+    console.log('Found track in songsData:', selectedTrack);
     
+    // If track not found in songsData, fetch it from the API
     if (!selectedTrack) {
-      console.error(`Track with ID ${id} not found in songsData`);
-      return;
+      try {
+        console.log('Track not found in songsData, fetching from API');
+        const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
+        const response = await axios.get(`${backendUrl}/api/songs/${id}`);
+        if (response.data.success) {
+          selectedTrack = response.data.song;
+          // Add to songsData to avoid future fetches
+          setSongsData(prev => [...prev, selectedTrack]);
+          console.log('Successfully fetched track from API:', selectedTrack);
+        } else {
+          console.error(`Failed to fetch song with ID ${id}`);
+          return;
+        }
+      } catch (error) {
+        console.error(`Error fetching song with ID ${id}:`, error);
+        return;
+      }
     }
 
     if (radioContext?.forceStopRadio) {
+      console.log('Stopping radio playback');
       radioContext.forceStopRadio();
     }
 
-    setTimeout(async () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.currentTime = 0;
-        audioRef.current.src = '';
-        audioRef.current.load();
-        audioRef.current.removeAttribute('src');
-      }
-      
+    // Stop YouTube playback if active
+    if (useYouTubePlayer) {
+      console.log('Stopping YouTube playback');
+      setUseYouTubePlayer(false);
+      setCurrentYouTubeVideo(null);
+    }
+
+    // Immediately pause current track and reset state
+    if (audioRef.current) {
+      console.log('Pausing current track');
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      audioRef.current.src = '';
+      audioRef.current.load();
+    }
+
+    try {
+      console.log('Extracting colors from track');
+      const colorTheme = await extractColorsFromTrack(selectedTrack);
+      setThemeColors(colorTheme);
+    } catch (error) {
+      console.error('Error extracting colors:', error);
+      setThemeColors({
+        primary: '#8b5cf6',
+        secondary: '#0f172a',
+        text: '#ffffff'
+      });
+    }
+    
+    console.log('Setting new track:', selectedTrack);
+    setTrack(selectedTrack);
+    saveLastPlayedSong(selectedTrack);
+    
+    if (user && user._id && token) {
       try {
-        const colorTheme = await extractColorsFromTrack(selectedTrack);
-        setThemeColors(colorTheme);
+        console.log('Recording play history');
+        await axios.post(
+          `${API_BASE_URL}/api/play/add`,
+          { song: id },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
       } catch (error) {
-        console.error('Error extracting colors:', error);
-        setThemeColors({
-          primary: '#8b5cf6',
-          secondary: '#0f172a',
-          text: '#ffffff'
-        });
+        console.error('Failed to record play history:', error);
       }
-      
-      setTrack(selectedTrack);
-      saveLastPlayedSong(selectedTrack);
-      
-      if (user && user._id && token) {
-        try {
-          await axios.post(
-            `${API_BASE_URL}/api/play/add`,
-            { song: id },
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-        } catch (error) {
-          console.error('Failed to record play history:', error);
+    }
+    
+    // Set up new track
+    setTimeout(() => {
+      if (audioRef.current) {
+        console.log('Setting up new track for playback');
+        audioRef.current.src = selectedTrack.file;
+        audioRef.current.load();
+        
+        // Set up media session
+        if ('mediaSession' in navigator) {
+          navigator.mediaSession.metadata = new MediaMetadata({
+            title: selectedTrack.title,
+            artist: getArtistName(selectedTrack),
+            album: getAlbumName(selectedTrack),
+            artwork: [
+              { src: selectedTrack.image || '/default-album.png' }
+            ]
+          });
         }
+        
+        // Start playback
+        console.log('Starting playback');
+        play();
       }
-      
-      setTimeout(() => {
-        if (audioRef.current) {
-          audioRef.current.src = selectedTrack.file;
-          audioRef.current.load();
-          play();
-        }
-      }, 100);
-    }, 50);
+    }, 100);
   };
 
   const Previous = () => {
@@ -1396,6 +1448,101 @@ export const PlayerContextProvider = ({ children }) => {
     };
   }, [track, autoplayEnabled]);
 
+  const playYouTubeVideo = async (videoId, videoData = null) => {
+    console.log('playYouTubeVideo called with:', { videoId, videoData });
+    try {
+      let videoDetails = videoData;
+      if (!videoDetails) {
+        console.log('Fetching video details from YouTube API');
+        videoDetails = await YouTubeService.getVideoDetails(videoId);
+      }
+
+      if (!videoDetails) {
+        console.error('Could not load video details');
+        throw new Error('Could not load video details');
+      }
+
+      console.log('Video details:', videoDetails);
+
+      // Stop any current audio playback
+      if (audioRef.current) {
+        console.log('Stopping current audio playback');
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+        audioRef.current.src = '';
+        audioRef.current.load();
+      }
+
+      // Stop radio if playing
+      if (radioContext?.isPlaying) {
+        console.log('Stopping radio playback');
+        radioContext.stopStation();
+      }
+
+      // Reset track state
+      setTrack(null);
+      setTime({
+        currentTime: { second: 0, minute: 0 },
+        totalTime: { second: 0, minute: 0 }
+      });
+
+      console.log('Setting YouTube player state');
+      setUseYouTubePlayer(true);
+      setCurrentYouTubeVideo({
+        id: videoId,
+        title: videoDetails.snippet.title,
+        channelTitle: videoDetails.snippet.channelTitle,
+        thumbnail: videoDetails.snippet.thumbnails.high?.url || videoDetails.snippet.thumbnails.default.url
+      });
+
+      // Update track info for media session
+      if ('mediaSession' in navigator) {
+        console.log('Updating media session metadata');
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: videoDetails.snippet.title,
+          artist: videoDetails.snippet.channelTitle,
+          artwork: [
+            { src: videoDetails.snippet.thumbnails.high?.url || videoDetails.snippet.thumbnails.default.url }
+          ]
+        });
+
+        navigator.mediaSession.setActionHandler('play', () => play());
+        navigator.mediaSession.setActionHandler('pause', () => pause());
+        navigator.mediaSession.setActionHandler('previoustrack', () => Previous());
+        navigator.mediaSession.setActionHandler('nexttrack', () => Next());
+      }
+
+      // Set playback state
+      setPlayStatus(true);
+    } catch (error) {
+      console.error('Error playing YouTube video:', error);
+      toast.error('Failed to play YouTube video');
+    }
+  };
+
+  const addToYouTubeQueue = (video) => {
+    setYoutubeQueue(prev => [...prev, video]);
+  };
+
+  const clearYouTubeQueue = () => {
+    setYoutubeQueue([]);
+  };
+
+  const playNextYouTubeVideo = () => {
+    if (youtubeQueue.length > 0) {
+      const nextVideo = youtubeQueue[0];
+      setYoutubeQueue(prev => prev.slice(1));
+      playYouTubeVideo(nextVideo.id.videoId, nextVideo);
+    } else {
+      setUseYouTubePlayer(false);
+      setCurrentYouTubeVideo(null);
+      // Resume normal playback if there are songs in the regular queue
+      if (queueSongs.length > 0) {
+        playWithId(queueSongs[0]._id);
+      }
+    }
+  };
+
   // Update context value to remove buffering-related values
   const contextValue = {
     audioRef,
@@ -1449,6 +1596,13 @@ export const PlayerContextProvider = ({ children }) => {
     setSleepTimer,
     sleepTimerRemaining,
     formatRemainingTime,
+    useYouTubePlayer,
+    setUseYouTubePlayer,
+    currentYouTubeVideo,
+    playYouTubeVideo,
+    addToYouTubeQueue,
+    clearYouTubeQueue,
+    youtubeQueue
   };
 
   // Add effect to persist autoplay preference
@@ -1476,3 +1630,5 @@ export const PlayerContextProvider = ({ children }) => {
     </PlayerContext.Provider>
   );
 };
+
+export default PlayerContextProvider;

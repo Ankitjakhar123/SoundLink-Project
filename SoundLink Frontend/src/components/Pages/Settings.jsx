@@ -1,10 +1,10 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { AuthContext } from '../../context/AuthContext';
 import { Link } from 'react-router-dom';
-import { FaArrowLeft, FaSun, FaMoon, FaBell, FaBellSlash, FaLock, FaCheck, FaEye, FaEyeSlash, FaVolumeUp, FaVolumeMute } from 'react-icons/fa';
+import { FaArrowLeft, FaSun, FaMoon, FaBell, FaBellSlash, FaLock, FaCheck, FaEye, FaEyeSlash, FaVolumeUp, FaVolumeMute, FaYoutube } from 'react-icons/fa';
 import axios from 'axios';
 
-const Settings = () => {
+const Settings = ({ useYouTubePlayer, setUseYouTubePlayer }) => {
   const { token } = useContext(AuthContext);
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
@@ -109,6 +109,19 @@ const Settings = () => {
 
         {/* Settings Sections */}
         <div className="grid gap-8">
+          {/* YouTube Integration Section */}
+          <SettingsSection title="YouTube Integration">
+            <div className="space-y-4">
+              <ToggleSetting 
+                icon={<FaYoutube className={useYouTubePlayer ? "text-red-500" : "text-neutral-500"} />}
+                title="YouTube Player" 
+                description="Use YouTube as an alternative music source" 
+                isActive={useYouTubePlayer}
+                onToggle={() => setUseYouTubePlayer(prev => !prev)}
+              />
+            </div>
+          </SettingsSection>
+
           {/* Appearance Section */}
           <SettingsSection title="Appearance">
             <div className="space-y-4">

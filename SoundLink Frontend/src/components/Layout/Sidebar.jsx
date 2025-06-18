@@ -1,6 +1,6 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { AuthContext } from '../../context/AuthContext';
-import { FaFire, FaRegClock, FaUser, FaVideo, FaMusic, FaChartBar, FaThLarge, FaHeart, FaStar, FaPodcast, FaPlus, FaListUl, FaBars, FaTimes, FaHome } from 'react-icons/fa';
+import { FaFire, FaRegClock, FaUser, FaVideo, FaMusic, FaChartBar, FaThLarge, FaHeart, FaStar, FaPodcast, FaPlus, FaListUl, FaBars, FaTimes, FaHome, FaCog } from 'react-icons/fa';
 import { MdRadio } from 'react-icons/md';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
@@ -138,6 +138,17 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
               label="Favorites" 
               active={location.pathname === '/favorites'} 
               onClick={() => handleNavigate('/favorites')} 
+            />
+          </div>
+
+          {/* Add Settings Section */}
+          <div className="mb-4 mt-auto">
+            <div className="text-xs text-neutral-400 mb-2">Options</div>
+            <SidebarItem 
+              icon={<FaCog />} 
+              label="Settings" 
+              active={location.pathname === '/settings'} 
+              onClick={() => handleNavigate('/settings')} 
             />
           </div>
         </nav>
