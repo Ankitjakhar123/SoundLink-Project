@@ -343,6 +343,7 @@ const App = () => {
           )}
         </div>
         {track && <div className="content-fade"></div>}
+        {useYouTubePlayer && <div className="content-fade youtube-content-fade"></div>}
         {/* Only one player at a time: radio or premium */}
         {useYouTubePlayer ? (
           <YouTubePremiumPlayer useYouTubePlayer={useYouTubePlayer} currentYouTubeVideo={currentYouTubeVideo} />
