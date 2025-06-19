@@ -1,4 +1,8 @@
-const YOUTUBE_API_KEY = 'AIzaSyAnpKfM4TXIwIXovM73PBQUZxEYl_5Y0ss'; // Replace with your API key
+const YOUTUBE_API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY;
+
+if (!YOUTUBE_API_KEY) {
+    console.error('YouTube API key is not configured. Please set VITE_YOUTUBE_API_KEY in your .env file');
+}
 
 class YouTubeService {
     static async searchVideos(query, isDirectSearch = false) {
