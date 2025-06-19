@@ -590,3 +590,69 @@ a, a:hover, a:focus, a:active, a:visited {
   }
 }
 
+/* YouTube Player Mobile Responsiveness */
+.youtube-premium-player {
+  transition: all 0.3s ease-in-out;
+}
+
+/* Mobile-specific YouTube player adjustments */
+@media (max-width: 768px) {
+  .youtube-premium-player {
+    /* Ensure it's above the bottom navigation */
+    z-index: 60 !important;
+  }
+  
+  /* Make controls more touch-friendly on mobile */
+  .youtube-premium-player button {
+    min-width: 44px;
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+  
+  /* Ensure the player is visible and not hidden behind navigation */
+  .youtube-premium-player:not(.expanded) {
+    bottom: 50px !important;
+  }
+  
+  /* Full screen mode on mobile */
+  .youtube-premium-player.expanded {
+    z-index: 9999 !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+  }
+}
+
+/* Ensure YouTube iframe is responsive */
+.youtube-player-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.youtube-player {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Touch-friendly controls for mobile */
+@media (max-width: 768px) {
+  .youtube-premium-player .flex.items-center.space-x-2 button {
+    padding: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+  
+  .youtube-premium-player .flex.items-center.space-x-2 button:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+}
+

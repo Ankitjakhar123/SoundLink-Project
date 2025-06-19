@@ -18,8 +18,19 @@ const YouTubePremiumPlayer = ({ currentYouTubeVideo }) => {
     const [error, setError] = useState(null);
     const [isExpanded, setIsExpanded] = useState(false);
     const [isPlaying, setIsPlaying] = useState(false);
+    const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth < 768);
     const playerRef = useRef(null);
     const wasPlayingRef = useRef(false);
+
+    // Update screen size state on resize
+    useEffect(() => {
+        const handleResize = () => {
+            setIsSmallScreen(window.innerWidth < 768);
+        };
+        
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, []);
 
     // Update currentVideoId when currentYouTubeVideo changes
     useEffect(() => {
@@ -106,10 +117,10 @@ const YouTubePremiumPlayer = ({ currentYouTubeVideo }) => {
     }
 
     return (
-        <div className={`youtube-premium-player fixed transition-all duration-300 ${
+        <div className={`youtube-premium-player fixed transition-all duration-300 ${isExpanded ? 'expanded' : ''} ${
             isExpanded 
                 ? 'inset-0 z-[9999] bg-black' 
-                : 'h-16 left-0 right-0 bottom-0 z-50 bg-neutral-900'
+                : `h-16 left-0 right-0 z-50 bg-neutral-900 ${isSmallScreen ? 'bottom-[50px]' : 'bottom-0'}`
         }`}>
             {/* Minimized Player */}
             <div className={`flex items-center justify-between px-4 h-16 ${isExpanded ? 'border-b border-white/10' : ''}`}>
@@ -133,18 +144,18 @@ const YouTubePremiumPlayer = ({ currentYouTubeVideo }) => {
                     )}
                 </div>
                 
-                <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2 md:space-x-4">
                     <button
                         onClick={togglePlayPause}
-                        className="w-8 h-8 flex items-center justify-center text-white hover:text-fuchsia-500 transition-colors"
+                        className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center text-white hover:text-fuchsia-500 transition-colors rounded-full hover:bg-white/10"
                     >
-                        {isPlaying ? <FaPause size={18} /> : <FaPlay size={18} />}
+                        {isPlaying ? <FaPause size={isSmallScreen ? 16 : 18} /> : <FaPlay size={isSmallScreen ? 16 : 18} />}
                     </button>
                     <button
                         onClick={toggleExpand}
-                        className="w-8 h-8 flex items-center justify-center text-white hover:text-fuchsia-500 transition-colors"
+                        className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center text-white hover:text-fuchsia-500 transition-colors rounded-full hover:bg-white/10"
                     >
-                        {isExpanded ? <FaCompress size={18} /> : <FaExpand size={18} />}
+                        {isExpanded ? <FaCompress size={isSmallScreen ? 16 : 18} /> : <FaExpand size={isSmallScreen ? 16 : 18} />}
                     </button>
                 </div>
             </div>
