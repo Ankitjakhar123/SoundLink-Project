@@ -29,11 +29,73 @@ const RadioStation = () => {
   const fetchStations = async () => {
     try {
       setLoading(true);
-      const response = await fetch('https://corsproxy.io/?https://de1.api.radio-browser.info/json/stations/bycountry/India'); 
-      if (!response.ok) {
-        throw new Error('Failed to fetch radio stations');
+      
+      // Try multiple CORS proxies as fallbacks
+      const corsProxies = [
+        'https://api.allorigins.win/raw?url=',
+        'https://cors-anywhere.herokuapp.com/',
+        'https://thingproxy.freeboard.io/fetch/',
+        'https://corsproxy.io/?'
+      ];
+      
+      let data = null;
+      
+      for (const proxy of corsProxies) {
+        try {
+          const apiUrl = 'https://de1.api.radio-browser.info/json/stations/bycountry/India';
+          const fullUrl = proxy + apiUrl;
+          
+          console.log(`Trying CORS proxy: ${proxy}`);
+          
+          const response = await fetch(fullUrl, {
+            method: 'GET',
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+            },
+            timeout: 10000 // 10 second timeout
+          });
+          
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+          
+          data = await response.json();
+          console.log(`Successfully fetched ${data.length} stations using ${proxy}`);
+          break; // Success, exit the loop
+          
+        } catch (error) {
+          console.warn(`Failed with proxy ${proxy}:`, error.message);
+          continue; // Try next proxy
+        }
       }
-      const data = await response.json();
+      
+      // If all proxies failed, try direct API call (might work in some browsers)
+      if (!data) {
+        try {
+          console.log('Trying direct API call...');
+          const response = await fetch('https://de1.api.radio-browser.info/json/stations/bycountry/India');
+          if (response.ok) {
+            data = await response.json();
+            console.log(`Successfully fetched ${data.length} stations directly`);
+          } else {
+            throw new Error(`Direct API call failed: ${response.status}`);
+          }
+        } catch (directError) {
+          console.error('Direct API call also failed:', directError);
+          // Use fallback sample stations
+          console.log('Using fallback sample stations');
+          data = getFallbackStations();
+          toast.info('Using sample radio stations. Some features may be limited.', {
+            position: "top-right",
+            autoClose: 5000,
+          });
+        }
+      }
+      
+      if (!data || !Array.isArray(data)) {
+        throw new Error('Invalid data received from radio API');
+      }
       
       // Filter and validate stations
       const validStations = data
@@ -43,12 +105,13 @@ const RadioStation = () => {
             url.endsWith('.mp3') || 
             url.includes('stream') || 
             url.includes('icecast') ||
-            url.includes('radio')
+            url.includes('radio') ||
+            url.includes('audio')
           );
         })
         .map(station => ({
           ...station,
-          stationuuid: station.stationuuid || station._id,
+          stationuuid: station.stationuuid || station._id || Math.random().toString(36).substr(2, 9),
           url_resolved: station.url_resolved || station.url,
           favicon: station.favicon || station.image || 'https://via.placeholder.com/150',
           bitrate: station.bitrate || '128',
@@ -58,16 +121,84 @@ const RadioStation = () => {
         }));
 
       if (validStations.length === 0) {
-        throw new Error('No valid radio stations found');
+        throw new Error('No valid radio stations found. Please try again later.');
       }
 
+      console.log(`Found ${validStations.length} valid stations`);
       groupStationsByGenre(validStations);
+      
     } catch (err) {
       console.error('Error fetching stations:', err);
-      setError(err.message || 'Failed to fetch radio stations');
+      setError(err.message || 'Failed to fetch radio stations. Please check your internet connection and try again.');
     } finally {
       setLoading(false);
     }
+  };
+
+  // Fallback sample radio stations
+  const getFallbackStations = () => {
+    return [
+      {
+        stationuuid: 'fallback-1',
+        name: 'Radio Mirchi',
+        url: 'https://stream.radiojar.com/4ywdgup3bnzuv',
+        url_resolved: 'https://stream.radiojar.com/4ywdgup3bnzuv',
+        favicon: 'https://via.placeholder.com/150',
+        tags: 'hindi,bollywood,music',
+        bitrate: '128',
+        codec: 'MP3',
+        country: 'IN',
+        language: 'Hindi'
+      },
+      {
+        stationuuid: 'fallback-2',
+        name: 'Big FM',
+        url: 'https://stream.radiojar.com/7csmg90fuqruv',
+        url_resolved: 'https://stream.radiojar.com/7csmg90fuqruv',
+        favicon: 'https://via.placeholder.com/150',
+        tags: 'hindi,bollywood',
+        bitrate: '128',
+        codec: 'MP3',
+        country: 'IN',
+        language: 'Hindi'
+      },
+      {
+        stationuuid: 'fallback-3',
+        name: 'Red FM',
+        url: 'https://stream.radiojar.com/4ywdgup3bnzuv',
+        url_resolved: 'https://stream.radiojar.com/4ywdgup3bnzuv',
+        favicon: 'https://via.placeholder.com/150',
+        tags: 'hindi,music',
+        bitrate: '128',
+        codec: 'MP3',
+        country: 'IN',
+        language: 'Hindi'
+      },
+      {
+        stationuuid: 'fallback-4',
+        name: 'Punjabi Radio',
+        url: 'https://stream.radiojar.com/7csmg90fuqruv',
+        url_resolved: 'https://stream.radiojar.com/7csmg90fuqruv',
+        favicon: 'https://via.placeholder.com/150',
+        tags: 'punjabi,music',
+        bitrate: '128',
+        codec: 'MP3',
+        country: 'IN',
+        language: 'Punjabi'
+      },
+      {
+        stationuuid: 'fallback-5',
+        name: 'Haryanvi Hits',
+        url: 'https://stream.radiojar.com/4ywdgup3bnzuv',
+        url_resolved: 'https://stream.radiojar.com/4ywdgup3bnzuv',
+        favicon: 'https://via.placeholder.com/150',
+        tags: 'haryanvi,folk',
+        bitrate: '128',
+        codec: 'MP3',
+        country: 'IN',
+        language: 'Haryanvi'
+      }
+    ];
   };
 
   const groupStationsByGenre = (allStations) => {
@@ -240,8 +371,17 @@ const RadioStation = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen flex justify-center items-center bg-black">
-        <div className="text-red-500 text-xl">{error}</div>
+      <div className="min-h-screen flex flex-col justify-center items-center bg-black gap-4">
+        <div className="text-red-500 text-xl text-center">{error}</div>
+        <button
+          onClick={() => {
+            setError(null);
+            fetchStations();
+          }}
+          className="px-6 py-3 bg-fuchsia-500 text-white rounded-lg hover:bg-fuchsia-600 transition-colors"
+        >
+          Try Again
+        </button>
       </div>
     );
   }
