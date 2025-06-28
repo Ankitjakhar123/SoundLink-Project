@@ -7,7 +7,7 @@ export const SEO_CONFIG = {
   // Site-wide settings
   site: {
     name: 'SoundLink',
-    url: 'https://soundlink.netlify.app',
+    url: 'https://soundlink.live',
     description: 'Premium music streaming platform offering high-quality audio streaming, trending songs, albums, and artist discovery',
     keywords: 'music streaming, online music, free music, trending songs, music albums, artists, playlists, audio streaming, music platform, SoundLink, music app, streaming service, songs, albums, artists, music discovery',
     author: 'SoundLink',
@@ -108,7 +108,7 @@ export const SEO_CONFIG = {
       "@type": "WebApplication",
       "name": "SoundLink",
       "description": "Premium music streaming platform offering high-quality audio streaming, trending songs, albums, and artist discovery",
-      "url": "https://soundlink.netlify.app",
+      "url": "https://soundlink.live",
       "applicationCategory": "MusicApplication",
       "operatingSystem": "Web Browser",
       "offers": {
@@ -125,10 +125,10 @@ export const SEO_CONFIG = {
         "name": "SoundLink",
         "logo": {
           "@type": "ImageObject",
-          "url": "https://soundlink.netlify.app/icons/soundlink-icon-512.png"
+          "url": "https://soundlink.live/icons/soundlink-icon-512.png"
         }
       },
-      "screenshot": "https://soundlink.netlify.app/assets/screenshot1.png",
+      "screenshot": "https://soundlink.live/assets/screenshot1.png",
       "aggregateRating": {
         "@type": "AggregateRating",
         "ratingValue": "4.8",
@@ -151,16 +151,16 @@ export const SEO_CONFIG = {
       "@context": "https://schema.org",
       "@type": "Organization",
       "name": "SoundLink",
-      "url": "https://soundlink.netlify.app",
-      "logo": "https://soundlink.netlify.app/icons/soundlink-icon-512.png",
+      "url": "https://soundlink.live",
+      "logo": "https://soundlink.live/icons/soundlink-icon-512.png",
       "description": "Premium music streaming platform",
       "sameAs": [
-        "https://soundlink.netlify.app"
+        "https://soundlink.live"
       ],
       "contactPoint": {
         "@type": "ContactPoint",
         "contactType": "customer service",
-        "url": "https://soundlink.netlify.app/contact"
+        "url": "https://soundlink.live/contact"
       }
     },
 
@@ -169,11 +169,11 @@ export const SEO_CONFIG = {
       "@context": "https://schema.org",
       "@type": "WebSite",
       "name": "SoundLink",
-      "url": "https://soundlink.netlify.app",
+      "url": "https://soundlink.live",
       "description": "Premium music streaming platform",
       "potentialAction": {
         "@type": "SearchAction",
-        "target": "https://soundlink.netlify.app/search?q={search_term_string}",
+        "target": "https://soundlink.live/search?q={search_term_string}",
         "query-input": "required name=search_term_string"
       }
     },
@@ -184,8 +184,8 @@ export const SEO_CONFIG = {
       "@type": "MusicAlbum",
       "name": albumData.name,
       "description": albumData.description || `Listen to ${albumData.name} on SoundLink`,
-      "url": `https://soundlink.netlify.app/album/${albumData._id}`,
-      "image": albumData.image || "https://soundlink.netlify.app/icons/soundlink-icon-512.png",
+      "url": `https://soundlink.live/album/${albumData._id}`,
+      "image": albumData.image || "https://soundlink.live/icons/soundlink-icon-512.png",
       "publisher": {
         "@type": "Organization",
         "name": "SoundLink"
@@ -203,13 +203,13 @@ export const SEO_CONFIG = {
       "@type": "MusicGroup",
       "name": artistData.name,
       "description": artistData.description || `Listen to music by ${artistData.name} on SoundLink`,
-      "url": `https://soundlink.netlify.app/artist/${artistData._id}`,
-      "image": artistData.image || "https://soundlink.netlify.app/icons/soundlink-icon-512.png",
+      "url": `https://soundlink.live/artist/${artistData._id}`,
+      "image": artistData.image || "https://soundlink.live/icons/soundlink-icon-512.png",
       "genre": artistData.genre,
       "album": artistData.albums?.map(album => ({
         "@type": "MusicAlbum",
         "name": album.name,
-        "url": `https://soundlink.netlify.app/album/${album._id}`
+        "url": `https://soundlink.live/album/${album._id}`
       }))
     }),
 
@@ -219,8 +219,8 @@ export const SEO_CONFIG = {
       "@type": "MusicRecording",
       "name": songData.name,
       "description": `Listen to ${songData.name} by ${songData.singer} on SoundLink`,
-      "url": `https://soundlink.netlify.app/song/${songData._id}/info`,
-      "image": songData.image || "https://soundlink.netlify.app/icons/soundlink-icon-512.png",
+      "url": `https://soundlink.live/song/${songData._id}/info`,
+      "image": songData.image || "https://soundlink.live/icons/soundlink-icon-512.png",
       "byArtist": {
         "@type": "MusicGroup",
         "name": songData.singer
@@ -239,8 +239,8 @@ export const SEO_CONFIG = {
       "@type": "ItemList",
       "name": playlistData.name,
       "description": playlistData.description || `Playlist: ${playlistData.name} on SoundLink`,
-      "url": `https://soundlink.netlify.app/playlist/${playlistData._id}`,
-      "image": playlistData.image || "https://soundlink.netlify.app/icons/soundlink-icon-512.png",
+      "url": `https://soundlink.live/playlist/${playlistData._id}`,
+      "image": playlistData.image || "https://soundlink.live/icons/soundlink-icon-512.png",
       "numberOfItems": playlistData.songs?.length || 0,
       "itemListElement": playlistData.songs?.map((song, index) => ({
         "@type": "ListItem",

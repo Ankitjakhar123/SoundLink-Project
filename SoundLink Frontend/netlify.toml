@@ -7,6 +7,25 @@
   # Default build command
   command = "npm run build"
 
+# Domain redirects for SEO
+[[redirects]]
+  from = "https://www.soundlink.live/*"
+  to = "https://soundlink.live/:splat"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "http://soundlink.live/*"
+  to = "https://soundlink.live/:splat"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "http://www.soundlink.live/*"
+  to = "https://soundlink.live/:splat"
+  status = 301
+  force = true
+
 # Handle SPA routing (redirects all requests to index.html)
 [[redirects]]
   from = "/*"

@@ -43,9 +43,9 @@ Allow: /sitemap.xml
 Crawl-delay: 1
 
 # Sitemap location
-Sitemap: https://soundlink.netlify.app/sitemap.xml
+Sitemap: https://soundlink.live/sitemap.xml
 
 # Additional sitemaps for different content types (if you create them later)
-# Sitemap: https://soundlink.netlify.app/sitemap-albums.xml
-# Sitemap: https://soundlink.netlify.app/sitemap-artists.xml
-# Sitemap: https://soundlink.netlify.app/sitemap-songs.xml 
+# Sitemap: https://soundlink.live/sitemap-albums.xml
+# Sitemap: https://soundlink.live/sitemap-artists.xml
+# Sitemap: https://soundlink.live/sitemap-songs.xml 
