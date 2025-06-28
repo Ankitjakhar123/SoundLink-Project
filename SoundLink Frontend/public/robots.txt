@@ -1,4 +1,5 @@
 # SoundLink robots.txt
+# Allow all search engines to crawl the site
 User-agent: *
 Allow: /
 
@@ -6,6 +7,11 @@ Allow: /
 Disallow: /admin/
 Disallow: /api/
 Disallow: /config/
+Disallow: /temp/
+Disallow: /node_modules/
+Disallow: /.env
+Disallow: /package.json
+Disallow: /package-lock.json
 
 # Allow access to main content
 Allow: /index.html
@@ -15,6 +21,31 @@ Allow: /artists
 Allow: /player
 Allow: /playlists
 Allow: /search
+Allow: /trending
+Allow: /premium
+Allow: /radio
+Allow: /about
+Allow: /contact
+Allow: /terms
+Allow: /privacy
+Allow: /auth
+Allow: /login
+Allow: /signup
+
+# Allow access to static assets
+Allow: /icons/
+Allow: /assets/
+Allow: /public/
+Allow: /manifest.json
+Allow: /sitemap.xml
+
+# Crawl delay (optional - be respectful to server resources)
+Crawl-delay: 1
 
 # Sitemap location
-Sitemap: https://your-app-url.com/sitemap.xml 
+Sitemap: https://soundlink.netlify.app/sitemap.xml
+
+# Additional sitemaps for different content types (if you create them later)
+# Sitemap: https://soundlink.netlify.app/sitemap-albums.xml
+# Sitemap: https://soundlink.netlify.app/sitemap-artists.xml
+# Sitemap: https://soundlink.netlify.app/sitemap-songs.xml 
