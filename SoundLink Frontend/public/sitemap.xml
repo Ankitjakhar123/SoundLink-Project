@@ -2,73 +2,73 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <!-- Main pages -->
   <url>
-    <loc>https://soundlink.live/</loc>
+    <loc>https://www.soundlink.live/</loc>
     <lastmod>2024-12-19</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://soundlink.live/trending</loc>
+    <loc>https://www.soundlink.live/trending</loc>
     <lastmod>2024-12-19</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://soundlink.live/artists</loc>
+    <loc>https://www.soundlink.live/artists</loc>
     <lastmod>2024-12-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://soundlink.live/premium</loc>
+    <loc>https://www.soundlink.live/premium</loc>
     <lastmod>2024-12-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://soundlink.live/radio</loc>
+    <loc>https://www.soundlink.live/radio</loc>
     <lastmod>2024-12-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://soundlink.live/about</loc>
+    <loc>https://www.soundlink.live/about</loc>
     <lastmod>2024-12-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://soundlink.live/contact</loc>
+    <loc>https://www.soundlink.live/contact</loc>
     <lastmod>2024-12-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://soundlink.live/terms</loc>
+    <loc>https://www.soundlink.live/terms</loc>
     <lastmod>2024-12-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://soundlink.live/privacy</loc>
+    <loc>https://www.soundlink.live/privacy</loc>
     <lastmod>2024-12-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://soundlink.live/auth</loc>
+    <loc>https://www.soundlink.live/auth</loc>
     <lastmod>2024-12-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://soundlink.live/login</loc>
+    <loc>https://www.soundlink.live/login</loc>
     <lastmod>2024-12-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://soundlink.live/signup</loc>
+    <loc>https://www.soundlink.live/signup</loc>
     <lastmod>2024-12-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
@@ -76,31 +76,31 @@
 
   <!-- Protected pages (login required) -->
   <url>
-    <loc>https://soundlink.live/playlists</loc>
+    <loc>https://www.soundlink.live/playlists</loc>
     <lastmod>2024-12-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://soundlink.live/favorites</loc>
+    <loc>https://www.soundlink.live/favorites</loc>
     <lastmod>2024-12-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://soundlink.live/library</loc>
+    <loc>https://www.soundlink.live/library</loc>
     <lastmod>2024-12-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://soundlink.live/settings</loc>
+    <loc>https://www.soundlink.live/settings</loc>
     <lastmod>2024-12-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://soundlink.live/profile</loc>
+    <loc>https://www.soundlink.live/profile</loc>
     <lastmod>2024-12-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -109,19 +109,19 @@
   <!-- Dynamic content pages - These will be updated with actual IDs from your database -->
   <!-- Album pages -->
   <url>
-    <loc>https://soundlink.live/album/1</loc>
+    <loc>https://www.soundlink.live/album/1</loc>
     <lastmod>2024-12-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://soundlink.live/album/2</loc>
+    <loc>https://www.soundlink.live/album/2</loc>
     <lastmod>2024-12-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://soundlink.live/album/3</loc>
+    <loc>https://www.soundlink.live/album/3</loc>
     <lastmod>2024-12-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
@@ -129,19 +129,19 @@
 
   <!-- Artist pages -->
   <url>
-    <loc>https://soundlink.live/artist/1</loc>
+    <loc>https://www.soundlink.live/artist/1</loc>
     <lastmod>2024-12-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://soundlink.live/artist/2</loc>
+    <loc>https://www.soundlink.live/artist/2</loc>
     <lastmod>2024-12-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://soundlink.live/artist/3</loc>
+    <loc>https://www.soundlink.live/artist/3</loc>
     <lastmod>2024-12-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
@@ -149,19 +149,19 @@
 
   <!-- Movie album pages -->
   <url>
-    <loc>https://soundlink.live/movie/1</loc>
+    <loc>https://www.soundlink.live/movie/1</loc>
     <lastmod>2024-12-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://soundlink.live/movie/2</loc>
+    <loc>https://www.soundlink.live/movie/2</loc>
     <lastmod>2024-12-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://soundlink.live/movie/3</loc>
+    <loc>https://www.soundlink.live/movie/3</loc>
     <lastmod>2024-12-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
@@ -169,19 +169,19 @@
 
   <!-- Song detail pages -->
   <url>
-    <loc>https://soundlink.live/song/1/info</loc>
+    <loc>https://www.soundlink.live/song/1/info</loc>
     <lastmod>2024-12-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://soundlink.live/song/2/info</loc>
+    <loc>https://www.soundlink.live/song/2/info</loc>
     <lastmod>2024-12-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://soundlink.live/song/3/info</loc>
+    <loc>https://www.soundlink.live/song/3/info</loc>
     <lastmod>2024-12-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -189,19 +189,19 @@
 
   <!-- Playlist pages -->
   <url>
-    <loc>https://soundlink.live/playlist/1</loc>
+    <loc>https://www.soundlink.live/playlist/1</loc>
     <lastmod>2024-12-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://soundlink.live/playlist/2</loc>
+    <loc>https://www.soundlink.live/playlist/2</loc>
     <lastmod>2024-12-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://soundlink.live/playlist/3</loc>
+    <loc>https://www.soundlink.live/playlist/3</loc>
     <lastmod>2024-12-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>

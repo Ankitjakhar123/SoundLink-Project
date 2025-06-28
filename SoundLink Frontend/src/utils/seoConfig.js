@@ -7,7 +7,7 @@ export const SEO_CONFIG = {
   // Site-wide settings
   site: {
     name: 'SoundLink',
-    url: 'https://soundlink.live',
+    url: 'https://www.soundlink.live',
     description: 'Premium music streaming platform offering high-quality audio streaming, trending songs, albums, and artist discovery',
     keywords: 'music streaming, online music, free music, trending songs, music albums, artists, playlists, audio streaming, music platform, SoundLink, music app, streaming service, songs, albums, artists, music discovery',
     author: 'SoundLink',
@@ -108,7 +108,7 @@ export const SEO_CONFIG = {
       "@type": "WebApplication",
       "name": "SoundLink",
       "description": "Premium music streaming platform offering high-quality audio streaming, trending songs, albums, and artist discovery",
-      "url": "https://soundlink.live",
+      "url": "https://www.soundlink.live",
       "applicationCategory": "MusicApplication",
       "operatingSystem": "Web Browser",
       "offers": {
@@ -125,10 +125,10 @@ export const SEO_CONFIG = {
         "name": "SoundLink",
         "logo": {
           "@type": "ImageObject",
-          "url": "https://soundlink.live/icons/soundlink-icon-512.png"
+          "url": "https://www.soundlink.live/icons/soundlink-icon-512.png"
         }
       },
-      "screenshot": "https://soundlink.live/assets/screenshot1.png",
+      "screenshot": "https://www.soundlink.live/assets/screenshot1.png",
       "aggregateRating": {
         "@type": "AggregateRating",
         "ratingValue": "4.8",
@@ -151,16 +151,16 @@ export const SEO_CONFIG = {
       "@context": "https://schema.org",
       "@type": "Organization",
       "name": "SoundLink",
-      "url": "https://soundlink.live",
-      "logo": "https://soundlink.live/icons/soundlink-icon-512.png",
+      "url": "https://www.soundlink.live",
+      "logo": "https://www.soundlink.live/icons/soundlink-icon-512.png",
       "description": "Premium music streaming platform",
       "sameAs": [
-        "https://soundlink.live"
+        "https://www.soundlink.live"
       ],
       "contactPoint": {
         "@type": "ContactPoint",
         "contactType": "customer service",
-        "url": "https://soundlink.live/contact"
+        "url": "https://www.soundlink.live/contact"
       }
     },
 
@@ -169,11 +169,11 @@ export const SEO_CONFIG = {
       "@context": "https://schema.org",
       "@type": "WebSite",
       "name": "SoundLink",
-      "url": "https://soundlink.live",
+      "url": "https://www.soundlink.live",
       "description": "Premium music streaming platform",
       "potentialAction": {
         "@type": "SearchAction",
-        "target": "https://soundlink.live/search?q={search_term_string}",
+        "target": "https://www.soundlink.live/search?q={search_term_string}",
         "query-input": "required name=search_term_string"
       }
     },
@@ -184,8 +184,8 @@ export const SEO_CONFIG = {
       "@type": "MusicAlbum",
       "name": albumData.name,
       "description": albumData.description || `Listen to ${albumData.name} on SoundLink`,
-      "url": `https://soundlink.live/album/${albumData._id}`,
-      "image": albumData.image || "https://soundlink.live/icons/soundlink-icon-512.png",
+      "url": `https://www.soundlink.live/album/${albumData._id}`,
+      "image": albumData.image || "https://www.soundlink.live/icons/soundlink-icon-512.png",
       "publisher": {
         "@type": "Organization",
         "name": "SoundLink"
@@ -203,13 +203,13 @@ export const SEO_CONFIG = {
       "@type": "MusicGroup",
       "name": artistData.name,
       "description": artistData.description || `Listen to music by ${artistData.name} on SoundLink`,
-      "url": `https://soundlink.live/artist/${artistData._id}`,
-      "image": artistData.image || "https://soundlink.live/icons/soundlink-icon-512.png",
+      "url": `https://www.soundlink.live/artist/${artistData._id}`,
+      "image": artistData.image || "https://www.soundlink.live/icons/soundlink-icon-512.png",
       "genre": artistData.genre,
       "album": artistData.albums?.map(album => ({
         "@type": "MusicAlbum",
         "name": album.name,
-        "url": `https://soundlink.live/album/${album._id}`
+        "url": `https://www.soundlink.live/album/${album._id}`
       }))
     }),
 
@@ -219,8 +219,8 @@ export const SEO_CONFIG = {
       "@type": "MusicRecording",
       "name": songData.name,
       "description": `Listen to ${songData.name} by ${songData.singer} on SoundLink`,
-      "url": `https://soundlink.live/song/${songData._id}/info`,
-      "image": songData.image || "https://soundlink.live/icons/soundlink-icon-512.png",
+      "url": `https://www.soundlink.live/song/${songData._id}/info`,
+      "image": songData.image || "https://www.soundlink.live/icons/soundlink-icon-512.png",
       "byArtist": {
         "@type": "MusicGroup",
         "name": songData.singer
@@ -239,8 +239,8 @@ export const SEO_CONFIG = {
       "@type": "ItemList",
       "name": playlistData.name,
       "description": playlistData.description || `Playlist: ${playlistData.name} on SoundLink`,
-      "url": `https://soundlink.live/playlist/${playlistData._id}`,
-      "image": playlistData.image || "https://soundlink.live/icons/soundlink-icon-512.png",
+      "url": `https://www.soundlink.live/playlist/${playlistData._id}`,
+      "image": playlistData.image || "https://www.soundlink.live/icons/soundlink-icon-512.png",
       "numberOfItems": playlistData.songs?.length || 0,
       "itemListElement": playlistData.songs?.map((song, index) => ({
         "@type": "ListItem",
